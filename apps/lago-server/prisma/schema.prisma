@@ -1,0 +1,464 @@
+// Lago 数据库 Schema
+// 使用 npm 运行 prisma 命令
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 小程序端用户体系 ====================
+
+enum UserRole {
+  user      // 住户/个人卖家
+  merchant  // 商家
+  property  // 物业
+  admin     // 平台管理员（小程序端）
+}
+
+model User {
+  id              String    @id @default(cuid())
+  wechatOpenid    String?   @unique
+  wechatUnionid   String?
+  nickname        String?
+  avatarUrl       String?
+  phone           String?   @unique
+  email           String?   @unique
+  password        String?   // 密码哈希（用于手机号登录）
+  role            UserRole  @default(user)
+  creditScore     Int       @default(100) // 信用积分
+  isVerified      Boolean   @default(false) // 是否实名认证
+  isActive        Boolean   @default(true) // 账号状态
+  communityIds    String[]  // 加入的小区ID数组
+  
+  // 关联关系
+  products        Product[]
+  ordersAsBuyer   Order[]   @relation("Buyer")
+  ordersAsSeller  Order[]   @relation("Seller")
+  chatRooms       ChatRoomMember[]
+  messages        ChatMessage[]
+  notifications   Notification[]
+  settlements     Settlement[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([wechatOpenid])
+  @@index([phone])
+  @@index([role])
+  @@map("users")
+}
+
+// ==================== 运营系统账号体系 ====================
+
+enum OperationRole {
+  super_admin    // 超级管理员
+  audit_staff    // 审核专员
+  service_staff  // 客服专员
+  operation_staff // 运营专员
+  finance_staff  // 财务专员
+}
+
+model OperationStaff {
+  id              String        @id @default(cuid())
+  username        String        @unique // 用户名
+  email           String        @unique
+  password        String        // 密码哈希
+  role            OperationRole @default(operation_staff)
+  realName        String?       // 真实姓名
+  phone           String?        // 手机号
+  isActive        Boolean       @default(true) // 账号状态
+  lastLoginAt     DateTime?     // 最后登录时间
+  lastLoginIp     String?       // 最后登录IP
+  
+  // 关联关系
+  operationLogs   OperationLog[]
+  loginLogs       LoginLog[]
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([username])
+  @@index([email])
+  @@index([role])
+  @@map("operation_staffs")
+}
+
+// ==================== 社区体系 ====================
+
+model Community {
+  id          String    @id @default(cuid())
+  name        String    // 小区名称
+  location    String    // 地理位置
+  address     String?   // 详细地址
+  partnerId   String?   // 合作物业ID
+  geoHash     String?   // 地理位置哈希，用于距离计算
+  isActive    Boolean   @default(true)
+  
+  // 关联关系
+  products    Product[]
+  liveEvents  LiveEvent[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([partnerId])
+  @@index([geoHash])
+  @@map("communities")
+}
+
+// ==================== 商品系统 ====================
+
+enum ProductCategory {
+  toys
+  gaming
+}
+
+enum TransactionType {
+  rent
+  sell
+  both
+}
+
+enum ProductStatus {
+  pending
+  active
+  sold
+  rented
+  offline
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  ownerId         String          // 卖家ID
+  communityId     String?         // 所属小区ID
+  title           String          // 商品标题
+  description     String?         // 商品描述
+  category        ProductCategory // toys | gaming
+  type            TransactionType // rent | sell | both
+  price           Decimal         @db.Decimal(10,2) // 售价/租金
+  deposit         Decimal?        @db.Decimal(10,2) // 押金（租赁）
+  images          String[]        // 商品图片数组
+  status          ProductStatus    @default(pending)
+  location        String?         // 地理位置
+  geoHash         String?         // 地理位置哈希
+  isVerified      Boolean         @default(false) // 是否认证商品
+  viewCount       Int             @default(0) // 浏览次数
+  likeCount       Int             @default(0) // 收藏次数
+  
+  // 关联关系
+  owner           User            @relation(fields: [ownerId], references: [id])
+  community       Community?      @relation(fields: [communityId], references: [id])
+  orders          Order[]
+  chatRooms       ChatRoom[]
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([ownerId])
+  @@index([communityId])
+  @@index([status])
+  @@index([geoHash])
+  @@map("products")
+}
+
+// ==================== 订单系统 ====================
+
+enum OrderType {
+  rent
+  sell
+}
+
+enum OrderStatus {
+  pending
+  paid
+  confirmed
+  completed
+  cancelled
+  refunded
+}
+
+enum DeliveryType {
+  self_pickup
+  delivery
+  cabinet
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  productId       String        // 商品ID
+  buyerId         String        // 买家ID
+  sellerId        String        // 卖家ID
+  type            OrderType     // rent | sell
+  amount          Decimal       @db.Decimal(10,2) // 订单金额
+  deposit         Decimal?      @db.Decimal(10,2) // 押金（租赁）
+  status          OrderStatus   @default(pending)
+  startDate       DateTime?     // 租赁开始日期
+  endDate         DateTime?     // 租赁结束日期
+  deliveryType    DeliveryType  // self_pickup | delivery | cabinet
+  deliveryAddress String?       // 配送地址
+  remark          String?       // 备注
+  
+  // 关联关系
+  product         Product       @relation(fields: [productId], references: [id])
+  buyer           User          @relation("Buyer", fields: [buyerId], references: [id])
+  seller          User          @relation("Seller", fields: [sellerId], references: [id])
+  depositRecord   Deposit?
+  settlements     Settlement[]
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([productId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+  @@map("orders")
+}
+
+enum RefundStatus {
+  pending
+  refunded
+  forfeited
+}
+
+model Deposit {
+  id            String        @id @default(cuid())
+  orderId       String        @unique
+  amount        Decimal       @db.Decimal(10,2) // 押金金额
+  refundStatus  RefundStatus  @default(pending)
+  refundedAt    DateTime?     // 退款时间
+  
+  // 关联关系
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("deposits")
+}
+
+// ==================== 聊天系统 ====================
+
+model ChatRoom {
+  id          String           @id @default(cuid())
+  productId   String?          // 关联商品ID（商品聊天）
+  type        String           @default("private") // private | group
+  isActive    Boolean          @default(true)
+  
+  // 关联关系
+  product     Product?         @relation(fields: [productId], references: [id])
+  members     ChatRoomMember[]
+  messages    ChatMessage[]
+  
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([productId])
+  @@map("chat_rooms")
+}
+
+model ChatRoomMember {
+  id          String    @id @default(cuid())
+  chatRoomId  String
+  userId      String
+  
+  // 关联关系
+  chatRoom    ChatRoom  @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+
+  @@unique([chatRoomId, userId])
+  @@index([userId])
+  @@map("chat_room_members")
+}
+
+enum MessageType {
+  text
+  image
+  system
+  product_card
+}
+
+model ChatMessage {
+  id          String      @id @default(cuid())
+  chatRoomId  String
+  senderId    String
+  receiverId  String?
+  type        MessageType @default(text)
+  content     String      // 消息内容
+  fileUrl     String?     // 文件URL（图片等）
+  productId   String?     // 关联商品ID（商品卡片）
+  isRead      Boolean     @default(false)
+  
+  // 关联关系
+  chatRoom    ChatRoom    @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  sender      User        @relation(fields: [senderId], references: [id])
+  
+  createdAt   DateTime    @default(now())
+  readAt      DateTime?
+
+  @@index([chatRoomId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("chat_messages")
+}
+
+// ==================== 直播活动系统 ====================
+
+enum LiveEventStatus {
+  scheduled
+  live
+  ended
+}
+
+model LiveEvent {
+  id          String          @id @default(cuid())
+  communityId String
+  hostId      String          // 主持人ID（User）
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime?
+  streamUrl   String?
+  status      LiveEventStatus @default(scheduled)
+  viewCount   Int             @default(0)
+  
+  // 关联关系
+  community   Community       @relation(fields: [communityId], references: [id])
+  
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([communityId])
+  @@index([status])
+  @@map("live_events")
+}
+
+// ==================== 财务结算系统 ====================
+
+enum SettlementType {
+  order
+  refund
+  commission
+}
+
+enum SettlementStatus {
+  pending
+  completed
+  failed
+}
+
+model Settlement {
+  id              String          @id @default(cuid())
+  userId          String
+  orderId         String?
+  type            SettlementType
+  amount          Decimal         @db.Decimal(10,2)
+  status          SettlementStatus @default(pending)
+  completedAt     DateTime?
+  
+  // 关联关系
+  user            User            @relation(fields: [userId], references: [id])
+  order           Order?          @relation(fields: [orderId], references: [id])
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@map("settlements")
+}
+
+// ==================== 通知系统 ====================
+
+enum NotificationType {
+  order
+  message
+  system
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  content     String
+  relatedId   String?         // 相关实体ID
+  relatedType String?         // 相关实体类型
+  isRead      Boolean         @default(false)
+  
+  // 关联关系
+  user        User             @relation(fields: [userId], references: [id])
+  
+  createdAt   DateTime         @default(now())
+  readAt      DateTime?
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// ==================== 其他表 ====================
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  icon        String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("product_categories")
+}
+
+// ==================== 运营系统日志 ====================
+
+model OperationLog {
+  id          String    @id @default(cuid())
+  staffId     String
+  action      String    // 操作类型
+  targetType  String?   // 操作对象类型
+  targetId    String?   // 操作对象ID
+  details     String?   // 操作详情（JSON）
+  ip          String?
+  userAgent   String?
+  
+  // 关联关系
+  staff       OperationStaff @relation(fields: [staffId], references: [id])
+  
+  createdAt   DateTime  @default(now())
+
+  @@index([staffId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("operation_logs")
+}
+
+model LoginLog {
+  id          String    @id @default(cuid())
+  staffId     String
+  ip          String?
+  userAgent   String?
+  success     Boolean   @default(true)
+  reason      String?   // 失败原因
+  
+  // 关联关系
+  staff       OperationStaff @relation(fields: [staffId], references: [id])
+  
+  createdAt   DateTime  @default(now())
+
+  @@index([staffId])
+  @@index([success])
+  @@index([createdAt])
+  @@map("login_logs")
+}
+
