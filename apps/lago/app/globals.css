@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-text-primary font-sans;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    @apply no-underline transition-all duration-default;
+  }
+
+  button,
+  a[role="button"] {
+    @apply cursor-pointer transition-all duration-default;
+  }
+}
+
+@layer components {
+  /* 容器组件 */
+  .container-lago {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* 卡片组件 */
+  .card {
+    @apply rounded-card bg-container p-card shadow-card transition-all duration-default;
+  }
+
+  .card-hover {
+    @apply card hover:-translate-y-1 hover:shadow-card-hover;
+  }
+
+  /* 按钮组件 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-button bg-primary px-6 py-3 text-sm font-semibold text-white shadow-button transition-all duration-default hover:scale-105 hover:bg-primary-600 hover:shadow-button-hover sm:px-8 sm:py-3.5 sm:text-base;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-button border-2 border-primary bg-transparent px-6 py-3 text-sm font-semibold text-primary transition-all duration-default hover:scale-105 hover:bg-primary-50 sm:px-8 sm:py-3.5 sm:text-base;
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center rounded-button bg-accent px-6 py-3 text-sm font-semibold text-white shadow-button transition-all duration-default hover:scale-105 hover:bg-accent-600 hover:shadow-button-hover sm:px-8 sm:py-3.5 sm:text-base;
+  }
+
+  /* Section 标题 */
+  .section-title {
+    @apply text-2xl font-bold text-text-primary sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  .section-subtitle {
+    @apply mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-text-secondary sm:text-base lg:text-lg;
+  }
+
+  /* 文本样式 */
+  .text-heading {
+    @apply text-3xl font-bold leading-tight text-text-primary sm:text-4xl md:text-5xl lg:text-6xl;
+  }
+
+  .text-body {
+    @apply text-base leading-relaxed text-text-secondary sm:text-lg lg:text-xl;
+  }
+
+  .text-label {
+    @apply text-sm font-semibold text-text-primary sm:text-base;
+  }
+
+  .text-caption {
+    @apply text-xs text-text-secondary sm:text-sm;
+  }
+}
