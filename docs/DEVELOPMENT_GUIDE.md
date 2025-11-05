@@ -2,6 +2,8 @@
 
 > **重要提示**: 这是项目的核心开发文档，提供给AI作为context使用。包含所有关键的开发流程、规范和最佳实践。
 
+> **⚠️ 包管理器说明**: 本项目**使用 npm 进行依赖管理和构建**，不使用 pnpm。所有安装和构建命令必须使用 `npm`。
+
 ## 📚 文档导航
 
 本项目采用精简文档策略，核心文档如下：
@@ -25,10 +27,10 @@
 
 ```typescript
 // apps/lago-server/src/routes/products.ts
-import { Router } from 'express';
-import * as productController from '../controllers/productController';
-import { validateRequest } from '../middleware/validateRequest';
-import { productSchemas } from '../schemas/productSchema';
+import { Router } from "express";
+import * as productController from "../controllers/productController";
+import { validateRequest } from "../middleware/validateRequest";
+import { productSchemas } from "../schemas/productSchema";
 
 const router = Router();
 
@@ -56,7 +58,11 @@ const router = Router();
  *                 data:
  *                   $ref: '#/components/schemas/Task'
  */
-router.post('/tasks', validateRequest(taskSchemas.CreateTaskSchema), taskController.createTask);
+router.post(
+  "/tasks",
+  validateRequest(taskSchemas.CreateTaskSchema),
+  taskController.createTask
+);
 
 export default router;
 ```
@@ -67,8 +73,15 @@ export default router;
 
 ```typescript
 // apps/lago-server/src/schemas/productSchema.ts
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber, Min } from 'class-validator';
-import { ProductCategory, TransactionType } from '@prisma/client';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+  Min,
+} from "class-validator";
+import { ProductCategory, TransactionType } from "@prisma/client";
 
 export class CreateProductSchema {
   @IsString()
@@ -114,6 +127,7 @@ node scripts/generate-api.js
 ```
 
 生成的代码位于 `apps/lago-web/src/lib/apis/`:
+
 - `types.ts` - 类型定义和DTO类
 - `products.ts` - 商品相关API函数和Hooks
 - `orders.ts` - 订单相关API函数和Hooks
@@ -123,25 +137,21 @@ node scripts/generate-api.js
 
 ```tsx
 // 使用React Query Hook
-import { useCreateProduct, useProduct } from '@/lib/apis';
+import { useCreateProduct, useProduct } from "@/lib/apis";
 
 function ProductForm() {
   const createProduct = useCreateProduct({});
-  
+
   const handleSubmit = async (data: CreateProductDTO) => {
     try {
       const result = await createProduct.mutateAsync(data);
-      console.log('商品发布成功:', result);
+      console.log("商品发布成功:", result);
     } catch (error) {
-      console.error('发布失败:', error);
+      console.error("发布失败:", error);
     }
   };
-  
-  return (
-    <form onSubmit={handleSubmit}>
-      {/* 表单内容 */}
-    </form>
-  );
+
+  return <form onSubmit={handleSubmit}>{/* 表单内容 */}</form>;
 }
 ```
 
@@ -173,7 +183,7 @@ model TaskTemplate {
   description String?
   category    TaskCategory
   createdAt   DateTime @default(now()) @map("created_at")
-  
+
   @@map("task_templates")
 }
 ```
@@ -196,29 +206,29 @@ npx prisma migrate dev --name add_product_priority_and_tags
 
 ```typescript
 // apps/lago-server/src/scripts/seed.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('开始数据迁移...');
-  
+  console.log("开始数据迁移...");
+
   // 示例：为现有商品设置默认优先级
   const products = await prisma.product.findMany({
-    where: { priority: null }
+    where: { priority: null },
   });
-  
+
   for (const product of products) {
     await prisma.product.update({
       where: { id: product.id },
-      data: { 
-        priority: product.price ? 2 : 1 
-      }
+      data: {
+        priority: product.price ? 2 : 1,
+      },
     });
   }
-  
+
   console.log(`更新了 ${products.length} 个商品的优先级`);
-  
+
   // 初始化新的种子数据
   await seedProductCategories();
 }
@@ -226,23 +236,23 @@ async function main() {
 async function seedProductCategories() {
   const categories = [
     {
-      name: '玩具',
-      slug: 'toys',
-      icon: '🧸'
+      name: "玩具",
+      slug: "toys",
+      icon: "🧸",
     },
     {
-      name: '游戏机',
-      slug: 'gaming',
-      icon: '🎮'
+      name: "游戏机",
+      slug: "gaming",
+      icon: "🎮",
     },
     // ... 更多分类
   ];
-  
+
   for (const category of categories) {
     await prisma.productCategory.create({ data: category });
   }
-  
-  console.log('商品分类创建完成');
+
+  console.log("商品分类创建完成");
 }
 
 main()
@@ -286,6 +296,7 @@ npm run seed
 ```
 
 示例:
+
 ```
 docs/WIP/VOICE_FEATURE_SUMMARY.md          # 进行中
 docs/VOICE_FEATURE_SUMMARY.md              # 完成后移到这里
@@ -298,30 +309,37 @@ test/test-voice-feature.js                 # 测试文件
 # {功能名称} 实现总结
 
 ## 功能概述
+
 简要描述功能的目标和价值
 
 ## 技术实现
 
 ### 后端实现
+
 - 新增接口: ...
 - 数据模型: ...
 - 核心逻辑: ...
 
 ### 前端实现
+
 - 页面组件: ...
 - API调用: ...
 - 状态管理: ...
 
 ## 数据库变更
+
 列出所有schema变更
 
 ## 测试说明
+
 如何测试该功能
 
 ## 部署注意事项
+
 环境变量、依赖等
 
 ## 相关文档
+
 链接到相关文档
 ```
 
@@ -394,16 +412,24 @@ scripts/
 
 ## 🎨 技术栈
 
+### 包管理器
+
+- **⚠️ 重要**: 本项目使用 **npm** 进行依赖管理和构建
+- **不要使用**: pnpm、yarn 等其他包管理器
+- **所有安装命令**: 使用 `npm install` 或 `npm install -D`
+
 ### 前端
+
 - **框架**: Next.js 14 (App Router)
 - **UI**: React 18 + TypeScript
-- **样式**: Tailwind CSS
+- **样式**: Tailwind CSS v3
 - **状态管理**: React Context + Zustand
 - **数据请求**: @tanstack/react-query
 - **表单验证**: class-validator
 - **实时通信**: Socket.IO Client
 
 ### 后端
+
 - **运行时**: Node.js + TypeScript
 - **框架**: Express.js
 - **数据库**: PostgreSQL + Prisma ORM
@@ -412,6 +438,406 @@ scripts/
 - **文档**: Swagger/OpenAPI
 - **验证**: class-validator + class-transformer
 - **AI服务**: 通义千问 (对话 + TTS)
+
+---
+
+## 🎨 Tailwind CSS 配置与应用
+
+### 1. 安装依赖
+
+**重要**:
+
+- 新项目必须使用 Tailwind CSS v3，不要使用 v4（实验性版本）。
+- **必须使用 npm 安装依赖**，不要使用 pnpm。
+
+```bash
+cd apps/your-app-name
+
+# 安装 Tailwind CSS v3 及相关依赖（使用 npm）
+npm install -D 'tailwindcss@^3' postcss autoprefixer eslint-plugin-tailwindcss
+```
+
+### 2. 初始化配置文件
+
+创建 `tailwind.config.js` 和 `postcss.config.mjs`:
+
+```bash
+# 可选：使用 Tailwind CLI 初始化（但建议手动创建以包含设计系统）
+# npx tailwindcss init -p
+```
+
+### 3. 配置文件结构
+
+#### 3.1 `tailwind.config.js` - 设计系统核心配置
+
+**所有设计系统定义必须放在 `tailwind.config.js` 中**，包括：
+
+```javascript
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      // 1. 颜色系统 - 从设计系统文档提炼
+      colors: {
+        primary: {
+          DEFAULT: "#00C4CC", // 主色
+          50: "#E8F6FF", // 浅色变体
+          100: "#D4E7FF",
+          // ... 50-900 色阶
+        },
+        accent: {
+          DEFAULT: "#FF8C69", // 强调色
+          // ... 色阶
+        },
+        background: {
+          DEFAULT: "#F8F8F8",
+          light: "#F7FBFF",
+        },
+        container: {
+          DEFAULT: "#FFFFFF",
+        },
+        text: {
+          DEFAULT: "#2A2A2A",
+          primary: "#2A2A2A",
+          secondary: "#4B5563",
+          tertiary: "#888888",
+        },
+      },
+
+      // 2. 字体系统
+      fontFamily: {
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"Segoe UI"',
+          '"PingFang SC"',
+          '"Hiragino Sans GB"',
+          '"Microsoft YaHei"',
+          // ... 中文字体栈
+        ],
+      },
+
+      // 3. 圆角系统
+      borderRadius: {
+        card: "0.75rem", // 12px - 卡片圆角
+        "card-lg": "1rem", // 16px - 大卡片圆角
+        "card-xl": "1.5rem", // 24px - 超大卡片圆角
+        button: "9999px", // 胶囊按钮
+      },
+
+      // 4. 阴影系统
+      boxShadow: {
+        card: "0 2px 4px rgba(0, 0, 0, 0.04)",
+        "card-hover": "0 4px 12px rgba(0, 0, 0, 0.08)",
+        button: "0 4px 6px rgba(0, 0, 0, 0.1)",
+        "button-hover": "0 6px 12px rgba(0, 0, 0, 0.15)",
+        elevated: "0 10px 25px rgba(0, 196, 204, 0.1)",
+        "elevated-lg": "0 20px 40px rgba(0, 196, 204, 0.15)",
+      },
+
+      // 5. 间距系统（语义化）
+      spacing: {
+        section: "3rem", // 48px - Section 间距
+        "section-lg": "4rem", // 64px - 大 Section 间距
+        card: "1.5rem", // 24px - 卡片内边距
+        "card-lg": "2rem", // 32px - 大卡片内边距
+      },
+
+      // 6. 渐变背景
+      backgroundImage: {
+        "gradient-primary":
+          "linear-gradient(to bottom right, #F7FBFF, #FFFFFF, #F7FBFF)",
+        "gradient-card":
+          "linear-gradient(to bottom right, #F1F9FF, #FFFFFF, #FFF5F2)",
+        "gradient-lago":
+          "linear-gradient(to bottom, #F7FBFF, #FFFFFF, #F7FBFF)",
+      },
+
+      // 7. 动画时长
+      transitionDuration: {
+        default: "300ms",
+        fast: "150ms",
+        slow: "500ms",
+      },
+
+      // 8. 响应式断点
+      screens: {
+        xs: "475px",
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
+        "2xl": "1536px",
+      },
+    },
+  },
+  plugins: [],
+};
+```
+
+#### 3.2 `postcss.config.mjs` - PostCSS 配置
+
+```javascript
+/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+export default config;
+```
+
+#### 3.3 `app/globals.css` - 全局样式和组件类
+
+**重要原则**:
+
+- **不要**在 `globals.css` 中重复定义颜色、阴影等（已在 config 中定义）
+- **不要**使用 `@apply` 应用自定义工具类（会造成循环依赖）
+- **只**定义基础样式和可复用组件类
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-text-primary font-sans;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    @apply no-underline transition-all duration-default;
+  }
+
+  button,
+  a[role="button"] {
+    @apply cursor-pointer transition-all duration-default;
+  }
+}
+
+@layer components {
+  /* 容器组件 */
+  .container-lago {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* 卡片组件 */
+  .card {
+    @apply rounded-card bg-container p-card shadow-card transition-all duration-default;
+  }
+
+  .card-hover {
+    @apply card hover:-translate-y-1 hover:shadow-card-hover;
+  }
+
+  /* 按钮组件 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-button bg-primary px-6 py-3 text-sm font-semibold text-white shadow-button transition-all duration-default hover:scale-105 hover:bg-primary-600 hover:shadow-button-hover sm:px-8 sm:py-3.5 sm:text-base;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-button border-2 border-primary bg-transparent px-6 py-3 text-sm font-semibold text-primary transition-all duration-default hover:scale-105 hover:bg-primary-50 sm:px-8 sm:py-3.5 sm:text-base;
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center rounded-button bg-accent px-6 py-3 text-sm font-semibold text-white shadow-button transition-all duration-default hover:scale-105 hover:bg-accent-600 hover:shadow-button-hover sm:px-8 sm:py-3.5 sm:text-base;
+  }
+
+  /* Section 标题 */
+  .section-title {
+    @apply text-2xl font-bold text-text-primary sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  .section-subtitle {
+    @apply mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-text-secondary sm:text-base lg:text-lg;
+  }
+
+  /* 文本样式 */
+  .text-heading {
+    @apply text-3xl font-bold leading-tight text-text-primary sm:text-4xl md:text-5xl lg:text-6xl;
+  }
+
+  .text-body {
+    @apply text-base leading-relaxed text-text-secondary sm:text-lg lg:text-xl;
+  }
+
+  .text-label {
+    @apply text-sm font-semibold text-text-primary sm:text-base;
+  }
+
+  .text-caption {
+    @apply text-xs text-text-secondary sm:text-sm;
+  }
+}
+```
+
+### 4. 设计系统提炼流程
+
+#### 4.1 从设计文档提炼颜色
+
+参考 `DESIGN_SYSTEM.md`，提取所有颜色定义：
+
+```javascript
+// 从 DESIGN_SYSTEM.md 中提取
+colors: {
+  primary: '#00C4CC',      // 科技信赖蓝
+  accent: '#FF8C69',       // 活力橙
+  background: '#F8F8F8',   // 极浅灰
+  container: '#FFFFFF',    // 纯白
+  text: {
+    primary: '#2A2A2A',     // 标题/正文
+    secondary: '#888888',   // 辅助文字
+  },
+}
+```
+
+#### 4.2 生成色阶
+
+使用在线工具或手动生成 50-900 色阶，确保颜色渐变自然。
+
+#### 4.3 提炼圆角、阴影、间距
+
+从设计规范和实际使用中提炼：
+
+- 圆角：卡片、按钮的统一圆角值
+- 阴影：不同层级的阴影效果
+- 间距：语义化的间距值
+
+### 5. 使用规范
+
+#### 5.1 优先使用设计系统类名
+
+✅ **正确**:
+
+```tsx
+<div className="bg-primary text-white rounded-card shadow-card">
+  <h1 className="text-heading">标题</h1>
+  <p className="text-body">正文内容</p>
+  <button className="btn-primary">按钮</button>
+</div>
+```
+
+❌ **错误**:
+
+```tsx
+<div className="bg-[#00C4CC] text-white rounded-[12px] shadow-[0_2px_4px_rgba(0,0,0,0.04)]">
+  {/* 使用硬编码颜色和值 */}
+</div>
+```
+
+#### 5.2 响应式设计
+
+使用 Tailwind 响应式前缀：
+
+```tsx
+<div className="text-sm sm:text-base md:text-lg lg:text-xl">
+  {/* 响应式字体大小 */}
+</div>
+
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {/* 响应式网格布局 */}
+</div>
+```
+
+#### 5.3 使用组件类
+
+优先使用预定义的组件类：
+
+```tsx
+// 使用容器类
+<div className="container-lago">
+  {/* 内容 */}
+</div>
+
+// 使用卡片类
+<div className="card-hover">
+  {/* 卡片内容 */}
+</div>
+
+// 使用按钮类
+<button className="btn-primary">提交</button>
+<button className="btn-secondary">取消</button>
+```
+
+### 6. 常见问题
+
+#### 6.1 循环依赖错误
+
+**错误**: `You cannot @apply the shadow-elevated-lg utility here because it creates a circular dependency.`
+
+**原因**: 在 `@layer utilities` 中使用 `@apply` 应用自定义工具类。
+
+**解决**: 不要在 `@layer utilities` 中定义工具类，直接使用 config 中定义的类名。
+
+❌ **错误示例**:
+
+```css
+@layer utilities {
+  .shadow-elevated-lg {
+    @apply shadow-elevated-lg; /* 循环依赖 */
+  }
+}
+```
+
+✅ **正确做法**:
+
+```tsx
+// 直接在组件中使用
+<div className="shadow-elevated-lg">{/* 内容 */}</div>
+```
+
+#### 6.2 颜色不生效
+
+**原因**: 颜色定义在 `globals.css` 中而不是 `tailwind.config.js`。
+
+**解决**: 所有颜色定义必须在 `tailwind.config.js` 的 `theme.extend.colors` 中。
+
+#### 6.3 自定义类找不到
+
+**原因**: `content` 配置不包含文件路径。
+
+**解决**: 确保 `tailwind.config.js` 的 `content` 数组包含所有需要扫描的文件。
+
+### 7. 检查清单
+
+新项目配置 Tailwind CSS 时，确保：
+
+- [ ] 安装 `tailwindcss@^3`、`postcss`、`autoprefixer`、`eslint-plugin-tailwindcss`
+- [ ] 创建 `tailwind.config.js` 并提炼设计系统
+- [ ] 创建 `postcss.config.mjs`
+- [ ] 在 `globals.css` 中导入 Tailwind 指令
+- [ ] 所有颜色、阴影、圆角定义在 `tailwind.config.js` 中
+- [ ] `globals.css` 只包含基础样式和组件类
+- [ ] 没有循环依赖（不在 `@layer utilities` 中使用 `@apply` 自定义工具类）
+- [ ] 使用设计系统类名而不是硬编码值
+
+### 8. 参考示例
+
+完整配置示例参考：
+
+- `apps/lago/tailwind.config.js` - 设计系统配置
+- `apps/lago/app/globals.css` - 全局样式和组件类
+- `apps/lago/postcss.config.mjs` - PostCSS 配置
 
 ---
 
@@ -445,6 +871,7 @@ chore: 构建/工具相关
 ```
 
 示例:
+
 ```bash
 git commit -m "feat: 添加任务优先级功能"
 git commit -m "fix: 修复任务列表排序问题"
@@ -487,10 +914,12 @@ NEXT_PUBLIC_API_URL="http://localhost:3001"  # 前端API地址
 
 ## 🚀 快速开始
 
+> **⚠️ 重要**: 本项目使用 **npm** 作为包管理器，所有安装和构建命令必须使用 `npm`，不要使用 `pnpm` 或 `yarn`。
+
 ### 本地开发
 
 ```bash
-# 1. 安装依赖
+# 1. 安装依赖（使用 npm）
 npm install
 
 # 2. 启动数据库和Redis (使用Docker)
@@ -510,6 +939,7 @@ npm run dev
 ```
 
 访问:
+
 - 前端: http://localhost:3000
 - 后端API: http://localhost:3001
 - Swagger文档: http://localhost:3001/api-docs
@@ -633,6 +1063,7 @@ npm run build
 ### 常见问题
 
 1. **Prisma连接失败**
+
    ```bash
    # 检查DATABASE_URL是否正确
    # 重新生成Prisma Client
@@ -640,6 +1071,7 @@ npm run build
    ```
 
 2. **API生成失败**
+
    ```bash
    # 确保swagger.json存在且格式正确
    cd apps/lago-server
@@ -648,11 +1080,18 @@ npm run build
    ```
 
 3. **前端API调用401错误**
+
    ```bash
-# 检查Token是否有效
-# 清除localStorage中的token
-localStorage.removeItem('lago_token')
+
    ```
+
+# 检查Token是否有效
+
+# 清除localStorage中的token
+
+localStorage.removeItem('lago_token')
+
+```
 
 ---
 
@@ -684,3 +1123,4 @@ localStorage.removeItem('lago_token')
 
 **最后更新**: 2025-10-10
 
+```

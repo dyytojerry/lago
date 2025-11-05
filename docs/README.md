@@ -37,10 +37,21 @@
 
 ### 📖 参考文档
 
-6. **[DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)** ⭐⭐⭐
-   - **用途**: 设计系统规范
-   - **包含**: 配色系统、组件设计、设计原则
-   - **何时使用**: UI调整、设计新组件、主题修改
+6. **设计系统文档** ⭐⭐⭐
+   - **[DESIGN_SYSTEM_WEBSITE.md](./DESIGN_SYSTEM_WEBSITE.md)** - 官网设计系统（PC + Mobile）
+     - **用途**: 产品官网的设计规范
+     - **包含**: 官网配色、组件、响应式设计
+     - **何时使用**: 开发官网、设计官网页面
+   
+   - **[DESIGN_SYSTEM_ADMIN.md](./DESIGN_SYSTEM_ADMIN.md)** - 运营系统设计系统（PC Web）
+     - **用途**: 平台管理后台的设计规范
+     - **包含**: 后台配色、表格、表单、数据可视化
+     - **何时使用**: 开发管理后台、设计后台页面
+   
+   - **[DESIGN_SYSTEM_MINIPROGRAM.md](./DESIGN_SYSTEM_MINIPROGRAM.md)** - 小程序设计系统（微信小程序）
+     - **用途**: 微信小程序的设计规范
+     - **包含**: 小程序配色、组件、移动端交互
+     - **何时使用**: 开发小程序、设计小程序页面
 
 7. **[WHITEPAPER.md](./WHITEPAPER.md)** ⭐⭐⭐
    - **用途**: 产品白皮书
@@ -105,9 +116,10 @@
 
 ### 场景4: 我要进行UI调整
 
-1. 阅读 [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)
-   - 了解设计系统
-   - 理解配色方案
+1. 根据项目类型选择对应的设计系统文档：
+   - **官网项目**: [DESIGN_SYSTEM_WEBSITE.md](./DESIGN_SYSTEM_WEBSITE.md)
+   - **后台管理**: [DESIGN_SYSTEM_ADMIN.md](./DESIGN_SYSTEM_ADMIN.md)
+   - **小程序**: [DESIGN_SYSTEM_MINIPROGRAM.md](./DESIGN_SYSTEM_MINIPROGRAM.md)
 
 2. 参考 [FEATURES_BY_PAGE.md](./FEATURES_BY_PAGE.md)
    - 找到相关组件
@@ -125,15 +137,23 @@ docs/
 ├── DATABASE_DESIGN.md           # 核心 - 数据库设计
 ├── FEATURES_BY_PAGE.md          # 核心 - 功能说明（按页面）
 ├── PRD.md                       # 核心 - 产品需求文档
-├── DESIGN_SYSTEM.md             # 参考 - 设计系统
-├── WHITEPAPER.md                # 参考 - 产品白皮书
 ├── ADMIN_PANEL_DESIGN.md        # 核心 - 平台管理后台设计
+│
+├── 设计系统文档/
+│   ├── DESIGN_SYSTEM_WEBSITE.md         # 官网设计系统（PC + Mobile）
+│   ├── DESIGN_SYSTEM_ADMIN.md           # 运营系统设计系统（PC Web）
+│   └── DESIGN_SYSTEM_MINIPROGRAM.md     # 小程序设计系统（微信小程序）
+│
+├── 参考文档/
+│   └── WHITEPAPER.md            # 产品白皮书
 │
 ├── WIP/                         # 进行中的总结文档
 │   └── ...
 │
 └── archived/                    # 已归档的文档（不再使用）
-    └── ...
+    ├── DESIGN_SYSTEM.md        # 旧版设计系统（已拆分）
+    ├── DESIGN.md                # 旧版设计文档（已拆分）
+    └── DESIGN_SUMMARY.md        # 旧版设计总结（已拆分）
 ```
 
 ---
@@ -150,7 +170,10 @@ docs/
 - **数据库问题**: DATABASE_DESIGN.md
 - **功能问题**: FEATURES_BY_PAGE.md
 - **产品问题**: PRD.md
-- **设计问题**: DESIGN_SYSTEM.md
+- **设计问题**: 
+  - 官网 → DESIGN_SYSTEM_WEBSITE.md
+  - 后台 → DESIGN_SYSTEM_ADMIN.md
+  - 小程序 → DESIGN_SYSTEM_MINIPROGRAM.md
 
 #### 2. 组合原则
 根据问题类型，组合阅读多个文档：
@@ -158,10 +181,14 @@ docs/
 | 问题类型 | 推荐文档组合 |
 |---------|-------------|
 | 开发新API | DEVELOPMENT_GUIDE + DATABASE_DESIGN + ARCHITECTURE |
-| 开发新页面 | FEATURES_BY_PAGE + DEVELOPMENT_GUIDE + DESIGN_SYSTEM |
+| 开发新页面（官网） | FEATURES_BY_PAGE + DEVELOPMENT_GUIDE + DESIGN_SYSTEM_WEBSITE |
+| 开发新页面（后台） | FEATURES_BY_PAGE + DEVELOPMENT_GUIDE + DESIGN_SYSTEM_ADMIN |
+| 开发新页面（小程序） | FEATURES_BY_PAGE + DEVELOPMENT_GUIDE + DESIGN_SYSTEM_MINIPROGRAM |
 | 数据库迁移 | DATABASE_DESIGN + DEVELOPMENT_GUIDE |
 | 架构重构 | ARCHITECTURE + DATABASE_DESIGN + FEATURES_BY_PAGE |
-| UI修改 | DESIGN_SYSTEM + FEATURES_BY_PAGE |
+| UI修改（官网） | DESIGN_SYSTEM_WEBSITE + FEATURES_BY_PAGE |
+| UI修改（后台） | DESIGN_SYSTEM_ADMIN + FEATURES_BY_PAGE |
+| UI修改（小程序） | DESIGN_SYSTEM_MINIPROGRAM + FEATURES_BY_PAGE |
 | bug修复 | FEATURES_BY_PAGE + DATABASE_DESIGN |
 | 产品规划 | PRD + FEATURES_BY_PAGE + ARCHITECTURE |
 
@@ -245,7 +272,13 @@ npm run dev
 ## 🛠️ 开发者快速参考
 
 ### 常用命令
+
+> **⚠️ 重要**: 本项目使用 **npm** 作为包管理器，所有命令必须使用 `npm`。
+
 ```bash
+# 安装依赖（使用 npm）
+npm install
+
 # 启动开发环境
 npm run dev
 
@@ -332,14 +365,23 @@ VIRTUAL_NUMBER_API_KEY= # 虚拟号服务API密钥
 
 ## 📊 文档统计
 
-- **核心文档**: 8个
-- **参考文档**: 2个
-- **总页数**: ~1500行
+- **核心文档**: 6个
+- **设计系统文档**: 3个（官网、后台、小程序）
+- **参考文档**: 1个
+- **总页数**: ~2000行
 - **最后更新**: 2025-01-10
 
 ---
 
 ## 🔖 版本历史
+
+### v3.1 (2025-01-10)
+- **设计系统文档重组**: 将单一设计系统文档拆分为三个独立文档
+  - `DESIGN_SYSTEM_WEBSITE.md` - 官网设计系统（PC + Mobile）
+  - `DESIGN_SYSTEM_ADMIN.md` - 运营系统设计系统（PC Web）
+  - `DESIGN_SYSTEM_MINIPROGRAM.md` - 小程序设计系统（微信小程序）
+- 旧版设计系统文档移至 `archived/` 目录
+- 更新文档导航和使用指南
 
 ### v3.0 (2025-01-10)
 - 从 PiggyBank 迁移到 Lago 项目
