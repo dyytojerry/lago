@@ -1,0 +1,124 @@
+/* 微信小程序 WebView 页面样式 */
+/* 使用 Lago 设计系统颜色 */
+
+/* 加载状态 */
+.loading-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #F8F8F8;
+}
+
+.loading-spinner {
+  width: 80rpx;
+  height: 80rpx;
+  border: 4rpx solid #E8F6FF;
+  border-top: 4rpx solid #00C4CC;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 32rpx;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+/* 错误状态 */
+.error-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #F8F8F8;
+  padding: 64rpx;
+}
+
+.error-icon {
+  font-size: 120rpx;
+  margin-bottom: 32rpx;
+}
+
+.error-message {
+  font-size: 28rpx;
+  color: #888888;
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 48rpx;
+}
+
+.retry-button {
+  background-color: #00C4CC;
+  color: #ffffff;
+  border: none;
+  border-radius: 8rpx;
+  padding: 24rpx 48rpx;
+  font-size: 28rpx;
+}
+
+.retry-button:active {
+  background-color: #00B0B8;
+}
+
+.retry-button::after {
+  border: none;
+}
+
+/* WebView */
+.webview {
+  flex: 1;
+  width: 100%;
+}
+
+/* 适配不同屏幕 */
+@media screen and (max-width: 750rpx) {
+  .custom-navbar {
+    height: 80rpx;
+    padding: 0 24rpx;
+  }
+  
+  .navbar-title {
+    font-size: 28rpx;
+  }
+  
+  .icon-back,
+  .icon-refresh {
+    font-size: 40rpx;
+  }
+}
+
+/* 暗色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .webview-container {
+    background-color: #1a1a1a;
+  }
+  
+  .custom-navbar {
+    background-color: #2a2a2a;
+    border-bottom-color: #3a3a3a;
+  }
+  
+  .icon-back,
+  .icon-refresh,
+  .navbar-title {
+    color: #ffffff;
+  }
+  
+  .loading-container,
+  .error-container {
+    background-color: #2a2a2a;
+  }
+  
+  .loading-text,
+  .error-message {
+    color: #cccccc;
+  }
+}

@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import authRoutes from './routes/auth.routes';
+import shareRoutes from './routes/share.routes';
 import { swaggerSpec } from './config/swagger.config';
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.get('/health', (req, res) => {
 
 // 路由
 app.use('/api/auth', authRoutes);
+app.use('/api/share', shareRoutes);
 
 // 错误处理
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

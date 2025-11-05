@@ -99,7 +99,7 @@ cp apps/lago-web/env.example apps/lago-web/.env
 
 ```bash
 # apps/lago-server/.env
-DATABASE_URL="postgresql://lagouser:lagopass@localhost:5432/lagobank"
+DATABASE_URL="postgresql://user:password@localhost:5432/lago"
 REDIS_URL="redis://:lagoredis@localhost:6379"
 JWT_SECRET="your-super-secret-jwt-key"
 WECHAT_APPID="your_wechat_appid"

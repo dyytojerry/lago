@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "来购",
+  "navigationStyle": "custom",
+  "backgroundColor": "#F8F8F8",
+  "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": false,
+  "disableScroll": true,
+  "navigationBarBackgroundColor": "#00C4CC",
+  "navigationBarTextStyle": "white"
+}
