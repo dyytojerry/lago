@@ -1,93 +1,251 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated, getStaff, hasPermission } from '@/lib/auth';
+import { isAuthenticated } from '@/lib/auth';
+import apiClient from '@/lib/api';
+
+interface DashboardStats {
+  gmv: {
+    today: number;
+    week: number;
+    month: number;
+    total: number;
+  };
+  users: {
+    newToday: number;
+    newWeek: number;
+    activeToday: number;
+    total: number;
+    active: number;
+  };
+  communities: {
+    active: number;
+    new: number;
+  };
+  orders: {
+    today: number;
+    pending: number;
+  };
+  pending: {
+    products: number;
+    approvals: number;
+    complaints: number;
+  };
+}
+
+interface TrendData {
+  gmv: Array<{ date: string; value: number }>;
+  users: Array<{ date: string; value: number }>;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
-  const staff = getStaff();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [trends, setTrends] = useState<TrendData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push('/admin/login');
+      return;
     }
+
+    loadData();
   }, [router]);
 
-  if (!isAuthenticated() || !staff) {
-    return null;
+  const loadData = async () => {
+    try {
+      const [statsRes, trendsRes] = await Promise.all([
+        apiClient.get('/admin/dashboard/stats'),
+        apiClient.get('/admin/dashboard/trends?period=7d'),
+      ]);
+
+      setStats(statsRes.data);
+      setTrends(trendsRes.data);
+    } catch (error) {
+      console.error('加载数据失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isAuthenticated() || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">加载中...</div>
+      </div>
+    );
   }
 
-  const roleNames: Record<string, string> = {
-    super_admin: '超级管理员',
-    audit_staff: '审核专员',
-    service_staff: '客服专员',
-    operation_staff: '运营专员',
-    finance_staff: '财务专员',
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('zh-CN', {
+      style: 'currency',
+      currency: 'CNY',
+      minimumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h1 className="text-3xl font-bold mb-4">运营系统仪表盘</h1>
-          <div className="border-t pt-4">
-            <h2 className="text-xl font-semibold mb-4">登录信息</h2>
-            <div className="space-y-2">
-              <p><strong>用户名:</strong> {staff.username}</p>
-              <p><strong>邮箱:</strong> {staff.email}</p>
-              <p><strong>姓名:</strong> {staff.realName || '未设置'}</p>
-              <p><strong>角色:</strong> {roleNames[staff.role] || staff.role}</p>
-              <p><strong>手机号:</strong> {staff.phone || '未绑定'}</p>
-            </div>
+    <div>
+      <h1 className="text-3xl font-bold mb-6">仪表盘</h1>
+
+      {/* 核心指标卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {/* GMV */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">全站 GMV</h3>
+            <span className="text-2xl">💰</span>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-gray-900">
+              {stats ? formatCurrency(stats.gmv.total) : '--'}
+            </p>
+            <p className="text-sm text-gray-500">
+              今日: {stats ? formatCurrency(stats.gmv.today) : '--'}
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {hasPermission(['super_admin', 'audit_staff']) && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-2">入驻审核</h3>
-              <p className="text-gray-600">审核小区、物业、商家入驻申请</p>
-            </div>
-          )}
+        {/* 用户增长 */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">用户增长</h3>
+            <span className="text-2xl">👥</span>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-gray-900">
+              {stats ? stats.users.total.toLocaleString() : '--'}
+            </p>
+            <p className="text-sm text-gray-500">
+              今日新增: {stats ? stats.users.newToday : '--'}
+            </p>
+          </div>
+        </div>
 
-          {hasPermission(['super_admin', 'audit_staff']) && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-2">商品审核</h3>
-              <p className="text-gray-600">审核商品内容和合规性</p>
-            </div>
-          )}
+        {/* 订单统计 */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">订单统计</h3>
+            <span className="text-2xl">🛒</span>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-gray-900">
+              {stats ? stats.orders.today : '--'}
+            </p>
+            <p className="text-sm text-gray-500">
+              待处理: {stats ? stats.orders.pending : '--'}
+            </p>
+          </div>
+        </div>
 
-          {hasPermission(['super_admin', 'service_staff']) && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-2">逆向维权</h3>
-              <p className="text-gray-600">处理用户投诉和纠纷</p>
-            </div>
-          )}
-
-          {hasPermission(['super_admin', 'operation_staff']) && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-2">数据看板</h3>
-              <p className="text-gray-600">查看平台运营数据和分析</p>
-            </div>
-          )}
-
-          {hasPermission(['super_admin', 'finance_staff']) && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-2">财务结算</h3>
-              <p className="text-gray-600">处理提现申请和财务结算</p>
-            </div>
-          )}
-
-          {hasPermission(['super_admin']) && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-2">系统设置</h3>
-              <p className="text-gray-600">配置系统参数和权限</p>
-            </div>
-          )}
+        {/* 待审核事项 */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">待审核</h3>
+            <span className="text-2xl">⏳</span>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-gray-900">
+              {stats ? stats.pending.products : '--'}
+            </p>
+            <p className="text-sm text-gray-500">待审核商品</p>
+          </div>
         </div>
       </div>
+
+      {/* 数据趋势 */}
+      {trends && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">GMV 趋势（最近7天）</h3>
+            <div className="space-y-2">
+              {trends.gmv.map((item) => (
+                <div key={item.date} className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">{item.date}</span>
+                  <span className="font-medium">{formatCurrency(item.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">用户增长趋势（最近7天）</h3>
+            <div className="space-y-2">
+              {trends.users.map((item) => (
+                <div key={item.date} className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">{item.date}</span>
+                  <span className="font-medium">{item.value} 人</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 详细统计 */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">用户统计</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">总用户数</span>
+                <span className="font-medium">{stats.users.total.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">活跃用户</span>
+                <span className="font-medium">{stats.users.active.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">今日活跃</span>
+                <span className="font-medium">{stats.users.activeToday}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">本周新增</span>
+                <span className="font-medium">{stats.users.newWeek}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">GMV 统计</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">今日 GMV</span>
+                <span className="font-medium">{formatCurrency(stats.gmv.today)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">本周 GMV</span>
+                <span className="font-medium">{formatCurrency(stats.gmv.week)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">本月 GMV</span>
+                <span className="font-medium">{formatCurrency(stats.gmv.month)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">累计 GMV</span>
+                <span className="font-medium">{formatCurrency(stats.gmv.total)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">小区统计</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">活跃小区</span>
+                <span className="font-medium">{stats.communities.active}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">本月新增</span>
+                <span className="font-medium">{stats.communities.new}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

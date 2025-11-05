@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import authRoutes from './routes/auth.routes';
 import shareRoutes from './routes/share.routes';
+import dashboardRoutes from './routes/dashboard.routes';
+import productsRoutes from './routes/products.routes';
+import usersRoutes from './routes/users.routes';
+import ordersRoutes from './routes/orders.routes';
 import { swaggerSpec } from './config/swagger.config';
 
 dotenv.config();
@@ -30,6 +34,10 @@ app.get('/health', (req, res) => {
 // 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/share', shareRoutes);
+app.use('/api/admin/dashboard', dashboardRoutes);
+app.use('/api/admin/products', productsRoutes);
+app.use('/api/admin/users', usersRoutes);
+app.use('/api/admin/orders', ordersRoutes);
 
 // 错误处理
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
