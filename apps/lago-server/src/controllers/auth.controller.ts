@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { generateToken, hashPassword, comparePassword } from '../lib/auth';
-import { WechatLoginDto, PhoneLoginDto, PhoneRegisterDto, OperationLoginDto } from '../schemas/auth';
+import { generateUserToken, generateOperationToken, hashPassword, comparePassword } from '../lib/auth';
 
 // 小程序端：微信登录
-export async function wechatLogin(req: Request<{}, {}, WechatLoginDto>, res: Response) {
+export async function wechatLogin(req: Request, res: Response) {
   try {
     const { code } = req.body;
 
@@ -33,10 +32,9 @@ export async function wechatLogin(req: Request<{}, {}, WechatLoginDto>, res: Res
       return res.status(403).json({ error: '账号已被禁用' });
     }
 
-    const token = generateToken({
+    const token = generateUserToken({
       userId: user.id,
       role: user.role,
-      type: 'user',
     });
 
     res.json({
@@ -58,7 +56,7 @@ export async function wechatLogin(req: Request<{}, {}, WechatLoginDto>, res: Res
 }
 
 // 小程序端：手机号登录
-export async function phoneLogin(req: Request<{}, {}, PhoneLoginDto>, res: Response) {
+export async function phoneLogin(req: Request, res: Response) {
   try {
     const { phone, password } = req.body;
 
@@ -79,10 +77,9 @@ export async function phoneLogin(req: Request<{}, {}, PhoneLoginDto>, res: Respo
       return res.status(401).json({ error: '手机号或密码错误' });
     }
 
-    const token = generateToken({
+    const token = generateUserToken({
       userId: user.id,
       role: user.role,
-      type: 'user',
     });
 
     res.json({
@@ -104,7 +101,7 @@ export async function phoneLogin(req: Request<{}, {}, PhoneLoginDto>, res: Respo
 }
 
 // 小程序端：手机号注册
-export async function phoneRegister(req: Request<{}, {}, PhoneRegisterDto>, res: Response) {
+export async function phoneRegister(req: Request, res: Response) {
   try {
     const { phone, password } = req.body;
 
@@ -129,10 +126,9 @@ export async function phoneRegister(req: Request<{}, {}, PhoneRegisterDto>, res:
       },
     });
 
-    const token = generateToken({
+    const token = generateUserToken({
       userId: user.id,
       role: user.role,
-      type: 'user',
     });
 
     res.status(201).json({
@@ -154,7 +150,7 @@ export async function phoneRegister(req: Request<{}, {}, PhoneRegisterDto>, res:
 }
 
 // 运营系统：登录
-export async function operationLogin(req: Request<{}, {}, OperationLoginDto>, res: Response) {
+export async function operationLogin(req: Request, res: Response) {
   try {
     const { username, password } = req.body;
 
@@ -210,10 +206,9 @@ export async function operationLogin(req: Request<{}, {}, OperationLoginDto>, re
       },
     });
 
-    const token = generateToken({
+    const token = generateOperationToken({
       staffId: staff.id,
       role: staff.role,
-      type: 'operation',
     });
 
     res.json({

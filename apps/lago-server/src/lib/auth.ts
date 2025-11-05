@@ -1,59 +1,168 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { User, OperationStaff, UserRole, OperationRole } from '@prisma/client';
+import prisma from './prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV !== 'development') {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
-// 小程序端用户Token payload
-export interface UserTokenPayload {
+// 应用端 Token Payload
+export interface UserJWTPayload {
   userId: string;
-  role: UserRole;
+  role: string;
   type: 'user';
+  iat?: number;
+  exp?: number;
 }
 
-// 运营系统Token payload
-export interface OperationTokenPayload {
+// 运营端 Token Payload
+export interface OperationJWTPayload {
   staffId: string;
-  role: OperationRole;
+  role: string;
   type: 'operation';
+  iat?: number;
+  exp?: number;
 }
 
-export type TokenPayload = UserTokenPayload | OperationTokenPayload;
+// 通用 Token Payload（用于验证）
+export type JWTPayload = UserJWTPayload | OperationJWTPayload;
 
-// 生成Token
-export function generateToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-  });
+/**
+ * 生成应用端用户 Token
+ */
+export function generateUserToken(payload: { userId: string; role: string }): string {
+  const secret = JWT_SECRET || 'dev-secret-key';
+  return jwt.sign(
+    {
+      ...payload,
+      type: 'user',
+    },
+    secret,
+    { expiresIn: '7d' }
+  );
 }
 
-// 验证Token
-export function verifyToken(token: string): TokenPayload | null {
+/**
+ * 生成运营端 Token
+ */
+export function generateOperationToken(payload: { staffId: string; role: string }): string {
+  const secret = JWT_SECRET || 'dev-secret-key';
+  return jwt.sign(
+    {
+      ...payload,
+      type: 'operation',
+    },
+    secret,
+    { expiresIn: '1d' }
+  );
+}
+
+/**
+ * 验证 Token（通用）
+ */
+export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+    const secret = JWT_SECRET || 'dev-secret-key';
+    const decoded = jwt.verify(token, secret) as JWTPayload;
+    return decoded;
   } catch (error) {
+    console.error('Token verification error:', error);
     return null;
   }
 }
 
-// 密码加密
+/**
+ * 检查是否为应用端 Token
+ */
+export function isUserToken(payload: JWTPayload): payload is UserJWTPayload {
+  return payload.type === 'user' && 'userId' in payload;
+}
+
+/**
+ * 检查是否为运营端 Token
+ */
+export function isOperationToken(payload: JWTPayload): payload is OperationJWTPayload {
+  return payload.type === 'operation' && 'staffId' in payload;
+}
+
+/**
+ * 密码加密
+ */
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10);
+  return bcrypt.hash(password, 12);
 }
 
-// 验证密码
-export async function comparePassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+/**
+ * 密码比较
+ */
+export async function comparePassword(password: string, hashedPassword: string): Promise<boolean> {
+  return bcrypt.compare(password, hashedPassword);
 }
 
-// 验证用户Token
-export function isUserToken(payload: TokenPayload): payload is UserTokenPayload {
-  return payload.type === 'user';
+/**
+ * 从 Token 获取应用端用户信息
+ */
+export async function getUserFromToken(authHeader: string) {
+  const token = authHeader.replace('Bearer ', '');
+  const payload = verifyToken(token);
+  
+  if (!payload || !isUserToken(payload)) {
+    return null;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: {
+      id: true,
+      wechatOpenid: true,
+      nickname: true,
+      avatarUrl: true,
+      role: true,
+      phone: true,
+      email: true,
+      isVerified: true,
+      creditScore: true,
+      communityIds: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+    }
+  });
+
+  return user;
 }
 
-// 验证运营系统Token
-export function isOperationToken(payload: TokenPayload): payload is OperationTokenPayload {
-  return payload.type === 'operation';
+/**
+ * 从 Token 获取运营端人员信息
+ */
+export async function getOperationStaffFromToken(authHeader: string) {
+  const token = authHeader.replace('Bearer ', '');
+  const payload = verifyToken(token);
+  
+  if (!payload || !isOperationToken(payload)) {
+    return null;
+  }
+
+  const staff = await prisma.operationStaff.findUnique({
+    where: { id: payload.staffId },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      role: true,
+      realName: true,
+      phone: true,
+      isActive: true,
+      lastLoginAt: true,
+      lastLoginIp: true,
+      createdAt: true,
+      updatedAt: true,
+    }
+  });
+
+  return staff;
 }
 
+// 兼容性导出（为了向后兼容）
+export const generateToken = generateUserToken;

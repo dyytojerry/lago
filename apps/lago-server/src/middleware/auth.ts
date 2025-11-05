@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, isUserToken, isOperationToken } from '../lib/auth';
 import prisma from '../lib/prisma';
+import { verifyToken, isUserToken, isOperationToken } from '../lib/auth';
 
 // 扩展Express Request类型
 declare global {
@@ -20,7 +20,9 @@ declare global {
   }
 }
 
-// 小程序端用户认证中间件
+/**
+ * 应用端用户认证中间件
+ */
 export async function authUser(req: Request, res: Response, next: NextFunction) {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -53,11 +55,14 @@ export async function authUser(req: Request, res: Response, next: NextFunction) 
 
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     return res.status(401).json({ error: '认证失败' });
   }
 }
 
-// 运营系统认证中间件
+/**
+ * 运营系统认证中间件
+ */
 export async function authOperation(req: Request, res: Response, next: NextFunction) {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -90,11 +95,14 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
 
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     return res.status(401).json({ error: '认证失败' });
   }
 }
 
-// 角色权限检查中间件
+/**
+ * 角色权限检查中间件
+ */
 export function requireRole(...allowedRoles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     const role = req.user?.role || req.operationStaff?.role;
@@ -106,4 +114,3 @@ export function requireRole(...allowedRoles: string[]) {
     next();
   };
 }
-

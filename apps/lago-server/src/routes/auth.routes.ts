@@ -7,9 +7,14 @@ import {
   getCurrentUser,
   getCurrentStaff,
 } from '../controllers/auth.controller';
-import { validateDto } from '../middleware/validate';
+import { validateRequest } from '../middleware/validateRequest';
 import { authUser, authOperation } from '../middleware/auth';
-import { WechatLoginDto, PhoneLoginDto, PhoneRegisterDto, OperationLoginDto } from '../schemas/auth';
+import {
+  wechatLoginSchema,
+  phoneLoginSchema,
+  phoneRegisterSchema,
+  operationLoginSchema,
+} from '../schemas/auth.joi';
 
 const router = Router();
 
@@ -39,7 +44,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/wechat/login', validateDto(WechatLoginDto), wechatLogin);
+router.post('/wechat/login', validateRequest(wechatLoginSchema), wechatLogin);
 
 /**
  * @swagger
@@ -67,7 +72,7 @@ router.post('/wechat/login', validateDto(WechatLoginDto), wechatLogin);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/phone/login', validateDto(PhoneLoginDto), phoneLogin);
+router.post('/phone/login', validateRequest(phoneLoginSchema), phoneLogin);
 
 /**
  * @swagger
@@ -95,7 +100,7 @@ router.post('/phone/login', validateDto(PhoneLoginDto), phoneLogin);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/phone/register', validateDto(PhoneRegisterDto), phoneRegister);
+router.post('/phone/register', validateRequest(phoneRegisterSchema), phoneRegister);
 
 /**
  * @swagger
@@ -123,7 +128,7 @@ router.post('/phone/register', validateDto(PhoneRegisterDto), phoneRegister);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/operation/login', validateDto(OperationLoginDto), operationLogin);
+router.post('/operation/login', validateRequest(operationLoginSchema), operationLogin);
 
 /**
  * @swagger
