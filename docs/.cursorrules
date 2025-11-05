@@ -1,0 +1,138 @@
+# Lago 项目 AI Context 规则
+
+## 📚 核心文档作为Context
+
+当处理Lago项目的任何开发问题时，请按以下优先级阅读文档：
+
+### 1. 必读核心文档 (优先级从高到低)
+
+1. **docs/DEVELOPMENT_GUIDE.md** ⭐⭐⭐⭐⭐
+   - 最核心的开发指南
+   - 包含API开发、数据库迁移、文档规范
+   - 适用于所有开发任务
+
+2. **docs/DATABASE_DESIGN.md** ⭐⭐⭐⭐⭐
+   - 完整的数据库结构说明
+   - 数据模型和关系
+   - 适用于涉及数据库的任务
+
+3. **docs/ARCHITECTURE.md** ⭐⭐⭐⭐⭐
+   - 系统架构设计
+   - 技术栈和模块划分
+   - 适用于架构相关问题
+
+4. **docs/FEATURES_BY_PAGE.md** ⭐⭐⭐⭐⭐
+   - 按页面组织的功能说明
+   - API调用和组件使用
+   - 适用于具体页面的开发
+
+5. **docs/DESIGN_SUMMARY.md** ⭐⭐⭐
+   - UI/UX设计总结
+   - 适用于界面相关问题
+
+### 2. 文档组合使用策略
+
+根据任务类型，组合阅读相应文档：
+
+| 任务类型 | 推荐文档组合 |
+|---------|-------------|
+| 开发新API | DEVELOPMENT_GUIDE + DATABASE_DESIGN + ARCHITECTURE |
+| 开发新页面 | FEATURES_BY_PAGE + DEVELOPMENT_GUIDE + DESIGN_SUMMARY |
+| 数据库迁移 | DATABASE_DESIGN + DEVELOPMENT_GUIDE |
+| 架构重构 | ARCHITECTURE + DATABASE_DESIGN + FEATURES_BY_PAGE |
+| UI修改 | DESIGN_SUMMARY + FEATURES_BY_PAGE |
+| bug修复 | FEATURES_BY_PAGE + DATABASE_DESIGN |
+
+## 🎯 开发流程规范
+
+### API开发
+
+1. 在`apps/lago-server/src/routes/`定义路由和Swagger描述
+2. 在`apps/lago-server/src/schemas/`使用class-validator定义验证Schema
+3. 在`apps/lago-server/src/config/swagger.ts`定义Swagger用到的实体对象结构
+4. 获取`http://localhost:3001/api-docs`的swagger.json文件，运行`node scripts/generate-api.js`生成前端API调用函数和Hooks
+5. 前端使用生成的API函数和Hooks
+
+### 数据库变更
+
+1. 修改`apps/lago-server/prisma/schema.prisma`
+2. 运行`npx prisma db push`（开发）或`npx prisma migrate dev`（生产）
+3. 在`src/scripts/seed.ts`中处理存量数据迁移和种子数据更新
+
+### 文档管理
+
+- 临时总结: 放在`docs/WIP/`
+- 完成后: 更新核心文档，总结移至`docs/archived/`
+- 测试文件: 放在`test/`
+
+## 🚫 禁止事项
+
+- 不要直接执行SQL，永远使用Prisma
+- 不要在根目录创建测试文件
+- 不要创建重复的功能总结文档
+- 不要跳过API生成步骤
+
+## ✅ 最佳实践
+
+- API接口必须有完整的Swagger文档
+- 所有代码必须有TypeScript类型定义
+- 数据库变更必须通过Prisma Schema
+- 新功能必须更新对应的核心文档
+
+## 📂 项目关键路径
+
+```
+# 后端
+apps/lago-server/
+├── src/routes/        # API路由定义 + Swagger
+├── src/schemas/       # 验证Schema (class-validator)
+├── src/controllers/   # 控制器
+├── src/services/      # 业务服务
+├── src/config/swagger.ts # Swagger实体对象结构
+└── prisma/schema.prisma # 数据库Schema
+
+# 前端
+apps/lago-web/
+├── src/app/          # Next.js页面 (App Router)
+├── src/components/   # 可复用组件
+├── src/lib/apis/     # API调用（自动生成）
+└── scripts/generate-api.js # API生成脚本
+
+# 文档
+docs/
+├── README.md                # 文档导航
+├── DEVELOPMENT_GUIDE.md     # 开发指南 ⭐⭐⭐⭐⭐
+├── ARCHITECTURE.md          # 架构设计 ⭐⭐⭐⭐⭐
+├── DATABASE_DESIGN.md       # 数据库设计 ⭐⭐⭐⭐⭐
+├── FEATURES_BY_PAGE.md      # 功能说明 ⭐⭐⭐⭐⭐
+├── PRD.md                    # 产品需求文档 ⭐⭐⭐⭐
+└── DESIGN_SYSTEM.md          # 设计系统 ⭐⭐⭐
+```
+
+## 🔧 常用命令
+
+```bash
+# 启动开发
+npm run dev
+
+# 数据库操作
+cd apps/lago-server
+npx prisma db push
+npx tsx src/scripts/seed.ts
+npx prisma studio
+
+# 生成API
+cd apps/lago-web
+node scripts/generate-api.js
+
+# 获取swagger.json
+curl http://localhost:3001/api-docs -o swagger.json
+```
+
+## 📝 记住
+
+- 核心文档是项目知识的唯一来源
+- 保持文档与代码同步
+- 遵循既定的开发流程
+- 所有变更都要有文档记录
+
