@@ -141,7 +141,7 @@ cd apps/lago-web
 node scripts/generate-api.js
 
 # 获取swagger.json
-curl http://localhost:3001/api-docs -o swagger.json
+curl http://localhost:3001/api-docs.json -o swagger.json
 ```
 
 ## 📝 记住

@@ -105,7 +105,7 @@ router.post('/', async (req: Request, res: Response) => {
             : '/images/share-logo.png';
 
           shareData = {
-            title: `${product.title} - ${product.type === 'RENT' ? '租赁' : '出售'}`,
+            title: `${product.title} - ${product.type === 'rent' ? '租赁' : '出售'}`,
             desc: product.description || `价格：¥${product.price}`,
             path: `/pages/webview/webview?url=${encodeURIComponent(pagePath)}`,
             imageUrl: imageUrl

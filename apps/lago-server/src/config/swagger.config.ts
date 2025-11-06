@@ -1,4 +1,6 @@
+import { Express } from 'express';
 import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 import { getSwaggerComponents } from './swagger';
 
 const options: swaggerJsdoc.Options = {
@@ -21,4 +23,21 @@ const options: swaggerJsdoc.Options = {
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
+
+const specs = swaggerJsdoc(options);
+
+export const setupSwagger = (app: Express) => {
+  // Swagger UI
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Lago API 文档'
+  }));
+
+  // JSON endpoint
+  app.get('/api-docs.json', (_, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(specs);
+  });
+};
 

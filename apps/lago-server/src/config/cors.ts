@@ -5,7 +5,6 @@ const getAllowedOrigins = (): string[] => {
   const origins = [
     // 放开所有跨域
     '*',
-    process.env.FRONTEND_URL,
   ];
 
   // 过滤掉undefined值

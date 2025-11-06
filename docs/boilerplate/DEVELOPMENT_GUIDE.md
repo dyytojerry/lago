@@ -36,32 +36,171 @@ export const swaggerSchemas = {
 
 #### 1.2 定义路由和 Swagger 文档
 
-在 `src/routes/` 目录下定义路由，使用 `$ref` 引用 Schema：
+**位置**: `src/routes/*.routes.ts`
+
+**重要规范**：
+
+1. **路由文件结构**：
+   - 导入依赖
+   - 创建 router 实例
+   - 应用中间件（如需要）
+   - **文件头部 tags 定义**（必须）
+   - 接口定义（每个接口都有完整的 Swagger 注释）
+
+2. **Tags 命名规范**：
+   - Tag 名称使用**大驼峰形式**（多个单词连接，不使用空格）
+     - ✅ `AdminDashboard`、`AdminUsers`、`AdminProducts`
+     - ❌ `Admin Dashboard`、`Admin Users`
+   - 每个接口的 tags 包含**两个值**：`[RouteTag, ProjectTag]`
+     - 第一个 tag：route 的功能分类（如 `Auth`、`AdminProducts`）
+     - 第二个 tag：项目类型（`App` 或 `Operation`）
+   - 文件头部的 `tags.name` 只包含第一个 tag
+
+3. **示例**：
 
 ```typescript
-// src/routes/users.routes.ts
+// src/routes/auth.routes.ts
+import { Router } from 'express';
+import { wechatLogin, operationLogin } from '../controllers/auth.controller';
+import { validateRequest } from '../middleware/validateRequest';
+import { authUser, authOperation } from '../middleware/auth';
+
+const router = Router();
+
 /**
  * @swagger
- * /api/users:
+ * tags:
+ *   name: Auth
+ *   description: 用户认证相关接口
+ */
+
+/**
+ * @swagger
+ * /api/auth/wechat/login:
  *   post:
- *     summary: 创建用户
- *     tags: [Users]
+ *     summary: 微信登录（小程序端）
+ *     tags: [Auth, App]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateUserRequest'
+ *             $ref: '#/components/schemas/WechatLoginRequest'
  *     responses:
  *       200:
- *         description: 创建成功
+ *         description: 登录成功
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       401:
+ *         description: 登录失败
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/users', validateDto(CreateUserDto), createUser);
+router.post('/wechat/login', validateRequest(wechatLoginSchema), wechatLogin);
+
+/**
+ * @swagger
+ * /api/auth/operation/login:
+ *   post:
+ *     summary: 运营系统登录
+ *     tags: [Auth, Operation]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/OperationLoginRequest'
+ *     responses:
+ *       200:
+ *         description: 登录成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/OperationLoginResponse'
+ *       401:
+ *         description: 登录失败
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/operation/login', validateRequest(operationLoginSchema), operationLogin);
+
+export default router;
 ```
+
+**运营系统路由示例**：
+
+```typescript
+// src/routes/products.routes.ts
+import { Router } from 'express';
+import { getProducts } from '../controllers/products.controller';
+import { authOperation } from '../middleware/auth';
+import { validateRequest } from '../middleware/validateRequest';
+import * as Joi from 'joi';
+
+const router = Router();
+
+// 所有路由需要运营端认证
+router.use(authOperation);
+
+/**
+ * @swagger
+ * tags:
+ *   name: AdminProducts
+ *   description: 运营系统商品管理相关接口
+ */
+
+/**
+ * @swagger
+ * /api/admin/products:
+ *   get:
+ *     summary: 获取商品列表
+ *     tags: [AdminProducts, Operation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: string
+ *           default: "1"
+ *         description: 页码
+ *     responses:
+ *       200:
+ *         description: 成功获取商品列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ProductListResponse'
+ *       401:
+ *         description: 未认证
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get(
+  '/',
+  validateRequest(
+    Joi.object({
+      query: Joi.object({
+        page: Joi.string().optional(),
+        limit: Joi.string().optional(),
+      }),
+    })
+  ),
+  getProducts
+);
+
+export default router;
+```
+
+**详细规范请参考 `docs/API_DEVELOPMENT.md`**。
 
 #### 1.3 定义验证 Schema
 
@@ -338,6 +477,8 @@ npm run dev
 5. **使用 npm 安装依赖，不要使用 pnpm 或 yarn**
 6. **设计系统必须从项目设计文档中提取，配置到 tailwind.config.js 中**
 7. **Swagger Schema 定义在 src/config/swagger.ts 中，通过 $ref 引用**
+8. **路由文件开头必须定义 tags.name（只包含第一个 tag）**
+9. **每个接口的 tags 包含两个值：`[RouteTag, ProjectTag]`（Tag 使用大驼峰形式）**
 
 ---
 

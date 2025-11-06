@@ -8,7 +8,7 @@ const args = process.argv.slice(2);
 const projectType = args.find(arg => arg.startsWith('--project='))?.split('=')[1];
 
 // 读取swagger.json
-const swaggerPath = path.join(__dirname, '../apps/lago-server/swagger.json');
+const swaggerPath = path.join(__dirname, '../swagger.json');
 if (!fs.existsSync(swaggerPath)) {
   console.error('错误: 找不到 swagger.json 文件，请先运行服务器生成 swagger.json');
   process.exit(1);
@@ -384,12 +384,11 @@ function generateEnumTypes(enumTypes) {
 // 用于跟踪已生成的函数名，避免重复
 const usedFunctionNames = new Set();
 
+// 确定需要过滤的 tags
+const allowedTags = tagMappings[projectType] || [];
 // 主生成函数
 function generateApiFiles() {
-  console.log(`开始生成API代码 (项目: ${projectType}, 标签过滤: ${tagFilter || 'all'})...`);
-  
-  // 确定需要过滤的 tags
-  const allowedTags = tagMappings[projectType] || [];
+  console.log(`开始生成API代码 (项目: ${projectType}, 标签过滤: ${allowedTags.join(', ')})...`);
   
   // 提取枚举类型
   const enumTypes = extractEnumTypes(swagger.components?.schemas || {});
@@ -419,10 +418,10 @@ function generateApiFiles() {
   for (const [path, methods] of Object.entries(swagger.paths || {})) {
     for (const [method, operation] of Object.entries(methods)) {
       const tags = operation.tags || ['default'];
-      const [tag, project] = tags[0];
+      const [tag, project] = tags;
 
       // 过滤：只包含指定项目的 tags
-      if(project !== projectType && !allowedTags?.includes(tag)) {
+      if(project !== projectType.charAt(0).toUpperCase() + projectType.slice(1) && !allowedTags?.includes(tag)) {
         continue;  // 跳过不符合的接口
       }
       

@@ -64,8 +64,11 @@
 ### API开发
 
 1. 在 `src/config/swagger.ts` 定义 Swagger Schema（用于 $ref 引用）
-2. 在 `src/routes/` 定义路由和 Swagger 描述（使用 $ref 引用 Schema）
-3. 在 `src/schemas/` 使用 class-validator 定义验证 Schema
+2. 在 `src/routes/` 定义路由和 Swagger 描述：
+   - **文件开头必须定义 tags.name**（只包含第一个 tag，大驼峰形式）
+   - 每个接口的 tags 包含两个值：`[RouteTag, ProjectTag]`
+   - 使用 $ref 引用 Schema（不要重复定义）
+3. 在 `src/schemas/` 使用 Joi 或 class-validator 定义验证 Schema
 4. 在 `src/controllers/` 实现控制器逻辑
 5. 在 `src/services/` 实现业务服务
 
@@ -106,6 +109,8 @@
 - 数据库变更必须通过Prisma Schema
 - 新功能必须更新对应的核心文档
 - Swagger Schema 定义在 `src/config/swagger.ts`，通过 $ref 引用
+- **路由文件开头必须定义 tags.name**（只包含第一个 tag，大驼峰形式）
+- **每个接口的 tags 包含两个值**：`[RouteTag, ProjectTag]`（Tag 使用大驼峰形式）
 - **设计系统必须从项目设计文档中提取**，配置到 `tailwind.config.js` 中
 - 使用 npm 安装依赖，不要使用 pnpm 或 yarn
 

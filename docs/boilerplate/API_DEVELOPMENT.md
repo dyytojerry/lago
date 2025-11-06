@@ -83,84 +83,253 @@ export const swaggerSchemas = {
 
 **位置**: `src/routes/*.routes.ts`
 
-在路由文件中定义 API 端点，使用 `$ref` 引用 Schema：
+#### 2.1 路由文件结构
+
+每个路由文件必须遵循以下结构：
+
+1. **文件头部 Tags 定义**：在 `router` 定义后、第一个接口定义前，定义该 route 的 tag
+2. **接口定义**：每个接口都需要完整的 Swagger 注释
+
+#### 2.2 Tags 命名规范
+
+**重要规则**：
+- **Tag 名称使用大驼峰形式**：多个单词连接起来，不要使用空格
+  - ✅ `AdminDashboard`、`AdminUsers`、`AdminProducts`
+  - ❌ `Admin Dashboard`、`Admin Users`、`Admin Products`
+  
+- **每个接口的 tags 包含两个值**：
+  - 第一个 tag：当前 route 的 tag（如 `Auth`、`AdminDashboard`、`Share`）
+  - 第二个 tag：项目类型（`App` 或 `Operation`）
+  
+- **文件头部的 tags.name 只包含第一个 tag**（route 的 tag）
+
+#### 2.3 路由文件示例
 
 ```typescript
-// src/routes/users.routes.ts
+// src/routes/auth.routes.ts
 import { Router } from 'express';
-import { createUser, getUser } from '../controllers/user.controller';
-import { validateDto } from '../middleware/validate';
-import { CreateUserDto } from '../schemas/user.schema';
+import { wechatLogin, phoneLogin, operationLogin } from '../controllers/auth.controller';
+import { validateRequest } from '../middleware/validateRequest';
+import { authUser, authOperation } from '../middleware/auth';
 
 const router = Router();
 
 /**
  * @swagger
- * /api/users:
+ * tags:
+ *   name: Auth
+ *   description: 用户认证相关接口
+ */
+
+/**
+ * @swagger
+ * /api/auth/wechat/login:
  *   post:
- *     summary: 创建用户
- *     tags: [Users]
+ *     summary: 微信登录（小程序端）
+ *     tags: [Auth, App]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateUserRequest'
+ *             $ref: '#/components/schemas/WechatLoginRequest'
  *     responses:
- *       201:
- *         description: 创建成功
+ *       200:
+ *         description: 登录成功
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/UserResponse'
- *       400:
- *         description: 请求参数错误
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       401:
+ *         description: 登录失败
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/users', validateDto(CreateUserDto), createUser);
+router.post('/wechat/login', validateRequest(wechatLoginSchema), wechatLogin);
 
 /**
  * @swagger
- * /api/users/{id}:
- *   get:
- *     summary: 获取用户信息
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: 用户ID
+ * /api/auth/operation/login:
+ *   post:
+ *     summary: 运营系统登录
+ *     tags: [Auth, Operation]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/OperationLoginRequest'
  *     responses:
  *       200:
- *         description: 获取成功
+ *         description: 登录成功
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/UserResponse'
+ *               $ref: '#/components/schemas/OperationLoginResponse'
+ *       401:
+ *         description: 登录失败
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/operation/login', validateRequest(operationLoginSchema), operationLogin);
+
+export default router;
+```
+
+#### 2.4 运营系统路由示例
+
+```typescript
+// src/routes/products.routes.ts
+import { Router } from 'express';
+import { getProducts, approveProduct } from '../controllers/products.controller';
+import { authOperation } from '../middleware/auth';
+import { validateRequest } from '../middleware/validateRequest';
+import * as Joi from 'joi';
+
+const router = Router();
+
+// 所有路由需要运营端认证
+router.use(authOperation);
+
+/**
+ * @swagger
+ * tags:
+ *   name: AdminProducts
+ *   description: 运营系统商品管理相关接口
+ */
+
+/**
+ * @swagger
+ * /api/admin/products:
+ *   get:
+ *     summary: 获取商品列表
+ *     tags: [AdminProducts, Operation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: string
+ *           default: "1"
+ *         description: 页码
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: string
+ *           default: "20"
+ *         description: 每页数量
+ *     responses:
+ *       200:
+ *         description: 成功获取商品列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ProductListResponse'
  *       401:
  *         description: 未认证
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: 用户不存在
+ *       500:
+ *         description: 服务器错误
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/users/:id', authUser, getUser);
+router.get(
+  '/',
+  validateRequest(
+    Joi.object({
+      query: Joi.object({
+        page: Joi.string().optional(),
+        limit: Joi.string().optional(),
+      }),
+    })
+  ),
+  getProducts
+);
 
 export default router;
 ```
+
+#### 2.5 小程序端路由示例
+
+```typescript
+// src/routes/share.routes.ts
+import { Router, Request, Response } from 'express';
+import prisma from '../lib/prisma';
+
+const router = Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Share
+ *   description: 分享相关接口
+ */
+
+/**
+ * @swagger
+ * /api/share:
+ *   post:
+ *     summary: 获取分享数据
+ *     tags: [Share, App]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [appMessage, timeline]
+ *                 description: 分享类型
+ *               path:
+ *                 type: string
+ *                 description: 当前页面路径
+ *     responses:
+ *       200:
+ *         description: 分享数据
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 title:
+ *                   type: string
+ *                 desc:
+ *                   type: string
+ *                 path:
+ *                   type: string
+ *                 imageUrl:
+ *                   type: string
+ */
+router.post('/', async (req: Request, res: Response) => {
+  // 实现逻辑...
+});
+
+export default router;
+```
+
+#### 2.6 Tags 使用规则总结
+
+| 场景 | 第一个 Tag | 第二个 Tag | 文件头部 tags.name |
+|------|-----------|-----------|------------------|
+| 小程序端认证接口 | `Auth` | `App` | `Auth` |
+| 运营系统认证接口 | `Auth` | `Operation` | `Auth` |
+| 运营系统仪表盘 | `AdminDashboard` | `Operation` | `AdminDashboard` |
+| 运营系统用户管理 | `AdminUsers` | `Operation` | `AdminUsers` |
+| 运营系统商品管理 | `AdminProducts` | `Operation` | `AdminProducts` |
+| 运营系统订单管理 | `AdminOrders` | `Operation` | `AdminOrders` |
+| 小程序端分享功能 | `Share` | `App` | `Share` |
 
 ### 3. 定义验证 Schema
 
@@ -337,34 +506,56 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 - **定义一次，多处引用**: 在 `swagger.ts` 中定义 Schema，通过 `$ref` 引用
 - **避免重复**: 不要在路由注释中重复定义 Schema
 
-### 2. 错误处理
+### 2. Tags 规范
+
+- **大驼峰命名**: Tag 名称使用大驼峰形式，多个单词连接（如 `AdminDashboard`）
+- **双标签结构**: 每个接口的 tags 包含两个值 `[RouteTag, ProjectTag]`
+  - 第一个 tag：route 的功能分类（如 `Auth`、`AdminProducts`）
+  - 第二个 tag：项目类型（`App` 或 `Operation`）
+- **文件头部定义**: 在路由文件开头定义 tags.name，只包含第一个 tag
+
+### 3. 路由文件结构
+
+- **统一的文件结构**：
+  1. 导入依赖
+  2. 创建 router 实例
+  3. 应用中间件（如需要）
+  4. **文件头部 tags 定义**（必须）
+  5. 接口定义（每个接口都有完整的 Swagger 注释）
+
+### 4. 错误处理
 
 - **统一错误格式**: 使用 `ErrorResponse` Schema
 - **HTTP 状态码**: 正确使用状态码（200, 201, 400, 401, 404, 500）
 - **错误信息**: 提供清晰的错误信息
 
-### 3. 验证
+### 5. 验证
 
-- **使用 class-validator**: 所有请求参数都要验证
-- **验证中间件**: 使用 `validateDto` 中间件自动验证
+- **使用 Joi 或 class-validator**: 所有请求参数都要验证
+- **验证中间件**: 使用 `validateRequest` 或 `validateDto` 中间件自动验证
 
-### 4. 认证
+### 6. 认证
 
 - **JWT Token**: 使用 Bearer Token 认证
 - **认证中间件**: 使用 `authUser` 或 `authOperation` 中间件
 - **权限检查**: 使用 `requireRole` 中间件检查权限
+- **安全声明**: 需要认证的接口必须在 Swagger 注释中添加 `security: - bearerAuth: []`
 
 ## ✅ 检查清单
 
 开发新 API 时，确保：
 
 - [ ] 在 `swagger.ts` 中定义了所有 Schema
+- [ ] 路由文件开头定义了 tags.name（只包含第一个 tag）
+- [ ] 每个接口的 tags 包含两个值：`[RouteTag, ProjectTag]`
+- [ ] Tag 名称使用大驼峰形式（如 `AdminDashboard`，不是 `Admin Dashboard`）
 - [ ] 路由注释中使用 `$ref` 引用 Schema
-- [ ] 定义了验证 Schema（class-validator）
+- [ ] 定义了验证 Schema（Joi 或 class-validator）
 - [ ] 实现了控制器逻辑
 - [ ] 实现了服务层逻辑
 - [ ] 添加了错误处理
 - [ ] 添加了认证（如需要）
+- [ ] 需要认证的接口添加了 `security: - bearerAuth: []`
 - [ ] 测试了 API 端点
 - [ ] 更新了 API 文档
 
