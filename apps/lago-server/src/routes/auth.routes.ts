@@ -14,7 +14,7 @@ import {
   phoneLoginSchema,
   phoneRegisterSchema,
   operationLoginSchema,
-} from '../schemas/auth.joi';
+} from '../schemas/authSchema';
 
 const router = Router();
 

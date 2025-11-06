@@ -1,9 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -55,6 +55,14 @@ module.exports = {
           700: '#616161',
           900: '#212121',   // 标题/正文
           DEFAULT: '#9E9E9E',
+        },
+        background: {
+          DEFAULT: '#F5F5F5',  // 页面背景色
+          primary: '#F5F5F5',   // 主背景色
+        },
+        text: {
+          primary: '#212121',   // 标题/正文
+          secondary: '#9E9E9E', // 辅助文字
         },
       },
       fontFamily: {

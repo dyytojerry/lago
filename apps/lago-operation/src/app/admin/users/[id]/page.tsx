@@ -1,10 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
-import { isAuthenticated } from '@/lib/auth';
-import apiClient from '@/lib/api';
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@lago/ui";
+import {
+  adminUserDetail,
+  adminUsersStatu,
+  AdminUsersStatuPathParams,
+} from "@/lib/apis";
 
 interface UserDetail {
   id: string;
@@ -61,10 +65,10 @@ export default function UserDetailPage() {
   const [loading, setLoading] = useState(true);
   const [creditScore, setCreditScore] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);
-
+  const { isLoggedIn } = useAuth();
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/admin/login');
+    if (!isLoggedIn) {
+      router.push("/login");
       return;
     }
 
@@ -74,7 +78,7 @@ export default function UserDetailPage() {
   const loadUser = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/admin/users/${userId}`);
+      const response = await adminUserDetail({ id: userId });
       setUser(response.data.user);
       setProducts(response.data.products || []);
       setOrders(response.data.orders || []);
@@ -82,24 +86,24 @@ export default function UserDetailPage() {
         setCreditScore(response.data.user.creditScore);
       }
     } catch (error) {
-      console.error('加载用户详情失败:', error);
-      alert('加载用户详情失败');
+      console.error("加载用户详情失败:", error);
+      alert("加载用户详情失败");
     } finally {
       setLoading(false);
     }
   };
 
   const handleUpdateStatus = async (isActive: boolean) => {
-    if (!confirm(`确定要${isActive ? '激活' : '冻结'}这个用户吗？`)) {
+    if (!confirm(`确定要${isActive ? "激活" : "冻结"}这个用户吗？`)) {
       return;
     }
 
     try {
-      await apiClient.put(`/admin/users/${userId}/status`, { isActive });
-      alert(`用户已${isActive ? '激活' : '冻结'}`);
+      await adminUsersStatu({ id: userId }, { isActive });
+      alert(`用户已${isActive ? "激活" : "冻结"}`);
       loadUser();
     } catch (error: any) {
-      alert(error.response?.data?.error || '操作失败');
+      alert(error.response?.data?.error || "操作失败");
     }
   };
 
@@ -110,17 +114,17 @@ export default function UserDetailPage() {
 
     try {
       setIsUpdating(true);
-      await apiClient.put(`/admin/users/${userId}/status`, { creditScore });
-      alert('信用积分已更新');
+      await adminUsersStatu({ id: userId }, { creditScore });
+      alert("信用积分已更新");
       loadUser();
     } catch (error: any) {
-      alert(error.response?.data?.error || '操作失败');
+      alert(error.response?.data?.error || "操作失败");
     } finally {
       setIsUpdating(false);
     }
   };
 
-  if (!isAuthenticated() || loading) {
+  if (!isLoggedIn || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">加载中...</div>
@@ -129,16 +133,14 @@ export default function UserDetailPage() {
   }
 
   if (!user) {
-    return (
-      <div className="text-center py-12 text-gray-500">用户不存在</div>
-    );
+    return <div className="text-center py-12 text-gray-500">用户不存在</div>;
   }
 
   const roleNames: Record<string, string> = {
-    user: '用户',
-    merchant: '商家',
-    property: '物业',
-    admin: '管理员',
+    user: "用户",
+    merchant: "商家",
+    property: "物业",
+    admin: "管理员",
   };
 
   return (
@@ -155,11 +157,11 @@ export default function UserDetailPage() {
             onClick={() => handleUpdateStatus(!user.isActive)}
             className={`px-4 py-2 rounded-lg ${
               user.isActive
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-green-600 text-white hover:bg-green-700'
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-green-600 text-white hover:bg-green-700"
             }`}
           >
-            {user.isActive ? '冻结账号' : '激活账号'}
+            {user.isActive ? "冻结账号" : "激活账号"}
           </button>
         </div>
       </div>
@@ -172,7 +174,7 @@ export default function UserDetailPage() {
               {user.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
-                  alt={user.nickname || '用户'}
+                  alt={user.nickname || "用户"}
                   className="w-20 h-20 rounded-full"
                 />
               ) : (
@@ -181,7 +183,9 @@ export default function UserDetailPage() {
                 </div>
               )}
               <div>
-                <h1 className="text-2xl font-bold">{user.nickname || '未设置昵称'}</h1>
+                <h1 className="text-2xl font-bold">
+                  {user.nickname || "未设置昵称"}
+                </h1>
                 <p className="text-gray-500">用户ID: {user.id}</p>
               </div>
             </div>
@@ -189,15 +193,17 @@ export default function UserDetailPage() {
             <div className="grid grid-cols-2 gap-4 border-t pt-4">
               <div>
                 <span className="text-gray-600 text-sm">手机号:</span>
-                <div className="font-medium">{user.phone || '--'}</div>
+                <div className="font-medium">{user.phone || "--"}</div>
               </div>
               <div>
                 <span className="text-gray-600 text-sm">邮箱:</span>
-                <div className="font-medium">{user.email || '--'}</div>
+                <div className="font-medium">{user.email || "--"}</div>
               </div>
               <div>
                 <span className="text-gray-600 text-sm">角色:</span>
-                <div className="font-medium">{roleNames[user.role] || user.role}</div>
+                <div className="font-medium">
+                  {roleNames[user.role] || user.role}
+                </div>
               </div>
               <div>
                 <span className="text-gray-600 text-sm">状态:</span>
@@ -205,11 +211,11 @@ export default function UserDetailPage() {
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded-full ${
                       user.isActive
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {user.isActive ? '正常' : '已冻结'}
+                    {user.isActive ? "正常" : "已冻结"}
                   </span>
                 </div>
               </div>
@@ -233,11 +239,15 @@ export default function UserDetailPage() {
               </div>
               <div>
                 <span className="text-gray-600 text-sm">注册时间:</span>
-                <div className="text-sm">{new Date(user.createdAt).toLocaleString('zh-CN')}</div>
+                <div className="text-sm">
+                  {new Date(user.createdAt).toLocaleString("zh-CN")}
+                </div>
               </div>
               <div>
                 <span className="text-gray-600 text-sm">最后更新:</span>
-                <div className="text-sm">{new Date(user.updatedAt).toLocaleString('zh-CN')}</div>
+                <div className="text-sm">
+                  {new Date(user.updatedAt).toLocaleString("zh-CN")}
+                </div>
               </div>
             </div>
           </div>
@@ -259,7 +269,7 @@ export default function UserDetailPage() {
                 disabled={isUpdating || creditScore === user.creditScore}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {isUpdating ? '更新中...' : '更新积分'}
+                {isUpdating ? "更新中..." : "更新积分"}
               </button>
             </div>
           </div>
@@ -267,7 +277,9 @@ export default function UserDetailPage() {
           {/* 商品列表 */}
           {products.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">发布的商品 ({products.length})</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                发布的商品 ({products.length})
+              </h3>
               <div className="space-y-3">
                 {products.map((product) => (
                   <div key={product.id} className="border-b pb-3">
@@ -280,11 +292,14 @@ export default function UserDetailPage() {
                           {product.title}
                         </Link>
                         <div className="text-sm text-gray-500">
-                          价格: ¥{Number(product.price).toFixed(2)} | 状态: {product.status}
+                          价格: ¥{Number(product.price).toFixed(2)} | 状态:{" "}
+                          {product.status}
                         </div>
                       </div>
                       <span className="text-sm text-gray-600">
-                        {new Date(product.createdAt).toLocaleDateString('zh-CN')}
+                        {new Date(product.createdAt).toLocaleDateString(
+                          "zh-CN"
+                        )}
                       </span>
                     </div>
                   </div>
@@ -296,7 +311,9 @@ export default function UserDetailPage() {
           {/* 订单列表 */}
           {orders.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">订单记录 ({orders.length})</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                订单记录 ({orders.length})
+              </h3>
               <div className="space-y-3">
                 {orders.map((order) => (
                   <div key={order.id} className="border-b pb-3">
@@ -309,11 +326,13 @@ export default function UserDetailPage() {
                           订单 {order.id.slice(0, 8)}...
                         </Link>
                         <div className="text-sm text-gray-500">
-                          {order.type === 'rent' ? '租赁' : '出售'} | 金额: ¥{Number(order.amount).toFixed(2)} | 状态: {order.status}
+                          {order.type === "rent" ? "租赁" : "出售"} | 金额: ¥
+                          {Number(order.amount).toFixed(2)} | 状态:{" "}
+                          {order.status}
                         </div>
                       </div>
                       <span className="text-sm text-gray-600">
-                        {new Date(order.createdAt).toLocaleDateString('zh-CN')}
+                        {new Date(order.createdAt).toLocaleDateString("zh-CN")}
                       </span>
                     </div>
                   </div>
@@ -329,15 +348,21 @@ export default function UserDetailPage() {
             <h3 className="text-lg font-semibold mb-4">统计信息</h3>
             <div className="space-y-4">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{user._count.products}</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {user._count.products}
+                </div>
                 <div className="text-sm text-gray-600">发布商品</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{user._count.ordersAsBuyer}</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {user._count.ordersAsBuyer}
+                </div>
                 <div className="text-sm text-gray-600">购买订单</div>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{user._count.ordersAsSeller}</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {user._count.ordersAsSeller}
+                </div>
                 <div className="text-sm text-gray-600">销售订单</div>
               </div>
             </div>
@@ -348,7 +373,9 @@ export default function UserDetailPage() {
             <div className="space-y-2 text-sm">
               <div>
                 <span className="text-gray-600">微信 OpenID:</span>
-                <div className="font-mono text-xs break-all">{user.wechatOpenid || '--'}</div>
+                <div className="font-mono text-xs break-all">
+                  {user.wechatOpenid || "--"}
+                </div>
               </div>
               <div>
                 <span className="text-gray-600">加入小区:</span>
@@ -361,4 +388,3 @@ export default function UserDetailPage() {
     </div>
   );
 }
-

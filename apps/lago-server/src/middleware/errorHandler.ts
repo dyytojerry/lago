@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { logger } from '../config/logger';
+import { createErrorResponse } from '../lib/response';
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -63,9 +64,10 @@ export const errorHandler = (
     message = 'Something went wrong';
   }
 
-  res.status(statusCode).json({
-    success: false,
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-  });
+  // 在开发环境下，将 stack 信息添加到错误消息中
+  const errorMessage = process.env.NODE_ENV === 'development' && error.stack
+    ? `${message}\n${error.stack}`
+    : message;
+
+  return createErrorResponse(res, errorMessage, statusCode);
 };

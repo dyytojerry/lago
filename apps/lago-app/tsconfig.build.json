@@ -4,6 +4,7 @@
     "composite": true,
     "noEmit": false,
     "outDir": "./dist",
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@lago/common": ["../../packages/common/src/index.ts"],

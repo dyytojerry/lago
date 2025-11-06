@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 /**
  * 获取用户信息
@@ -8,7 +9,7 @@ export async function getUserProfile(req: Request, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const user = await prisma.user.findUnique({
@@ -29,13 +30,13 @@ export async function getUserProfile(req: Request, res: Response) {
     });
 
     if (!user) {
-      return res.status(404).json({ error: '用户不存在' });
+      return createErrorResponse(res, '用户不存在', 404);
     }
 
-    res.json({ user });
+    return createSuccessResponse(res, { user });
   } catch (error) {
     console.error('获取用户信息失败:', error);
-    res.status(500).json({ error: '获取用户信息失败' });
+    return createErrorResponse(res, '获取用户信息失败', 500);
   }
 }
 
@@ -46,7 +47,7 @@ export async function updateUserProfile(req: Request, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const { nickname, avatarUrl, phone } = req.body;
@@ -61,7 +62,7 @@ export async function updateUserProfile(req: Request, res: Response) {
           where: { phone },
         });
         if (existingUser && existingUser.id !== userId) {
-          return res.status(400).json({ error: '手机号已被使用' });
+          return createErrorResponse(res, '手机号已被使用', 400);
         }
       }
       updateData.phone = phone;
@@ -85,10 +86,10 @@ export async function updateUserProfile(req: Request, res: Response) {
       },
     });
 
-    res.json({ user });
+    return createSuccessResponse(res, { user });
   } catch (error) {
     console.error('更新用户信息失败:', error);
-    res.status(500).json({ error: '更新用户信息失败' });
+    return createErrorResponse(res, '更新用户信息失败', 500);
   }
 }
 
@@ -99,7 +100,7 @@ export async function getUserProducts(req: Request, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const {
@@ -134,18 +135,20 @@ export async function getUserProducts(req: Request, res: Response) {
               location: true,
             },
           },
-          _count: {
-            select: {
-              orders: true,
-            },
-          },
         },
       }),
       prisma.product.count({ where }),
     ]);
 
-    res.json({
+    // 获取统计信息
+    const productIds = products.map(p => p.id);
+    const _count = productIds.length > 0 ? {
+      orders: await prisma.order.count({ where: { productId: { in: productIds } } }),
+    } : { orders: 0 };
+
+    return createSuccessResponse(res, {
       products,
+      _count,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -155,7 +158,7 @@ export async function getUserProducts(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取用户商品失败:', error);
-    res.status(500).json({ error: '获取用户商品失败' });
+    return createErrorResponse(res, '获取用户商品失败', 500);
   }
 }
 
@@ -166,7 +169,7 @@ export async function getUserOrders(req: Request, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const {
@@ -221,7 +224,7 @@ export async function getUserOrders(req: Request, res: Response) {
       prisma.order.count({ where }),
     ]);
 
-    res.json({
+    return createSuccessResponse(res, {
       orders,
       pagination: {
         page: pageNum,
@@ -232,7 +235,7 @@ export async function getUserOrders(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取用户订单失败:', error);
-    res.status(500).json({ error: '获取用户订单失败' });
+    return createErrorResponse(res, '获取用户订单失败', 500);
   }
 }
 

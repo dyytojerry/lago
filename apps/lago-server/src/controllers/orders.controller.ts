@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 /**
  * 获取订单列表
@@ -78,7 +79,7 @@ export async function getOrders(req: Request, res: Response) {
       prisma.order.count({ where }),
     ]);
 
-    res.json({
+    return createSuccessResponse(res, {
       orders,
       pagination: {
         page: pageNum,
@@ -89,7 +90,7 @@ export async function getOrders(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取订单列表失败:', error);
-    res.status(500).json({ error: '获取订单列表失败' });
+    return createErrorResponse(res, '获取订单列表失败', 500);
   }
 }
 
@@ -135,13 +136,13 @@ export async function getOrder(req: Request, res: Response) {
     });
 
     if (!order) {
-      return res.status(404).json({ error: '订单不存在' });
+      return createErrorResponse(res, '订单不存在', 404);
     }
 
-    res.json({ order });
+    return createSuccessResponse(res, { order });
   } catch (error) {
     console.error('获取订单详情失败:', error);
-    res.status(500).json({ error: '获取订单详情失败' });
+    return createErrorResponse(res, '获取订单详情失败', 500);
   }
 }
 
@@ -155,7 +156,7 @@ export async function updateOrderStatus(req: Request, res: Response) {
     const staff = req.operationStaff;
 
     if (!staff) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     await prisma.order.update({
@@ -176,10 +177,10 @@ export async function updateOrderStatus(req: Request, res: Response) {
       },
     });
 
-    res.json({ success: true, message: '订单状态已更新' });
+    return createSuccessResponse(res, { message: '订单状态已更新' });
   } catch (error) {
     console.error('更新订单状态失败:', error);
-    res.status(500).json({ error: '更新订单状态失败' });
+    return createErrorResponse(res, '更新订单状态失败', 500);
   }
 }
 

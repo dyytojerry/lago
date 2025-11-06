@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 /**
  * 获取商品列表
@@ -66,7 +67,7 @@ export async function getProducts(req: Request, res: Response) {
       prisma.product.count({ where }),
     ]);
 
-    res.json({
+    return createSuccessResponse(res, {
       products,
       pagination: {
         page: pageNum,
@@ -77,7 +78,7 @@ export async function getProducts(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取商品列表失败:', error);
-    res.status(500).json({ error: '获取商品列表失败' });
+    return createErrorResponse(res, '获取商品列表失败', 500);
   }
 }
 
@@ -126,13 +127,13 @@ export async function getProduct(req: Request, res: Response) {
     });
 
     if (!product) {
-      return res.status(404).json({ error: '商品不存在' });
+      return createErrorResponse(res, '商品不存在', 404);
     }
 
-    res.json({ product });
+    return createSuccessResponse(res, { product });
   } catch (error) {
     console.error('获取商品详情失败:', error);
-    res.status(500).json({ error: '获取商品详情失败' });
+    return createErrorResponse(res, '获取商品详情失败', 500);
   }
 }
 
@@ -146,7 +147,7 @@ export async function approveProduct(req: Request, res: Response) {
     const staff = req.operationStaff;
 
     if (!staff) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const product = await prisma.product.findUnique({
@@ -154,11 +155,11 @@ export async function approveProduct(req: Request, res: Response) {
     });
 
     if (!product) {
-      return res.status(404).json({ error: '商品不存在' });
+      return createErrorResponse(res, '商品不存在', 404);
     }
 
     if (product.status !== 'pending') {
-      return res.status(400).json({ error: '商品状态不正确' });
+      return createErrorResponse(res, '商品状态不正确', 400);
     }
 
     // 更新商品状态
@@ -187,10 +188,10 @@ export async function approveProduct(req: Request, res: Response) {
       },
     });
 
-    res.json({ success: true, message: `商品已${action === 'approve' ? '通过' : '拒绝'}` });
+    return createSuccessResponse(res, { message: `商品已${action === 'approve' ? '通过' : '拒绝'}` });
   } catch (error) {
     console.error('审核商品失败:', error);
-    res.status(500).json({ error: '审核商品失败' });
+    return createErrorResponse(res, '审核商品失败', 500);
   }
 }
 
@@ -203,7 +204,7 @@ export async function batchApproveProducts(req: Request, res: Response) {
     const staff = req.operationStaff;
 
     if (!staff || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ error: '参数错误' });
+      return createErrorResponse(res, '参数错误', 400);
     }
 
     const updateData: any = {};
@@ -234,10 +235,10 @@ export async function batchApproveProducts(req: Request, res: Response) {
       })),
     });
 
-    res.json({ success: true, message: `已${action === 'approve' ? '通过' : '拒绝'} ${ids.length} 个商品` });
+    return createSuccessResponse(res, { message: `已${action === 'approve' ? '通过' : '拒绝'} ${ids.length} 个商品` });
   } catch (error) {
     console.error('批量审核商品失败:', error);
-    res.status(500).json({ error: '批量审核商品失败' });
+    return createErrorResponse(res, '批量审核商品失败', 500);
   }
 }
 

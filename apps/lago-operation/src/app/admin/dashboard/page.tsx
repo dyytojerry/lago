@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
-import apiClient from '@/lib/api';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@lago/ui";
+import { adminDashboardStats, adminDashboardTrends } from "@/lib/apis";
 
 interface DashboardStats {
   gmv: {
@@ -44,10 +44,10 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [trends, setTrends] = useState<TrendData | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const { isLoggedIn } = useAuth();
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/admin/login');
+    if (!isLoggedIn) {
+      router.push("/login");
       return;
     }
 
@@ -57,20 +57,20 @@ export default function DashboardPage() {
   const loadData = async () => {
     try {
       const [statsRes, trendsRes] = await Promise.all([
-        apiClient.get('/admin/dashboard/stats'),
-        apiClient.get('/admin/dashboard/trends?period=7d'),
+        adminDashboardStats(),
+        adminDashboardTrends({ period: "7d" }),
       ]);
 
       setStats(statsRes.data);
       setTrends(trendsRes.data);
     } catch (error) {
-      console.error('加载数据失败:', error);
+      console.error("加载数据失败:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isAuthenticated() || loading) {
+  if (!isLoggedIn || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">加载中...</div>
@@ -79,9 +79,9 @@ export default function DashboardPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('zh-CN', {
-      style: 'currency',
-      currency: 'CNY',
+    return new Intl.NumberFormat("zh-CN", {
+      style: "currency",
+      currency: "CNY",
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -100,10 +100,10 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-1">
             <p className="text-2xl font-bold text-gray-900">
-              {stats ? formatCurrency(stats.gmv.total) : '--'}
+              {stats ? formatCurrency(stats.gmv.total) : "--"}
             </p>
             <p className="text-sm text-gray-500">
-              今日: {stats ? formatCurrency(stats.gmv.today) : '--'}
+              今日: {stats ? formatCurrency(stats.gmv.today) : "--"}
             </p>
           </div>
         </div>
@@ -116,10 +116,10 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-1">
             <p className="text-2xl font-bold text-gray-900">
-              {stats ? stats.users.total.toLocaleString() : '--'}
+              {stats ? stats.users.total.toLocaleString() : "--"}
             </p>
             <p className="text-sm text-gray-500">
-              今日新增: {stats ? stats.users.newToday : '--'}
+              今日新增: {stats ? stats.users.newToday : "--"}
             </p>
           </div>
         </div>
@@ -132,10 +132,10 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-1">
             <p className="text-2xl font-bold text-gray-900">
-              {stats ? stats.orders.today : '--'}
+              {stats ? stats.orders.today : "--"}
             </p>
             <p className="text-sm text-gray-500">
-              待处理: {stats ? stats.orders.pending : '--'}
+              待处理: {stats ? stats.orders.pending : "--"}
             </p>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-1">
             <p className="text-2xl font-bold text-gray-900">
-              {stats ? stats.pending.products : '--'}
+              {stats ? stats.pending.products : "--"}
             </p>
             <p className="text-sm text-gray-500">待审核商品</p>
           </div>
@@ -162,19 +162,29 @@ export default function DashboardPage() {
             <h3 className="text-lg font-semibold mb-4">GMV 趋势（最近7天）</h3>
             <div className="space-y-2">
               {trends.gmv.map((item) => (
-                <div key={item.date} className="flex items-center justify-between">
+                <div
+                  key={item.date}
+                  className="flex items-center justify-between"
+                >
                   <span className="text-sm text-gray-600">{item.date}</span>
-                  <span className="font-medium">{formatCurrency(item.value)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(item.value)}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">用户增长趋势（最近7天）</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              用户增长趋势（最近7天）
+            </h3>
             <div className="space-y-2">
               {trends.users.map((item) => (
-                <div key={item.date} className="flex items-center justify-between">
+                <div
+                  key={item.date}
+                  className="flex items-center justify-between"
+                >
                   <span className="text-sm text-gray-600">{item.date}</span>
                   <span className="font-medium">{item.value} 人</span>
                 </div>
@@ -192,11 +202,15 @@ export default function DashboardPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">总用户数</span>
-                <span className="font-medium">{stats.users.total.toLocaleString()}</span>
+                <span className="font-medium">
+                  {stats.users.total.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">活跃用户</span>
-                <span className="font-medium">{stats.users.active.toLocaleString()}</span>
+                <span className="font-medium">
+                  {stats.users.active.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">今日活跃</span>
@@ -214,19 +228,27 @@ export default function DashboardPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">今日 GMV</span>
-                <span className="font-medium">{formatCurrency(stats.gmv.today)}</span>
+                <span className="font-medium">
+                  {formatCurrency(stats.gmv.today)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">本周 GMV</span>
-                <span className="font-medium">{formatCurrency(stats.gmv.week)}</span>
+                <span className="font-medium">
+                  {formatCurrency(stats.gmv.week)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">本月 GMV</span>
-                <span className="font-medium">{formatCurrency(stats.gmv.month)}</span>
+                <span className="font-medium">
+                  {formatCurrency(stats.gmv.month)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">累计 GMV</span>
-                <span className="font-medium">{formatCurrency(stats.gmv.total)}</span>
+                <span className="font-medium">
+                  {formatCurrency(stats.gmv.total)}
+                </span>
               </div>
             </div>
           </div>

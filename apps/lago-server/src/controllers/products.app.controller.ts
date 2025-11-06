@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 /**
  * 获取商品列表（小程序端）
@@ -75,7 +76,7 @@ export async function getProductsForApp(req: Request, res: Response) {
       prisma.product.count({ where }),
     ]);
 
-    res.json({
+    return createSuccessResponse(res, {
       products,
       pagination: {
         page: pageNum,
@@ -86,7 +87,7 @@ export async function getProductsForApp(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取商品列表失败:', error);
-    res.status(500).json({ error: '获取商品列表失败' });
+    return createErrorResponse(res, '获取商品列表失败', 500);
   }
 }
 
@@ -130,7 +131,7 @@ export async function getProductForApp(req: Request, res: Response) {
     });
 
     if (!product) {
-      return res.status(404).json({ error: '商品不存在' });
+      return createErrorResponse(res, '商品不存在', 404);
     }
 
     // 检查用户是否已收藏
@@ -143,7 +144,7 @@ export async function getProductForApp(req: Request, res: Response) {
       // isLiked = !!like;
     }
 
-    res.json({
+    return createSuccessResponse(res, {
       product: {
         ...product,
         isLiked,
@@ -151,7 +152,7 @@ export async function getProductForApp(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取商品详情失败:', error);
-    res.status(500).json({ error: '获取商品详情失败' });
+    return createErrorResponse(res, '获取商品详情失败', 500);
   }
 }
 
@@ -209,10 +210,10 @@ export async function getRecommendedProducts(req: Request, res: Response) {
       },
     });
 
-    res.json({ products });
+    return createSuccessResponse(res, { products });
   } catch (error) {
     console.error('获取推荐商品失败:', error);
-    res.status(500).json({ error: '获取推荐商品失败' });
+    return createErrorResponse(res, '获取推荐商品失败', 500);
   }
 }
 
@@ -254,10 +255,10 @@ export async function getHotProducts(req: Request, res: Response) {
       },
     });
 
-    res.json({ products });
+    return createSuccessResponse(res, { products });
   } catch (error) {
     console.error('获取热门商品失败:', error);
-    res.status(500).json({ error: '获取热门商品失败' });
+    return createErrorResponse(res, '获取热门商品失败', 500);
   }
 }
 
@@ -268,7 +269,7 @@ export async function createProduct(req: Request, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const {
@@ -317,10 +318,10 @@ export async function createProduct(req: Request, res: Response) {
       },
     });
 
-    res.status(201).json({ product });
+    return createSuccessResponse(res, { product }, 201);
   } catch (error) {
     console.error('创建商品失败:', error);
-    res.status(500).json({ error: '创建商品失败' });
+    return createErrorResponse(res, '创建商品失败', 500);
   }
 }
 
@@ -332,7 +333,7 @@ export async function updateProduct(req: Request, res: Response) {
     const { id } = req.params;
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     // 检查商品所有权
@@ -341,11 +342,11 @@ export async function updateProduct(req: Request, res: Response) {
     });
 
     if (!product) {
-      return res.status(404).json({ error: '商品不存在' });
+      return createErrorResponse(res, '商品不存在', 404);
     }
 
     if (product.ownerId !== userId) {
-      return res.status(403).json({ error: '无权限修改此商品' });
+      return createErrorResponse(res, '无权限修改此商品', 403);
     }
 
     // 如果商品已审核通过，更新后需要重新审核
@@ -380,10 +381,10 @@ export async function updateProduct(req: Request, res: Response) {
       },
     });
 
-    res.json({ product: updatedProduct });
+    return createSuccessResponse(res, { product: updatedProduct });
   } catch (error) {
     console.error('更新商品失败:', error);
-    res.status(500).json({ error: '更新商品失败' });
+    return createErrorResponse(res, '更新商品失败', 500);
   }
 }
 
@@ -395,7 +396,7 @@ export async function deleteProduct(req: Request, res: Response) {
     const { id } = req.params;
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     // 检查商品所有权
@@ -404,11 +405,11 @@ export async function deleteProduct(req: Request, res: Response) {
     });
 
     if (!product) {
-      return res.status(404).json({ error: '商品不存在' });
+      return createErrorResponse(res, '商品不存在', 404);
     }
 
     if (product.ownerId !== userId) {
-      return res.status(403).json({ error: '无权限删除此商品' });
+      return createErrorResponse(res, '无权限删除此商品', 403);
     }
 
     // 如果商品有订单，不能删除
@@ -420,17 +421,17 @@ export async function deleteProduct(req: Request, res: Response) {
     });
 
     if (orderCount > 0) {
-      return res.status(400).json({ error: '商品有进行中的订单，无法删除' });
+      return createErrorResponse(res, '商品有进行中的订单，无法删除', 400);
     }
 
     await prisma.product.delete({
       where: { id },
     });
 
-    res.json({ success: true, message: '商品已删除' });
+    return createSuccessResponse(res, { message: '商品已删除' });
   } catch (error) {
     console.error('删除商品失败:', error);
-    res.status(500).json({ error: '删除商品失败' });
+    return createErrorResponse(res, '删除商品失败', 500);
   }
 }
 
@@ -442,7 +443,7 @@ export async function likeProduct(req: Request, res: Response) {
     const { id } = req.params;
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     // 增加收藏数
@@ -453,10 +454,10 @@ export async function likeProduct(req: Request, res: Response) {
 
     // TODO: 如果后续有收藏表，在这里记录收藏关系
 
-    res.json({ success: true, message: '收藏成功' });
+    return createSuccessResponse(res, { message: '收藏成功' });
   } catch (error) {
     console.error('收藏商品失败:', error);
-    res.status(500).json({ error: '收藏商品失败' });
+    return createErrorResponse(res, '收藏商品失败', 500);
   }
 }
 
@@ -468,7 +469,7 @@ export async function unlikeProduct(req: Request, res: Response) {
     const { id } = req.params;
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     // 减少收藏数
@@ -479,10 +480,10 @@ export async function unlikeProduct(req: Request, res: Response) {
 
     // TODO: 如果后续有收藏表，在这里删除收藏关系
 
-    res.json({ success: true, message: '取消收藏成功' });
+    return createSuccessResponse(res, { message: '取消收藏成功' });
   } catch (error) {
     console.error('取消收藏商品失败:', error);
-    res.status(500).json({ error: '取消收藏商品失败' });
+    return createErrorResponse(res, '取消收藏商品失败', 500);
   }
 }
 

@@ -6,6 +6,32 @@
  */
 
 export const swaggerSchemas = {
+
+
+  // ==================== 通用 ====================
+
+  Pagination: {
+    type: 'object',
+    properties: {
+      page: {
+        type: 'integer',
+        description: '当前页码',
+      },
+      limit: {
+        type: 'integer',
+        description: '每页数量',
+      },
+      total: {
+        type: 'integer',
+        description: '总记录数',
+      },
+      totalPages: {
+        type: 'integer',
+        description: '总页数',
+      },
+    },
+    required: ['page', 'limit', 'total', 'totalPages'],
+  },
   // ==================== 认证相关 ====================
 
   User: {
@@ -287,37 +313,13 @@ export const swaggerSchemas = {
     required: ['id', 'title', 'category', 'type', 'price', 'status', 'images'],
   },
 
-  ProductWithRelations: {
-    allOf: [
-      { $ref: '#/components/schemas/Product' },
-      {
-        type: 'object',
-        properties: {
-          owner: {
-            $ref: '#/components/schemas/User',
-          },
-          community: {
-            type: 'object',
-            nullable: true,
-            properties: {
-              id: { type: 'string' },
-              name: { type: 'string' },
-              location: { type: 'string', nullable: true },
-              address: { type: 'string', nullable: true },
-            },
-          },
-        },
-      },
-    ],
-  },
-
   ProductListResponse: {
     type: 'object',
     properties: {
       products: {
         type: 'array',
         items: {
-          $ref: '#/components/schemas/ProductWithRelations',
+          $ref: '#/components/schemas/Product',
         },
       },
       pagination: {
@@ -331,7 +333,7 @@ export const swaggerSchemas = {
     type: 'object',
     properties: {
       product: {
-        $ref: '#/components/schemas/ProductWithRelations',
+        $ref: '#/components/schemas/Product',
       },
     },
     required: ['product'],
@@ -449,41 +451,13 @@ export const swaggerSchemas = {
     required: ['id', 'type', 'status', 'amount', 'deliveryType'],
   },
 
-  OrderWithRelations: {
-    allOf: [
-      { $ref: '#/components/schemas/Order' },
-      {
-        type: 'object',
-        properties: {
-          product: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              title: { type: 'string' },
-              images: {
-                type: 'array',
-                items: { type: 'string' },
-              },
-            },
-          },
-          buyer: {
-            $ref: '#/components/schemas/User',
-          },
-          seller: {
-            $ref: '#/components/schemas/User',
-          },
-        },
-      },
-    ],
-  },
-
   OrderListResponse: {
     type: 'object',
     properties: {
       orders: {
         type: 'array',
         items: {
-          $ref: '#/components/schemas/OrderWithRelations',
+          $ref: '#/components/schemas/Order',
         },
       },
       pagination: {
@@ -503,7 +477,7 @@ export const swaggerSchemas = {
             type: 'object',
             properties: {
               product: {
-                $ref: '#/components/schemas/ProductWithRelations',
+                $ref: '#/components/schemas/Product',
               },
               buyer: {
                 $ref: '#/components/schemas/User',
@@ -551,51 +525,13 @@ export const swaggerSchemas = {
 
   // ==================== 用户相关 ====================
 
-  UserWithCount: {
-    allOf: [
-      { $ref: '#/components/schemas/User' },
-      {
-        type: 'object',
-        properties: {
-          email: {
-            type: 'string',
-            nullable: true,
-            description: '邮箱',
-          },
-          isActive: {
-            type: 'boolean',
-            description: '是否激活',
-          },
-          communityIds: {
-            type: 'array',
-            items: { type: 'string' },
-            description: '加入的小区ID数组',
-          },
-          createdAt: {
-            type: 'string',
-            format: 'date-time',
-            description: '创建时间',
-          },
-          _count: {
-            type: 'object',
-            properties: {
-              products: { type: 'integer' },
-              ordersAsBuyer: { type: 'integer' },
-              ordersAsSeller: { type: 'integer' },
-            },
-          },
-        },
-      },
-    ],
-  },
-
   UserListResponse: {
     type: 'object',
     properties: {
       users: {
         type: 'array',
         items: {
-          $ref: '#/components/schemas/UserWithCount',
+          $ref: '#/components/schemas/User',
         },
       },
       pagination: {
@@ -610,7 +546,7 @@ export const swaggerSchemas = {
     properties: {
       user: {
         allOf: [
-          { $ref: '#/components/schemas/UserWithCount' },
+          { $ref: '#/components/schemas/User' },
           {
             type: 'object',
             properties: {
@@ -644,7 +580,7 @@ export const swaggerSchemas = {
       orders: {
         type: 'array',
         items: {
-          $ref: '#/components/schemas/OrderWithRelations',
+          $ref: '#/components/schemas/Order',
         },
       },
     },
@@ -757,7 +693,7 @@ export const swaggerSchemas = {
       products: {
         type: 'array',
         items: {
-          $ref: '#/components/schemas/ProductWithRelations',
+          $ref: '#/components/schemas/Product',
         },
       },
       approvals: {
@@ -776,31 +712,6 @@ export const swaggerSchemas = {
       },
     },
     required: ['products', 'approvals', 'complaints'],
-  },
-
-  // ==================== 通用 ====================
-
-  Pagination: {
-    type: 'object',
-    properties: {
-      page: {
-        type: 'integer',
-        description: '当前页码',
-      },
-      limit: {
-        type: 'integer',
-        description: '每页数量',
-      },
-      total: {
-        type: 'integer',
-        description: '总记录数',
-      },
-      totalPages: {
-        type: 'integer',
-        description: '总页数',
-      },
-    },
-    required: ['page', 'limit', 'total', 'totalPages'],
   },
 };
 

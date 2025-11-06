@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useCallback } from 'react';
-import { setMiniprogramTitle } from '@/lib/miniprogram';
+import { setMiniprogramTitle } from '@lago/common';
 
 export function usePageTitle(title: string, dependencies: any[] = []) {
   useEffect(() => {

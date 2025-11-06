@@ -2,15 +2,22 @@
 
 import React from "react";
 import "./globals.css";
-import { AuthProvider } from "@/providers/AuthProvider";
 import {
+  AuthProvider,
   WebSocketProvider,
-  RealTimeNotifications,
-} from "@/providers/WebSocketProvider";
+  ApiProvider,
+  LoadingProvider,
+  MiniprogramProvider,
+} from "@lago/ui";
 import { Toaster } from "react-hot-toast";
-import { ApiProvider } from "@/providers/ApiProvider";
-import { LoadingProvider } from "@/providers/LoadingProvider";
-import { MiniprogramProvider } from "@/providers/MiniprogramProvider";
+import { authOperationLogin, authOperationMe } from "@/lib/apis";
+
+// 定义 authApi 对象
+const authApi = {
+  authMe: authOperationMe,
+  authLogin: authOperationLogin,
+  authLogout: () => Promise.resolve(),
+};
 
 export default function RootLayout({
   children,
@@ -20,8 +27,8 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <head>
-        <title>丁家乐园</title>
-        <meta name="description" content="让每个孩子都能筑起属于自己的梦想" />
+        <title>来购运营系统</title>
+        <meta name="description" content="来购运营管理系统" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
@@ -31,7 +38,7 @@ export default function RootLayout({
         <LoadingProvider>
           <ApiProvider>
             <MiniprogramProvider>
-              <AuthProvider>
+              <AuthProvider authApi={authApi}>
                 <WebSocketProvider>
                   <div className="relative">{children}</div>
                   {/* <RealTimeNotifications /> */}

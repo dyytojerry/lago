@@ -1,32 +1,31 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { operationLogin, saveAuth } from '@/lib/auth';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@lago/ui";
 
 export default function OperationLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
+  const [error, setError] = useState("");
+  const { login } = useAuth();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
-      const response = await operationLogin(username, password);
-      saveAuth(response.token, response.staff);
-      router.push('/admin/dashboard');
+      await login({ username, password });
+      router.push("/admin/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.error || '登录失败，请重试');
+      debugger;
+      setError(err.response?.data?.error || "登录失败，请重试");
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
@@ -37,7 +36,10 @@ export default function OperationLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               用户名/邮箱
             </label>
             <input
@@ -53,7 +55,10 @@ export default function OperationLoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               密码
             </label>
             <input
@@ -78,7 +83,7 @@ export default function OperationLoginPage() {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? '登录中...' : '登录'}
+            {loading ? "登录中..." : "登录"}
           </button>
         </form>
 
@@ -89,4 +94,3 @@ export default function OperationLoginPage() {
     </div>
   );
 }
-

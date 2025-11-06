@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { generateUserToken, generateOperationToken, hashPassword, comparePassword } from '../lib/auth';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 // 小程序端：微信登录
 export async function wechatLogin(req: Request, res: Response) {
@@ -29,7 +30,7 @@ export async function wechatLogin(req: Request, res: Response) {
     }
 
     if (!user.isActive) {
-      return res.status(403).json({ error: '账号已被禁用' });
+      return createErrorResponse(res, '账号已被禁用', 403);
     }
 
     const token = generateUserToken({
@@ -37,7 +38,7 @@ export async function wechatLogin(req: Request, res: Response) {
       role: user.role,
     });
 
-    res.json({
+    return createSuccessResponse(res, {
       token,
       user: {
         id: user.id,
@@ -51,7 +52,7 @@ export async function wechatLogin(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('微信登录失败:', error);
-    res.status(500).json({ error: '登录失败' });
+    return createErrorResponse(res, '登录失败', 500);
   }
 }
 
@@ -65,16 +66,16 @@ export async function phoneLogin(req: Request, res: Response) {
     });
 
     if (!user || !user.password) {
-      return res.status(401).json({ error: '手机号或密码错误' });
+      return createErrorResponse(res, '手机号或密码错误', 401);
     }
 
     if (!user.isActive) {
-      return res.status(403).json({ error: '账号已被禁用' });
+      return createErrorResponse(res, '账号已被禁用', 403);
     }
 
     const isValid = await comparePassword(password, user.password);
     if (!isValid) {
-      return res.status(401).json({ error: '手机号或密码错误' });
+      return createErrorResponse(res, '手机号或密码错误', 401);
     }
 
     const token = generateUserToken({
@@ -82,7 +83,7 @@ export async function phoneLogin(req: Request, res: Response) {
       role: user.role,
     });
 
-    res.json({
+    return createSuccessResponse(res, {
       token,
       user: {
         id: user.id,
@@ -96,7 +97,7 @@ export async function phoneLogin(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('手机号登录失败:', error);
-    res.status(500).json({ error: '登录失败' });
+    return createErrorResponse(res, '登录失败', 500);
   }
 }
 
@@ -111,7 +112,7 @@ export async function phoneRegister(req: Request, res: Response) {
     });
 
     if (existingUser) {
-      return res.status(400).json({ error: '手机号已被注册' });
+      return createErrorResponse(res, '手机号已被注册', 400);
     }
 
     // 加密密码
@@ -131,7 +132,7 @@ export async function phoneRegister(req: Request, res: Response) {
       role: user.role,
     });
 
-    res.status(201).json({
+    return createSuccessResponse(res, {
       token,
       user: {
         id: user.id,
@@ -142,10 +143,10 @@ export async function phoneRegister(req: Request, res: Response) {
         isVerified: user.isVerified,
         creditScore: user.creditScore,
       },
-    });
+    }, 201);
   } catch (error) {
     console.error('注册失败:', error);
-    res.status(500).json({ error: '注册失败' });
+    return createErrorResponse(res, '注册失败', 500);
   }
 }
 
@@ -165,11 +166,11 @@ export async function operationLogin(req: Request, res: Response) {
     });
 
     if (!staff) {
-      return res.status(401).json({ error: '用户名或密码错误' });
+      return createErrorResponse(res, '用户名或密码错误', 401);
     }
 
     if (!staff.isActive) {
-      return res.status(403).json({ error: '账号已被禁用' });
+      return createErrorResponse(res, '账号已被禁用', 403);
     }
 
     const isValid = await comparePassword(password, staff.password);
@@ -184,7 +185,7 @@ export async function operationLogin(req: Request, res: Response) {
           userAgent: req.get('user-agent'),
         },
       });
-      return res.status(401).json({ error: '用户名或密码错误' });
+      return createErrorResponse(res, '用户名或密码错误', 401);
     }
 
     // 更新最后登录信息
@@ -211,7 +212,7 @@ export async function operationLogin(req: Request, res: Response) {
       role: staff.role,
     });
 
-    res.json({
+    return createSuccessResponse(res, {
       token,
       staff: {
         id: staff.id,
@@ -223,7 +224,7 @@ export async function operationLogin(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('运营系统登录失败:', error);
-    res.status(500).json({ error: '登录失败' });
+    return createErrorResponse(res, '登录失败', 500);
   }
 }
 
@@ -231,7 +232,7 @@ export async function operationLogin(req: Request, res: Response) {
 export async function getCurrentUser(req: Request, res: Response) {
   try {
     if (!req.user) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const user = await prisma.user.findUnique({
@@ -250,13 +251,13 @@ export async function getCurrentUser(req: Request, res: Response) {
     });
 
     if (!user) {
-      return res.status(404).json({ error: '用户不存在' });
+      return createErrorResponse(res, '用户不存在', 404);
     }
 
-    res.json({ user });
+    return createSuccessResponse(res, { user });
   } catch (error) {
     console.error('获取用户信息失败:', error);
-    res.status(500).json({ error: '获取用户信息失败' });
+    return createErrorResponse(res, '获取用户信息失败', 500);
   }
 }
 
@@ -264,7 +265,7 @@ export async function getCurrentUser(req: Request, res: Response) {
 export async function getCurrentStaff(req: Request, res: Response) {
   try {
     if (!req.operationStaff) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const staff = await prisma.operationStaff.findUnique({
@@ -281,13 +282,13 @@ export async function getCurrentStaff(req: Request, res: Response) {
     });
 
     if (!staff) {
-      return res.status(404).json({ error: '运营人员不存在' });
+      return createErrorResponse(res, '运营人员不存在', 404);
     }
 
-    res.json({ staff });
+    return createSuccessResponse(res, { staff });
   } catch (error) {
     console.error('获取运营人员信息失败:', error);
-    res.status(500).json({ error: '获取运营人员信息失败' });
+    return createErrorResponse(res, '获取运营人员信息失败', 500);
   }
 }
 

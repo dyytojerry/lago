@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { isInMiniprogram, shareInMiniprogram } from '@/lib/miniprogram';
+import { isInMiniProgram, shareInMiniprogram } from '@lago/common';
 import toast from 'react-hot-toast';
 
 export interface ShareOptions {
@@ -25,7 +25,7 @@ export function useShare() {
       path
     } = options;
 
-    if (isInMiniprogram()) {
+    if (isInMiniProgram()) {
       // 小程序环境：通过postMessage发送分享请求
       shareInMiniprogram({
         title,

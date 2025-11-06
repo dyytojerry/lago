@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import io from "socket.io-client";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "../providers/AuthProvider";
 
 export interface WebSocketMessage {
   type: string;
@@ -517,7 +517,7 @@ export function useWebSocket(options: WebSocketHookOptions = {}): WebSocketHook 
       });
 
       // 连接失败
-      newSocket.on('connect_error', (err) => {
+      newSocket.on('connect_error', (err: Error) => {
         console.error('❌ WebSocket: 连接失败', err);
         setIsConnected(false);
         setIsConnecting(false);
@@ -536,7 +536,7 @@ export function useWebSocket(options: WebSocketHookOptions = {}): WebSocketHook 
       });
 
       // 断开连接
-      newSocket.on('disconnect', (reason) => {
+      newSocket.on('disconnect', (reason: string) => {
         console.log('🔌 WebSocket: 连接断开', reason);
         setIsConnected(false);
         setIsConnecting(false);

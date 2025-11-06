@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 /**
  * 获取用户列表
@@ -58,20 +59,26 @@ export async function getUsers(req: Request, res: Response) {
           isActive: true,
           communityIds: true,
           createdAt: true,
-          _count: {
-            select: {
-              products: true,
-              ordersAsBuyer: true,
-              ordersAsSeller: true,
-            },
-          },
         },
       }),
       prisma.user.count({ where }),
     ]);
 
-    res.json({
+    // 获取统计信息（基于当前查询条件的所有用户，不仅仅是当前页）
+    const userIds = users.map(u => u.id);
+    const _count = userIds.length > 0 ? await Promise.all([
+      prisma.product.count({ where: { ownerId: { in: userIds } } }),
+      prisma.order.count({ where: { buyerId: { in: userIds } } }),
+      prisma.order.count({ where: { sellerId: { in: userIds } } }),
+    ]).then(([products, ordersAsBuyer, ordersAsSeller]) => ({
+      products,
+      ordersAsBuyer,
+      ordersAsSeller,
+    })) : { products: 0, ordersAsBuyer: 0, ordersAsSeller: 0 };
+
+    return createSuccessResponse(res, {
       users,
+      _count,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -81,7 +88,7 @@ export async function getUsers(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取用户列表失败:', error);
-    res.status(500).json({ error: '获取用户列表失败' });
+    return createErrorResponse(res, '获取用户列表失败', 500);
   }
 }
 
@@ -108,18 +115,11 @@ export async function getUser(req: Request, res: Response) {
         wechatOpenid: true,
         createdAt: true,
         updatedAt: true,
-        _count: {
-          select: {
-            products: true,
-            ordersAsBuyer: true,
-            ordersAsSeller: true,
-          },
-        },
       },
     });
 
     if (!user) {
-      return res.status(404).json({ error: '用户不存在' });
+      return createErrorResponse(res, '用户不存在', 404);
     }
 
     // 获取用户商品列表（最近10个）
@@ -158,14 +158,26 @@ export async function getUser(req: Request, res: Response) {
       },
     });
 
-    res.json({
+    // 获取统计信息
+    const _count = await Promise.all([
+      prisma.product.count({ where: { ownerId: id } }),
+      prisma.order.count({ where: { buyerId: id } }),
+      prisma.order.count({ where: { sellerId: id } }),
+    ]).then(([productsCount, ordersAsBuyerCount, ordersAsSellerCount]) => ({
+      products: productsCount,
+      ordersAsBuyer: ordersAsBuyerCount,
+      ordersAsSeller: ordersAsSellerCount,
+    }));
+
+    return createSuccessResponse(res, {
       user,
       products,
       orders,
+      _count,
     });
   } catch (error) {
     console.error('获取用户详情失败:', error);
-    res.status(500).json({ error: '获取用户详情失败' });
+    return createErrorResponse(res, '获取用户详情失败', 500);
   }
 }
 
@@ -179,7 +191,7 @@ export async function updateUserStatus(req: Request, res: Response) {
     const staff = req.operationStaff;
 
     if (!staff) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const updateData: any = {};
@@ -208,10 +220,10 @@ export async function updateUserStatus(req: Request, res: Response) {
       },
     });
 
-    res.json({ success: true, message: '用户状态已更新' });
+    return createSuccessResponse(res, { message: '用户状态已更新' });
   } catch (error) {
     console.error('更新用户状态失败:', error);
-    res.status(500).json({ error: '更新用户状态失败' });
+    return createErrorResponse(res, '更新用户状态失败', 500);
   }
 }
 

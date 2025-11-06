@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 /**
  * 获取订单列表（小程序端）
@@ -16,7 +17,7 @@ export async function getOrdersForApp(req: Request, res: Response) {
 
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const pageNum = parseInt(page as string);
@@ -76,7 +77,7 @@ export async function getOrdersForApp(req: Request, res: Response) {
       prisma.order.count({ where }),
     ]);
 
-    res.json({
+    return createSuccessResponse(res, {
       orders,
       pagination: {
         page: pageNum,
@@ -87,7 +88,7 @@ export async function getOrdersForApp(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取订单列表失败:', error);
-    res.status(500).json({ error: '获取订单列表失败' });
+    return createErrorResponse(res, '获取订单列表失败', 500);
   }
 }
 
@@ -99,7 +100,7 @@ export async function getOrderForApp(req: Request, res: Response) {
     const { id } = req.params;
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const order = await prisma.order.findUnique({
@@ -150,18 +151,18 @@ export async function getOrderForApp(req: Request, res: Response) {
     });
 
     if (!order) {
-      return res.status(404).json({ error: '订单不存在' });
+      return createErrorResponse(res, '订单不存在', 404);
     }
 
     // 检查权限：只有买家或卖家可以查看
     if (order.buyerId !== userId && order.sellerId !== userId) {
-      return res.status(403).json({ error: '无权限查看此订单' });
+      return createErrorResponse(res, '无权限查看此订单', 403);
     }
 
-    res.json({ order });
+    return createSuccessResponse(res, { order });
   } catch (error) {
     console.error('获取订单详情失败:', error);
-    res.status(500).json({ error: '获取订单详情失败' });
+    return createErrorResponse(res, '获取订单详情失败', 500);
   }
 }
 
@@ -172,7 +173,7 @@ export async function createOrder(req: Request, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const {
@@ -191,24 +192,24 @@ export async function createOrder(req: Request, res: Response) {
     });
 
     if (!product) {
-      return res.status(404).json({ error: '商品不存在' });
+      return createErrorResponse(res, '商品不存在', 404);
     }
 
     if (product.status !== 'active') {
-      return res.status(400).json({ error: '商品不可购买' });
+      return createErrorResponse(res, '商品不可购买', 400);
     }
 
     if (product.ownerId === userId) {
-      return res.status(400).json({ error: '不能购买自己的商品' });
+      return createErrorResponse(res, '不能购买自己的商品', 400);
     }
 
     // 检查商品类型是否匹配
     if (type === 'rent' && product.type !== 'rent' && product.type !== 'both') {
-      return res.status(400).json({ error: '该商品不支持租赁' });
+      return createErrorResponse(res, '该商品不支持租赁', 400);
     }
 
     if (type === 'sell' && product.type !== 'sell' && product.type !== 'both') {
-      return res.status(400).json({ error: '该商品不支持购买' });
+      return createErrorResponse(res, '该商品不支持购买', 400);
     }
 
     // 计算订单金额
@@ -285,10 +286,10 @@ export async function createOrder(req: Request, res: Response) {
       });
     }
 
-    res.status(201).json({ order });
+    return createSuccessResponse(res, { order }, 201);
   } catch (error) {
     console.error('创建订单失败:', error);
-    res.status(500).json({ error: '创建订单失败' });
+    return createErrorResponse(res, '创建订单失败', 500);
   }
 }
 
@@ -301,7 +302,7 @@ export async function updateOrderStatusForApp(req: Request, res: Response) {
     const { status } = req.body;
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const order = await prisma.order.findUnique({
@@ -309,12 +310,12 @@ export async function updateOrderStatusForApp(req: Request, res: Response) {
     });
 
     if (!order) {
-      return res.status(404).json({ error: '订单不存在' });
+      return createErrorResponse(res, '订单不存在', 404);
     }
 
     // 检查权限：只有买家或卖家可以更新
     if (order.buyerId !== userId && order.sellerId !== userId) {
-      return res.status(403).json({ error: '无权限更新此订单' });
+      return createErrorResponse(res, '无权限更新此订单', 403);
     }
 
     // 状态流转验证
@@ -328,9 +329,7 @@ export async function updateOrderStatusForApp(req: Request, res: Response) {
     };
 
     if (!validTransitions[order.status]?.includes(status)) {
-      return res.status(400).json({
-        error: `订单状态不能从 ${order.status} 变更为 ${status}`,
-      });
+      return createErrorResponse(res, `订单状态不能从 ${order.status} 变更为 ${status}`, 400);
     }
 
     await prisma.order.update({
@@ -338,10 +337,10 @@ export async function updateOrderStatusForApp(req: Request, res: Response) {
       data: { status },
     });
 
-    res.json({ success: true, message: '订单状态已更新' });
+    return createSuccessResponse(res, { message: '订单状态已更新' });
   } catch (error) {
     console.error('更新订单状态失败:', error);
-    res.status(500).json({ error: '更新订单状态失败' });
+    return createErrorResponse(res, '更新订单状态失败', 500);
   }
 }
 
@@ -353,7 +352,7 @@ export async function cancelOrder(req: Request, res: Response) {
     const { id } = req.params;
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const order = await prisma.order.findUnique({
@@ -361,17 +360,17 @@ export async function cancelOrder(req: Request, res: Response) {
     });
 
     if (!order) {
-      return res.status(404).json({ error: '订单不存在' });
+      return createErrorResponse(res, '订单不存在', 404);
     }
 
     // 检查权限
     if (order.buyerId !== userId && order.sellerId !== userId) {
-      return res.status(403).json({ error: '无权限取消此订单' });
+      return createErrorResponse(res, '无权限取消此订单', 403);
     }
 
     // 只有待支付或已支付的订单可以取消
     if (!['pending', 'paid'].includes(order.status)) {
-      return res.status(400).json({ error: '当前订单状态无法取消' });
+      return createErrorResponse(res, '当前订单状态无法取消', 400);
     }
 
     await prisma.order.update({
@@ -384,10 +383,10 @@ export async function cancelOrder(req: Request, res: Response) {
       // TODO: 实现退款逻辑
     }
 
-    res.json({ success: true, message: '订单已取消' });
+    return createSuccessResponse(res, { message: '订单已取消' });
   } catch (error) {
     console.error('取消订单失败:', error);
-    res.status(500).json({ error: '取消订单失败' });
+    return createErrorResponse(res, '取消订单失败', 500);
   }
 }
 

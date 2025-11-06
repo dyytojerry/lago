@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 /**
  * 获取仪表盘核心指标
@@ -91,7 +92,7 @@ export async function getDashboardStats(req: Request, res: Response) {
       where: { status: 'pending' },
     });
 
-    res.json({
+    return createSuccessResponse(res, {
       gmv: {
         today: Number(todayGMV._sum.amount || 0),
         week: Number(weekGMV._sum.amount || 0),
@@ -121,7 +122,7 @@ export async function getDashboardStats(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取仪表盘统计失败:', error);
-    res.status(500).json({ error: '获取统计信息失败' });
+    return createErrorResponse(res, '获取统计信息失败', 500);
   }
 }
 
@@ -170,13 +171,13 @@ export async function getDashboardTrends(req: Request, res: Response) {
       usersByDate[date] = (usersByDate[date] || 0) + 1;
     });
 
-    res.json({
+    return createSuccessResponse(res, {
       gmv: Object.entries(gmvByDate).map(([date, value]) => ({ date, value })),
       users: Object.entries(usersByDate).map(([date, value]) => ({ date, value })),
     });
   } catch (error) {
     console.error('获取趋势数据失败:', error);
-    res.status(500).json({ error: '获取趋势数据失败' });
+    return createErrorResponse(res, '获取趋势数据失败', 500);
   }
 }
 
@@ -197,14 +198,14 @@ export async function getPendingItems(req: Request, res: Response) {
       },
     });
 
-    res.json({
+    return createSuccessResponse(res, {
       products: pendingProducts,
       approvals: [], // TODO: 实现入驻审核后添加
       complaints: [], // TODO: 实现投诉系统后添加
     });
   } catch (error) {
     console.error('获取待处理事项失败:', error);
-    res.status(500).json({ error: '获取待处理事项失败' });
+    return createErrorResponse(res, '获取待处理事项失败', 500);
   }
 }
 

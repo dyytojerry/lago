@@ -60,6 +60,21 @@ export enum OrderDeliveryType {
   CABINET = 'cabinet',
 }
 
+export class Pagination {
+  @IsNumber()
+  page: number;
+
+  @IsNumber()
+  limit: number;
+
+  @IsNumber()
+  total: number;
+
+  @IsNumber()
+  totalPages: number;
+
+}
+
 export class User {
   @IsString()
   id: string;
@@ -241,10 +256,9 @@ export class Product {
 
 }
 
-
 export class ProductListResponse {
   @IsArray()
-  products: ProductWithRelations[];
+  products: Product[];
 
   @ValidateNested()
   pagination: Pagination;
@@ -253,7 +267,7 @@ export class ProductListResponse {
 
 export class ProductDetailResponse {
   @ValidateNested()
-  product: ProductWithRelations;
+  product: Product;
 
 }
 
@@ -326,10 +340,9 @@ export class Order {
 
 }
 
-
 export class OrderListResponse {
   @IsArray()
-  orders: OrderWithRelations[];
+  orders: Order[];
 
   @ValidateNested()
   pagination: Pagination;
@@ -352,10 +365,9 @@ export class OrderStatusUpdateRequest {
 
 }
 
-
 export class UserListResponse {
   @IsArray()
-  users: UserWithCount[];
+  users: User[];
 
   @ValidateNested()
   pagination: Pagination;
@@ -372,7 +384,7 @@ export class UserDetailResponse {
 
   @IsArray()
   @IsOptional()
-  orders?: OrderWithRelations[];
+  orders?: Order[];
 
 }
 
@@ -416,28 +428,13 @@ export class DashboardTrends {
 
 export class PendingItems {
   @IsArray()
-  products: ProductWithRelations[];
+  products: Product[];
 
   @IsArray()
   approvals: any[];
 
   @IsArray()
   complaints: any[];
-
-}
-
-export class Pagination {
-  @IsNumber()
-  page: number;
-
-  @IsNumber()
-  limit: number;
-
-  @IsNumber()
-  total: number;
-
-  @IsNumber()
-  totalPages: number;
 
 }
 

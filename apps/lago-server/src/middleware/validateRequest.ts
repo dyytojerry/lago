@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as Joi from 'joi';
+import { createErrorResponse } from '../lib/response';
 
 export function validateRequest(schema: Joi.ObjectSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -28,10 +29,7 @@ export function validateRequest(schema: Joi.ObjectSchema) {
     });
     
     if (error) {
-      return res.status(400).json({
-        success: false,
-        error: error.details[0].message
-      });
+      return createErrorResponse(res, error.details[0].message, 400);
     }
     
     // 将验证后的值赋回请求对象

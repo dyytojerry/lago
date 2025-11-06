@@ -16,6 +16,7 @@ import { corsMiddleware, corsPreflightMiddleware, corsDebugMiddleware } from './
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import { authUser, authOperation } from './middleware/auth';
+import { createSuccessResponse } from './lib/response';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -100,7 +101,7 @@ setupSwagger(app);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
-  res.status(200).json({
+  return createSuccessResponse(res, {
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()

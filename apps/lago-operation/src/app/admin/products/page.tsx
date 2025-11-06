@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { isAuthenticated, hasPermission } from '@/lib/auth';
-import apiClient from '@/lib/api';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth, NavigationLink } from "@lago/ui";
+import { adminProducts } from "@/lib/apis";
+import { adminProductsApprove } from "@/lib/apis";
 
 interface Product {
   id: string;
@@ -35,14 +36,14 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
-    status: '',
-    category: '',
-    search: '',
+    status: "",
+    category: "",
+    search: "",
   });
-
+  const { isLoggedIn } = useAuth();
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/admin/login');
+    if (!isLoggedIn) {
+      router.push("/login");
       return;
     }
 
@@ -54,71 +55,77 @@ export default function ProductsPage() {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '20',
+        limit: "20",
         ...(filters.status && { status: filters.status }),
         ...(filters.category && { category: filters.category }),
         ...(filters.search && { search: filters.search }),
       });
 
-      const response = await apiClient.get(`/admin/products?${params}`);
+      const response = await adminProducts({
+        page: page.toString(),
+        limit: "20",
+        ...(filters.status && { status: filters.status }),
+        ...(filters.category && { category: filters.category }),
+        ...(filters.search && { search: filters.search }),
+      } as any);
       setProducts(response.data.products);
       setTotalPages(response.data.pagination.totalPages);
     } catch (error) {
-      console.error('加载商品列表失败:', error);
+      console.error("加载商品列表失败:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async (id: string, action: 'approve' | 'reject') => {
-    if (!confirm(`确定要${action === 'approve' ? '通过' : '拒绝'}这个商品吗？`)) {
+  const handleApprove = async (id: string, action: "approve" | "reject") => {
+    if (
+      !confirm(`确定要${action === "approve" ? "通过" : "拒绝"}这个商品吗？`)
+    ) {
       return;
     }
 
     try {
-      await apiClient.post(`/admin/products/${id}/approve`, {
-        action,
-        reason: action === 'reject' ? '不符合平台规范' : undefined,
-      });
-      alert(`商品已${action === 'approve' ? '通过' : '拒绝'}`);
+      await adminProductsApprove(
+        { id },
+        { action, reason: action === "reject" ? "不符合平台规范" : undefined }
+      );
+      alert(`商品已${action === "approve" ? "通过" : "拒绝"}`);
       loadProducts();
     } catch (error: any) {
-      alert(error.response?.data?.error || '操作失败');
+      alert(error.response?.data?.error || "操作失败");
     }
   };
 
-  if (!isAuthenticated()) {
+  if (!isLoggedIn) {
     return null;
   }
 
   const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    active: 'bg-green-100 text-green-800',
-    sold: 'bg-blue-100 text-blue-800',
-    rented: 'bg-purple-100 text-purple-800',
-    offline: 'bg-gray-100 text-gray-800',
+    pending: "bg-yellow-100 text-yellow-800",
+    active: "bg-green-100 text-green-800",
+    sold: "bg-blue-100 text-blue-800",
+    rented: "bg-purple-100 text-purple-800",
+    offline: "bg-gray-100 text-gray-800",
   };
 
   const statusNames: Record<string, string> = {
-    pending: '待审核',
-    active: '已上架',
-    sold: '已售出',
-    rented: '已租出',
-    offline: '已下架',
+    pending: "待审核",
+    active: "已上架",
+    sold: "已售出",
+    rented: "已租出",
+    offline: "已下架",
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">商品管理</h1>
-        {hasPermission(['super_admin', 'audit_staff']) && (
-          <Link
-            href="/admin/products/approve"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            批量审核
-          </Link>
-        )}
+        <NavigationLink
+          href="/admin/products/approve"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          批量审核
+        </NavigationLink>
       </div>
 
       {/* 筛选器 */}
@@ -182,7 +189,7 @@ export default function ProductsPage() {
           <div className="flex items-end">
             <button
               onClick={() => {
-                setFilters({ status: '', category: '', search: '' });
+                setFilters({ status: "", category: "", search: "" });
                 setPage(1);
               }}
               className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
@@ -244,19 +251,25 @@ export default function ProductsPage() {
                             {product.title}
                           </Link>
                           <p className="text-sm text-gray-500 line-clamp-1">
-                            {product.description || '无描述'}
+                            {product.description || "无描述"}
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div>
-                        <div className="font-medium">{product.owner.nickname || '未设置'}</div>
-                        <div className="text-gray-500">{product.owner.phone || '--'}</div>
+                        <div className="font-medium">
+                          {product.owner.nickname || "未设置"}
+                        </div>
+                        <div className="text-gray-500">
+                          {product.owner.phone || "--"}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className="font-medium">¥{Number(product.price).toFixed(2)}</span>
+                      <span className="font-medium">
+                        ¥{Number(product.price).toFixed(2)}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <span
@@ -268,7 +281,7 @@ export default function ProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(product.createdAt).toLocaleDateString('zh-CN')}
+                      {new Date(product.createdAt).toLocaleDateString("zh-CN")}
                     </td>
                     <td className="px-6 py-4 text-right text-sm">
                       <div className="flex items-center justify-end gap-2">
@@ -278,17 +291,21 @@ export default function ProductsPage() {
                         >
                           详情
                         </Link>
-                        {hasPermission(['super_admin', 'audit_staff']) &&
-                          product.status === 'pending' && (
+                        {hasPermission(["super_admin", "audit_staff"]) &&
+                          product.status === "pending" && (
                             <>
                               <button
-                                onClick={() => handleApprove(product.id, 'approve')}
+                                onClick={() =>
+                                  handleApprove(product.id, "approve")
+                                }
                                 className="text-green-600 hover:text-green-800"
                               >
                                 通过
                               </button>
                               <button
-                                onClick={() => handleApprove(product.id, 'reject')}
+                                onClick={() =>
+                                  handleApprove(product.id, "reject")
+                                }
                                 className="text-red-600 hover:text-red-800"
                               >
                                 拒绝
@@ -330,4 +347,3 @@ export default function ProductsPage() {
     </div>
   );
 }
-

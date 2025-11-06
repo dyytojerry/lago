@@ -1,11 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { isAuthenticated } from '@/lib/auth';
-import apiClient from '@/lib/api';
-
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@lago/ui";
+import { adminOrders } from "@/lib/apis";
 interface Order {
   id: string;
   type: string;
@@ -37,14 +36,14 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
-    status: '',
-    type: '',
-    search: '',
+    status: "",
+    type: "",
+    search: "",
   });
-
+  const { isLoggedIn } = useAuth();
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/admin/login');
+    if (!isLoggedIn) {
+      router.push("/login");
       return;
     }
 
@@ -56,47 +55,53 @@ export default function OrdersPage() {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '20',
+        limit: "20",
         ...(filters.status && { status: filters.status }),
         ...(filters.type && { type: filters.type }),
         ...(filters.search && { search: filters.search }),
       });
 
-      const response = await apiClient.get(`/admin/orders?${params}`);
+      const response = await adminOrders({
+        page: page.toString(),
+        limit: "20",
+        ...(filters.status && { status: filters.status }),
+        ...(filters.type && { type: filters.type }),
+        ...(filters.search && { search: filters.search }),
+      } as any);
       setOrders(response.data.orders);
       setTotalPages(response.data.pagination.totalPages);
     } catch (error) {
-      console.error('加载订单列表失败:', error);
+      console.error("加载订单列表失败:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isAuthenticated()) {
+  if (!isLoggedIn) {
     return null;
   }
 
   const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    paid: 'bg-blue-100 text-blue-800',
-    confirmed: 'bg-purple-100 text-purple-800',
-    completed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-gray-100 text-gray-800',
-    refunded: 'bg-red-100 text-red-800',
+    pending: "bg-yellow-100 text-yellow-800",
+    paid: "bg-blue-100 text-blue-800",
+    confirmed: "bg-purple-100 text-purple-800",
+    completed: "bg-green-100 text-green-800",
+    cancelled: "bg-gray-100 text-gray-800",
+    refunded: "bg-red-100 text-red-800",
   };
 
   const statusNames: Record<string, string> = {
-    pending: '待支付',
-    paid: '已支付',
-    confirmed: '已确认',
-    completed: '已完成',
-    cancelled: '已取消',
-    refunded: '已退款',
+    pending: "待支付",
+    paid: "已支付",
+    confirmed: "已确认",
+    completed: "已完成",
+    cancelled: "已取消",
+    refunded: "已退款",
   };
 
   const typeNames: Record<string, string> = {
-    rent: '租赁',
-    sell: '出售',
+    rent: "租赁",
+    sell: "出售",
   };
 
   return (
@@ -165,7 +170,7 @@ export default function OrdersPage() {
           <div className="flex items-end">
             <button
               onClick={() => {
-                setFilters({ status: '', type: '', search: '' });
+                setFilters({ status: "", type: "", search: "" });
                 setPage(1);
               }}
               className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
@@ -218,13 +223,14 @@ export default function OrdersPage() {
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {order.product.images && order.product.images.length > 0 && (
-                          <img
-                            src={order.product.images[0]}
-                            alt={order.product.title}
-                            className="w-12 h-12 object-cover rounded"
-                          />
-                        )}
+                        {order.product.images &&
+                          order.product.images.length > 0 && (
+                            <img
+                              src={order.product.images[0]}
+                              alt={order.product.title}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          )}
                         <div>
                           <Link
                             href={`/admin/orders/${order.id}`}
@@ -232,27 +238,41 @@ export default function OrdersPage() {
                           >
                             {order.product.title}
                           </Link>
-                          <p className="text-sm text-gray-500">订单ID: {order.id.slice(0, 8)}...</p>
+                          <p className="text-sm text-gray-500">
+                            订单ID: {order.id.slice(0, 8)}...
+                          </p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div>
-                        <div className="font-medium">{order.buyer.nickname || '未设置'}</div>
-                        <div className="text-gray-500">{order.buyer.phone || '--'}</div>
+                        <div className="font-medium">
+                          {order.buyer.nickname || "未设置"}
+                        </div>
+                        <div className="text-gray-500">
+                          {order.buyer.phone || "--"}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div>
-                        <div className="font-medium">{order.seller.nickname || '未设置'}</div>
-                        <div className="text-gray-500">{order.seller.phone || '--'}</div>
+                        <div className="font-medium">
+                          {order.seller.nickname || "未设置"}
+                        </div>
+                        <div className="text-gray-500">
+                          {order.seller.phone || "--"}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div>
-                        <div className="font-medium">¥{Number(order.amount).toFixed(2)}</div>
+                        <div className="font-medium">
+                          ¥{Number(order.amount).toFixed(2)}
+                        </div>
                         {order.deposit && (
-                          <div className="text-gray-500">押金: ¥{Number(order.deposit).toFixed(2)}</div>
+                          <div className="text-gray-500">
+                            押金: ¥{Number(order.deposit).toFixed(2)}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -271,7 +291,7 @@ export default function OrdersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(order.createdAt).toLocaleDateString('zh-CN')}
+                      {new Date(order.createdAt).toLocaleDateString("zh-CN")}
                     </td>
                     <td className="px-6 py-4 text-right text-sm">
                       <Link
@@ -314,4 +334,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-

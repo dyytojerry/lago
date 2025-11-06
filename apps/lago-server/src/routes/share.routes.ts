@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 const router = Router();
 
@@ -120,23 +121,17 @@ router.post('/', async (req: Request, res: Response) => {
     // 根据分享类型调整内容
     if (type === 'timeline') {
       // 朋友圈分享只需要标题和图片
-      return res.json({
+      return createSuccessResponse(res, {
         title: shareData.title,
         imageUrl: shareData.imageUrl
       });
     }
 
     // 好友分享返回完整数据
-    return res.json(shareData);
+    return createSuccessResponse(res, shareData);
   } catch (error) {
     console.error('获取分享数据失败:', error);
-    return res.status(500).json({
-      error: '获取分享数据失败',
-      title: '来购 - 社区化二手与租赁平台',
-      desc: '发现身边的优质商品，轻松租售',
-      path: '/pages/webview/webview',
-      imageUrl: '/images/share-logo.png'
-    });
+    return createErrorResponse(res, '获取分享数据失败', 500);
   }
 });
 

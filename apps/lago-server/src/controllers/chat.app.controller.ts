@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 /**
  * 获取聊天室列表
@@ -8,7 +9,7 @@ export async function getChatRooms(req: Request, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     const rooms = await prisma.chatRoom.findMany({
@@ -62,10 +63,10 @@ export async function getChatRooms(req: Request, res: Response) {
       },
     });
 
-    res.json({ rooms });
+    return createSuccessResponse(res, { rooms });
   } catch (error) {
     console.error('获取聊天室列表失败:', error);
-    res.status(500).json({ error: '获取聊天室列表失败' });
+    return createErrorResponse(res, '获取聊天室列表失败', 500);
   }
 }
 
@@ -77,7 +78,7 @@ export async function getChatRoom(req: Request, res: Response) {
     const { id } = req.params;
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     // 检查用户是否是聊天室成员
@@ -91,7 +92,7 @@ export async function getChatRoom(req: Request, res: Response) {
     });
 
     if (!member) {
-      return res.status(403).json({ error: '无权限访问此聊天室' });
+      return createErrorResponse(res, '无权限访问此聊天室', 403);
     }
 
     const room = await prisma.chatRoom.findUnique({
@@ -126,13 +127,13 @@ export async function getChatRoom(req: Request, res: Response) {
     });
 
     if (!room) {
-      return res.status(404).json({ error: '聊天室不存在' });
+      return createErrorResponse(res, '聊天室不存在', 404);
     }
 
-    res.json({ room });
+    return createSuccessResponse(res, { room });
   } catch (error) {
     console.error('获取聊天室详情失败:', error);
-    res.status(500).json({ error: '获取聊天室详情失败' });
+    return createErrorResponse(res, '获取聊天室详情失败', 500);
   }
 }
 
@@ -144,7 +145,7 @@ export async function createChatRoom(req: Request, res: Response) {
     const { productId, otherUserId } = req.body;
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     // 检查是否已存在聊天室
@@ -164,7 +165,7 @@ export async function createChatRoom(req: Request, res: Response) {
       });
 
       if (existingRoom && existingRoom.members.length === 2) {
-        return res.json({ room: existingRoom });
+        return createSuccessResponse(res, { room: existingRoom });
       }
     } else {
       // 检查是否已存在私聊
@@ -184,7 +185,7 @@ export async function createChatRoom(req: Request, res: Response) {
       });
 
       if (existingRoom && existingRoom.members.length === 2) {
-        return res.json({ room: existingRoom });
+        return createSuccessResponse(res, { room: existingRoom });
       }
     }
 
@@ -229,10 +230,10 @@ export async function createChatRoom(req: Request, res: Response) {
       },
     });
 
-    res.status(201).json({ room });
+    return createSuccessResponse(res, { room }, 201);
   } catch (error) {
     console.error('创建聊天室失败:', error);
-    res.status(500).json({ error: '创建聊天室失败' });
+    return createErrorResponse(res, '创建聊天室失败', 500);
   }
 }
 
@@ -249,7 +250,7 @@ export async function getMessages(req: Request, res: Response) {
 
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     // 检查用户是否是聊天室成员
@@ -263,7 +264,7 @@ export async function getMessages(req: Request, res: Response) {
     });
 
     if (!member) {
-      return res.status(403).json({ error: '无权限访问此聊天室' });
+      return createErrorResponse(res, '无权限访问此聊天室', 403);
     }
 
     const pageNum = parseInt(page as string);
@@ -302,7 +303,7 @@ export async function getMessages(req: Request, res: Response) {
       },
     });
 
-    res.json({
+    return createSuccessResponse(res, {
       messages: messages.reverse(), // 反转顺序，最新的在最后
       pagination: {
         page: pageNum,
@@ -313,7 +314,7 @@ export async function getMessages(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('获取消息列表失败:', error);
-    res.status(500).json({ error: '获取消息列表失败' });
+    return createErrorResponse(res, '获取消息列表失败', 500);
   }
 }
 
@@ -332,7 +333,7 @@ export async function sendMessage(req: Request, res: Response) {
 
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: '未认证' });
+      return createErrorResponse(res, '未认证', 401);
     }
 
     // 检查用户是否是聊天室成员
@@ -348,12 +349,12 @@ export async function sendMessage(req: Request, res: Response) {
     });
 
     if (!room) {
-      return res.status(404).json({ error: '聊天室不存在' });
+      return createErrorResponse(res, '聊天室不存在', 404);
     }
 
     const member = room.members.find(m => m.userId === userId);
     if (!member) {
-      return res.status(403).json({ error: '无权限在此聊天室发送消息' });
+      return createErrorResponse(res, '无权限在此聊天室发送消息', 403);
     }
 
     // 获取接收者ID
@@ -389,10 +390,10 @@ export async function sendMessage(req: Request, res: Response) {
 
     // TODO: 发送WebSocket通知给接收者
 
-    res.status(201).json({ message });
+    return createSuccessResponse(res, { message }, 201);
   } catch (error) {
     console.error('发送消息失败:', error);
-    res.status(500).json({ error: '发送消息失败' });
+    return createErrorResponse(res, '发送消息失败', 500);
   }
 }
 

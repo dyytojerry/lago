@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { isAuthenticated } from '@/lib/auth';
-import apiClient from '@/lib/api';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@lago/ui";
+import { adminUsers, adminUsersStatu } from "@/lib/apis";
 
 interface User {
   id: string;
@@ -31,14 +31,14 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
-    role: '',
-    status: '',
-    search: '',
+    role: "",
+    status: "",
+    search: "",
   });
-
+  const { isLoggedIn } = useAuth();
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/admin/login');
+    if (!isLoggedIn) {
+      router.push("/login");
       return;
     }
 
@@ -50,45 +50,51 @@ export default function UsersPage() {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '20',
+        limit: "20",
         ...(filters.role && { role: filters.role }),
         ...(filters.status && { status: filters.status }),
         ...(filters.search && { search: filters.search }),
       });
 
-      const response = await apiClient.get(`/admin/users?${params}`);
+      const response = await adminUsers({
+        page: page.toString(),
+        limit: "20",
+        ...(filters.role && { role: filters.role }),
+        ...(filters.status && { status: filters.status }),
+        ...(filters.search && { search: filters.search }),
+      } as any);
       setUsers(response.data.users);
       setTotalPages(response.data.pagination.totalPages);
     } catch (error) {
-      console.error('加载用户列表失败:', error);
+      console.error("加载用户列表失败:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleUpdateStatus = async (id: string, isActive: boolean) => {
-    if (!confirm(`确定要${isActive ? '激活' : '冻结'}这个用户吗？`)) {
+    if (!confirm(`确定要${isActive ? "激活" : "冻结"}这个用户吗？`)) {
       return;
     }
 
     try {
-      await apiClient.put(`/admin/users/${id}/status`, { isActive });
-      alert(`用户已${isActive ? '激活' : '冻结'}`);
+      await adminUsersStatu({ id }, { isActive });
+      alert(`用户已${isActive ? "激活" : "冻结"}`);
       loadUsers();
     } catch (error: any) {
-      alert(error.response?.data?.error || '操作失败');
+      alert(error.response?.data?.error || "操作失败");
     }
   };
 
-  if (!isAuthenticated()) {
+  if (!isLoggedIn) {
     return null;
   }
 
   const roleNames: Record<string, string> = {
-    user: '用户',
-    merchant: '商家',
-    property: '物业',
-    admin: '管理员',
+    user: "用户",
+    merchant: "商家",
+    property: "物业",
+    admin: "管理员",
   };
 
   return (
@@ -155,7 +161,7 @@ export default function UsersPage() {
           <div className="flex items-end">
             <button
               onClick={() => {
-                setFilters({ role: '', status: '', search: '' });
+                setFilters({ role: "", status: "", search: "" });
                 setPage(1);
               }}
               className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
@@ -208,7 +214,7 @@ export default function UsersPage() {
                         {user.avatarUrl ? (
                           <img
                             src={user.avatarUrl}
-                            alt={user.nickname || '用户'}
+                            alt={user.nickname || "用户"}
                             className="w-10 h-10 rounded-full"
                           />
                         ) : (
@@ -221,7 +227,7 @@ export default function UsersPage() {
                             href={`/admin/users/${user.id}`}
                             className="font-medium text-gray-900 hover:text-blue-600"
                           >
-                            {user.nickname || '未设置昵称'}
+                            {user.nickname || "未设置昵称"}
                           </Link>
                           <p className="text-sm text-gray-500">{user.id}</p>
                         </div>
@@ -229,8 +235,10 @@ export default function UsersPage() {
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div>
-                        <div>{user.phone || '--'}</div>
-                        <div className="text-gray-500">{user.email || '--'}</div>
+                        <div>{user.phone || "--"}</div>
+                        <div className="text-gray-500">
+                          {user.email || "--"}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
@@ -241,22 +249,27 @@ export default function UsersPage() {
                     <td className="px-6 py-4 text-sm">
                       <span className="font-medium">{user.creditScore}</span>
                       {user.isVerified && (
-                        <span className="ml-2 text-xs text-green-600">✓ 已认证</span>
+                        <span className="ml-2 text-xs text-green-600">
+                          ✓ 已认证
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       <div>商品: {user._count.products}</div>
-                      <div>买: {user._count.ordersAsBuyer} | 卖: {user._count.ordersAsSeller}</div>
+                      <div>
+                        买: {user._count.ordersAsBuyer} | 卖:{" "}
+                        {user._count.ordersAsSeller}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded-full ${
                           user.isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {user.isActive ? '正常' : '已冻结'}
+                        {user.isActive ? "正常" : "已冻结"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right text-sm">
@@ -268,14 +281,16 @@ export default function UsersPage() {
                           详情
                         </Link>
                         <button
-                          onClick={() => handleUpdateStatus(user.id, !user.isActive)}
+                          onClick={() =>
+                            handleUpdateStatus(user.id, !user.isActive)
+                          }
                           className={`${
                             user.isActive
-                              ? 'text-red-600 hover:text-red-800'
-                              : 'text-green-600 hover:text-green-800'
+                              ? "text-red-600 hover:text-red-800"
+                              : "text-green-600 hover:text-green-800"
                           }`}
                         >
-                          {user.isActive ? '冻结' : '激活'}
+                          {user.isActive ? "冻结" : "激活"}
                         </button>
                       </div>
                     </td>
@@ -312,4 +327,3 @@ export default function UsersPage() {
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-import { apiRequest } from '@/lib/api-request';
+import { apiRequest } from '@lago/common';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 export type TTSProvider = 'qwen' | 'web-speech' | 'none';

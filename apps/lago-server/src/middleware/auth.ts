@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma';
 import { verifyToken, isUserToken, isOperationToken } from '../lib/auth';
+import { createErrorResponse } from '../lib/response';
 
 // 扩展Express Request类型
 declare global {
@@ -28,13 +29,13 @@ export async function authUser(req: Request, res: Response, next: NextFunction) 
     const token = req.headers.authorization?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({ error: '未提供认证令牌' });
+      return createErrorResponse(res, '未提供认证令牌', 401);
     }
 
     const payload = verifyToken(token);
     
     if (!payload || !isUserToken(payload)) {
-      return res.status(401).json({ error: '无效的认证令牌' });
+      return createErrorResponse(res, '无效的认证令牌', 401);
     }
 
     // 验证用户是否存在且激活
@@ -44,7 +45,7 @@ export async function authUser(req: Request, res: Response, next: NextFunction) 
     });
 
     if (!user || !user.isActive) {
-      return res.status(401).json({ error: '用户不存在或已被禁用' });
+      return createErrorResponse(res, '用户不存在或已被禁用', 401);
     }
 
     req.user = {
@@ -56,7 +57,7 @@ export async function authUser(req: Request, res: Response, next: NextFunction) 
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return res.status(401).json({ error: '认证失败' });
+    return createErrorResponse(res, '认证失败', 401);
   }
 }
 
@@ -68,13 +69,13 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
     const token = req.headers.authorization?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({ error: '未提供认证令牌' });
+      return createErrorResponse(res, '未提供认证令牌', 401);
     }
 
     const payload = verifyToken(token);
     
     if (!payload || !isOperationToken(payload)) {
-      return res.status(401).json({ error: '无效的认证令牌' });
+      return createErrorResponse(res, '无效的认证令牌', 401);
     }
 
     // 验证运营人员是否存在且激活
@@ -84,7 +85,7 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
     });
 
     if (!staff || !staff.isActive) {
-      return res.status(401).json({ error: '运营人员不存在或已被禁用' });
+      return createErrorResponse(res, '运营人员不存在或已被禁用', 401);
     }
 
     req.operationStaff = {
@@ -96,7 +97,7 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return res.status(401).json({ error: '认证失败' });
+    return createErrorResponse(res, '认证失败', 401);
   }
 }
 
@@ -108,7 +109,7 @@ export function requireRole(...allowedRoles: string[]) {
     const role = req.user?.role || req.operationStaff?.role;
     
     if (!role || !allowedRoles.includes(role)) {
-      return res.status(403).json({ error: '权限不足' });
+      return createErrorResponse(res, '权限不足', 403);
     }
     
     next();

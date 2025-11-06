@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
-import apiClient from '@/lib/api';
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useAuth, NavigationLink } from "@lago/ui";
+import { adminOrderDetail, adminOrdersStatu } from "@/lib/apis";
 
 interface OrderDetail {
   id: string;
@@ -56,13 +56,13 @@ export default function OrderDetailPage() {
   const orderId = params.id as string;
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState('');
-  const [remark, setRemark] = useState('');
+  const [status, setStatus] = useState("");
+  const [remark, setRemark] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-
+  const { isLoggedIn } = useAuth();
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/admin/login');
+    if (!isLoggedIn) {
+      router.push("/login");
       return;
     }
 
@@ -72,15 +72,15 @@ export default function OrderDetailPage() {
   const loadOrder = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/admin/orders/${orderId}`);
+      const response = await adminOrderDetail({ id: orderId });
       setOrder(response.data.order);
       if (response.data.order) {
         setStatus(response.data.order.status);
-        setRemark(response.data.order.remark || '');
+        setRemark(response.data.order.remark || "");
       }
     } catch (error) {
-      console.error('加载订单详情失败:', error);
-      alert('加载订单详情失败');
+      console.error("加载订单详情失败:", error);
+      alert("加载订单详情失败");
     } finally {
       setLoading(false);
     }
@@ -93,20 +93,20 @@ export default function OrderDetailPage() {
 
     try {
       setIsUpdating(true);
-      await apiClient.put(`/admin/orders/${orderId}/status`, {
-        status,
-        remark: remark || undefined,
-      });
-      alert('订单状态已更新');
+      await adminOrdersStatu(
+        { id: orderId },
+        { status, remark: remark || undefined }
+      );
+      alert("订单状态已更新");
       loadOrder();
     } catch (error: any) {
-      alert(error.response?.data?.error || '操作失败');
+      alert(error.response?.data?.error || "操作失败");
     } finally {
       setIsUpdating(false);
     }
   };
 
-  if (!isAuthenticated() || loading) {
+  if (!isLoggedIn || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">加载中...</div>
@@ -115,38 +115,36 @@ export default function OrderDetailPage() {
   }
 
   if (!order) {
-    return (
-      <div className="text-center py-12 text-gray-500">订单不存在</div>
-    );
+    return <div className="text-center py-12 text-gray-500">订单不存在</div>;
   }
 
   const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    paid: 'bg-blue-100 text-blue-800',
-    confirmed: 'bg-purple-100 text-purple-800',
-    completed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-gray-100 text-gray-800',
-    refunded: 'bg-red-100 text-red-800',
+    pending: "bg-yellow-100 text-yellow-800",
+    paid: "bg-blue-100 text-blue-800",
+    confirmed: "bg-purple-100 text-purple-800",
+    completed: "bg-green-100 text-green-800",
+    cancelled: "bg-gray-100 text-gray-800",
+    refunded: "bg-red-100 text-red-800",
   };
 
   const statusNames: Record<string, string> = {
-    pending: '待支付',
-    paid: '已支付',
-    confirmed: '已确认',
-    completed: '已完成',
-    cancelled: '已取消',
-    refunded: '已退款',
+    pending: "待支付",
+    paid: "已支付",
+    confirmed: "已确认",
+    completed: "已完成",
+    cancelled: "已取消",
+    refunded: "已退款",
   };
 
   const typeNames: Record<string, string> = {
-    rent: '租赁',
-    sell: '出售',
+    rent: "租赁",
+    sell: "出售",
   };
 
   const deliveryTypeNames: Record<string, string> = {
-    self_pickup: '自提',
-    delivery: '配送',
-    cabinet: '循环柜',
+    self_pickup: "自提",
+    delivery: "配送",
+    cabinet: "循环柜",
   };
 
   return (
@@ -183,7 +181,9 @@ export default function OrderDetailPage() {
                 </div>
                 <div>
                   <span className="text-gray-600 text-sm">订单类型:</span>
-                  <div className="font-medium">{typeNames[order.type] || order.type}</div>
+                  <div className="font-medium">
+                    {typeNames[order.type] || order.type}
+                  </div>
                 </div>
                 <div>
                   <span className="text-gray-600 text-sm">订单金额:</span>
@@ -194,18 +194,23 @@ export default function OrderDetailPage() {
                 {order.deposit && (
                   <div>
                     <span className="text-gray-600 text-sm">押金:</span>
-                    <div className="font-medium">¥{Number(order.deposit).toFixed(2)}</div>
+                    <div className="font-medium">
+                      ¥{Number(order.deposit).toFixed(2)}
+                    </div>
                   </div>
                 )}
                 <div>
                   <span className="text-gray-600 text-sm">配送方式:</span>
                   <div className="font-medium">
-                    {deliveryTypeNames[order.deliveryType] || order.deliveryType}
+                    {deliveryTypeNames[order.deliveryType] ||
+                      order.deliveryType}
                   </div>
                 </div>
                 <div>
                   <span className="text-gray-600 text-sm">创建时间:</span>
-                  <div className="text-sm">{new Date(order.createdAt).toLocaleString('zh-CN')}</div>
+                  <div className="text-sm">
+                    {new Date(order.createdAt).toLocaleString("zh-CN")}
+                  </div>
                 </div>
               </div>
 
@@ -213,8 +218,10 @@ export default function OrderDetailPage() {
                 <div>
                   <span className="text-gray-600 text-sm">租赁期间:</span>
                   <div>
-                    {new Date(order.startDate).toLocaleDateString('zh-CN')} -{' '}
-                    {order.endDate ? new Date(order.endDate).toLocaleDateString('zh-CN') : '未设置'}
+                    {new Date(order.startDate).toLocaleDateString("zh-CN")} -{" "}
+                    {order.endDate
+                      ? new Date(order.endDate).toLocaleDateString("zh-CN")
+                      : "未设置"}
                   </div>
                 </div>
               )}
@@ -247,12 +254,12 @@ export default function OrderDetailPage() {
                 />
               )}
               <div className="flex-1">
-                <Link
+                <NavigationLink
                   href={`/admin/products/${order.product.id}`}
                   className="text-lg font-medium text-blue-600 hover:text-blue-800"
                 >
                   {order.product.title}
-                </Link>
+                </NavigationLink>
                 {order.product.description && (
                   <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                     {order.product.description}
@@ -272,16 +279,18 @@ export default function OrderDetailPage() {
               <div className="space-y-2">
                 <div>
                   <span className="text-gray-600 text-sm">押金金额:</span>
-                  <div className="font-medium">¥{Number(order.depositRecord.amount).toFixed(2)}</div>
+                  <div className="font-medium">
+                    ¥{Number(order.depositRecord.amount).toFixed(2)}
+                  </div>
                 </div>
                 <div>
                   <span className="text-gray-600 text-sm">退款状态:</span>
                   <div>
-                    {order.depositRecord.refundStatus === 'refunded' ? (
+                    {order.depositRecord.refundStatus === "refunded" ? (
                       <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
                         已退款
                       </span>
-                    ) : order.depositRecord.refundStatus === 'forfeited' ? (
+                    ) : order.depositRecord.refundStatus === "forfeited" ? (
                       <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
                         已没收
                       </span>
@@ -296,7 +305,9 @@ export default function OrderDetailPage() {
                   <div>
                     <span className="text-gray-600 text-sm">退款时间:</span>
                     <div className="text-sm">
-                      {new Date(order.depositRecord.refundedAt).toLocaleString('zh-CN')}
+                      {new Date(order.depositRecord.refundedAt).toLocaleString(
+                        "zh-CN"
+                      )}
                     </div>
                   </div>
                 )}
@@ -313,22 +324,24 @@ export default function OrderDetailPage() {
             <div className="space-y-3">
               <div>
                 <span className="text-gray-600 text-sm">昵称:</span>
-                <div className="font-medium">{order.buyer.nickname || '未设置'}</div>
+                <div className="font-medium">
+                  {order.buyer.nickname || "未设置"}
+                </div>
               </div>
               <div>
                 <span className="text-gray-600 text-sm">手机号:</span>
-                <div className="font-medium">{order.buyer.phone || '--'}</div>
+                <div className="font-medium">{order.buyer.phone || "--"}</div>
               </div>
               <div>
                 <span className="text-gray-600 text-sm">邮箱:</span>
-                <div className="font-medium">{order.buyer.email || '--'}</div>
+                <div className="font-medium">{order.buyer.email || "--"}</div>
               </div>
-              <Link
+              <NavigationLink
                 href={`/admin/users/${order.buyer.id}`}
                 className="block text-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
               >
                 查看买家详情
-              </Link>
+              </NavigationLink>
             </div>
           </div>
 
@@ -338,22 +351,24 @@ export default function OrderDetailPage() {
             <div className="space-y-3">
               <div>
                 <span className="text-gray-600 text-sm">昵称:</span>
-                <div className="font-medium">{order.seller.nickname || '未设置'}</div>
+                <div className="font-medium">
+                  {order.seller.nickname || "未设置"}
+                </div>
               </div>
               <div>
                 <span className="text-gray-600 text-sm">手机号:</span>
-                <div className="font-medium">{order.seller.phone || '--'}</div>
+                <div className="font-medium">{order.seller.phone || "--"}</div>
               </div>
               <div>
                 <span className="text-gray-600 text-sm">邮箱:</span>
-                <div className="font-medium">{order.seller.email || '--'}</div>
+                <div className="font-medium">{order.seller.email || "--"}</div>
               </div>
-              <Link
+              <NavigationLink
                 href={`/admin/users/${order.seller.id}`}
                 className="block text-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
               >
                 查看卖家详情
-              </Link>
+              </NavigationLink>
             </div>
           </div>
 
@@ -395,7 +410,7 @@ export default function OrderDetailPage() {
                 disabled={isUpdating || status === order.status}
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {isUpdating ? '更新中...' : '更新订单状态'}
+                {isUpdating ? "更新中..." : "更新订单状态"}
               </button>
             </div>
           </div>
@@ -404,4 +419,3 @@ export default function OrderDetailPage() {
     </div>
   );
 }
-

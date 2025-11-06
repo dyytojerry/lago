@@ -73,7 +73,7 @@ export function useNavigationRouter() {
   };
 }
 
-function NavigationLink({
+export function NavigationLink({
   href,
   children,
   className,
@@ -99,5 +99,3 @@ function NavigationLink({
 NavigationLink.Link = (props: any) => {
   return <a {...props} />;
 };
-
-export default NavigationLink;

@@ -1,6 +1,6 @@
 "use client";
 
-import NavigationLink from "@/components/NavigationLink";
+import { NavigationLink } from "@lago/ui";
 
 export default function NotFound() {
   return (
