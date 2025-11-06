@@ -30,6 +30,8 @@ import communitiesAppRoutes from './routes/communities.app.routes';
 import usersAppRoutes from './routes/users.app.routes';
 import usersRoutes from './routes/users.routes';
 import ordersRoutes from './routes/orders.routes';
+import regionsRoutes from './routes/regions.routes';
+import communitiesRoutes from './routes/communities.routes';
 
 
 // Load environment variables
@@ -112,6 +114,7 @@ app.get('/health', (_req, res) => {
 // 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/share', shareRoutes);
+app.use('/api/regions', regionsRoutes);
 app.use('/api/products', productsAppRoutes);
 app.use('/api/orders', ordersAppRoutes);
 app.use('/api/chat', chatAppRoutes);
@@ -121,6 +124,7 @@ app.use('/api/admin/dashboard', authOperation, dashboardRoutes);
 app.use('/api/admin/products', authOperation, productsRoutes);
 app.use('/api/admin/users', authOperation, usersRoutes);
 app.use('/api/admin/orders', authOperation, ordersRoutes);
+app.use('/api/admin/communities', authOperation, communitiesRoutes);
 
 
 // Initialize WebSocket service

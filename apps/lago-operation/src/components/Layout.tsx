@@ -40,6 +40,12 @@ export default function Layout({ children }: LayoutProps) {
       roles: ["super_admin", "audit_staff"],
     },
     {
+      title: "小区管理",
+      path: "/admin/communities",
+      icon: "🏘️",
+      roles: ["super_admin", "audit_staff"],
+    },
+    {
       title: "用户管理",
       path: "/admin/users",
       icon: "👥",

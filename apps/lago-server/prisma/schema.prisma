@@ -42,6 +42,7 @@ model User {
   messages       ChatMessage[]
   notifications  Notification[]
   settlements    Settlement[]
+  communities    UserCommunity[] // 加入的小区
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -87,27 +88,193 @@ model OperationStaff {
   @@map("operation_staffs")
 }
 
-// ==================== 社区体系 ====================
+// ==================== 省市区体系 ====================
 
-model Community {
+model Province {
   id        String  @id @default(cuid())
-  name      String // 小区名称
-  location  String // 地理位置
-  address   String? // 详细地址
-  partnerId String? // 合作物业ID
-  geoHash   String? // 地理位置哈希，用于距离计算
+  code      String  @unique // 省份代码
+  name      String  @unique // 省份名称
+  sortOrder Int     @default(0)
   isActive  Boolean @default(true)
 
   // 关联关系
-  products   Product[]
-  liveEvents LiveEvent[]
+  cities City[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@map("provinces")
+}
+
+model City {
+  id         String  @id @default(cuid())
+  provinceId String
+  code       String  @unique // 城市代码
+  name       String // 城市名称
+  sortOrder  Int     @default(0)
+  isActive   Boolean @default(true)
+
+  // 关联关系
+  province   Province   @relation(fields: [provinceId], references: [id])
+  districts  District[]
+  communities Community[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([provinceId])
+  @@map("cities")
+}
+
+model District {
+  id        String  @id @default(cuid())
+  cityId    String
+  code      String  @unique // 区县代码
+  name      String // 区县名称
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  // 关联关系
+  city       City        @relation(fields: [cityId], references: [id])
+  communities Community[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cityId])
+  @@map("districts")
+}
+
+// ==================== 社区体系 ====================
+
+enum CommunityVerificationStatus {
+  pending   // 待审核
+  approved  // 已认证
+  rejected  // 已拒绝
+}
+
+model Community {
+  id          String  @id @default(cuid())
+  name        String // 小区名称
+  location    String // 地理位置（经纬度 "lat,lng"）
+  address     String? // 详细地址
+  provinceId  String? // 省份ID
+  cityId      String? // 城市ID
+  districtId  String? // 区县ID
+  partnerId   String? // 合作物业ID（User role=property）
+  geoHash     String? // 地理位置哈希，用于距离计算
+  images      String[] // 小区相册
+  description String? // 小区介绍
+  verificationStatus CommunityVerificationStatus @default(pending) // 认证状态
+  verifiedAt  DateTime? // 认证时间
+  verifiedBy  String? // 认证审核人ID（OperationStaff）
+  isActive    Boolean @default(true)
+
+  // 关联关系
+  province    Province?            @relation(fields: [provinceId], references: [id])
+  city        City?                @relation(fields: [cityId], references: [id])
+  district    District?            @relation(fields: [districtId], references: [id])
+  products    Product[]
+  liveEvents  LiveEvent[]          @relation("LiveEvents")
+  activities  CommunityActivity[]
+  members     UserCommunity[]
+  verification CommunityVerification?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([provinceId])
+  @@index([cityId])
+  @@index([districtId])
   @@index([partnerId])
   @@index([geoHash])
+  @@index([verificationStatus])
   @@map("communities")
+}
+
+// 用户-小区关联表（记录用户加入的小区）
+model UserCommunity {
+  id          String   @id @default(cuid())
+  userId      String
+  communityId String
+  joinedAt    DateTime @default(now())
+  isActive    Boolean  @default(true)
+
+  // 关联关系
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId])
+  @@index([userId])
+  @@index([communityId])
+  @@map("user_communities")
+}
+
+// 小区认证申请表
+model CommunityVerification {
+  id          String   @id @default(cuid())
+  communityId String  @unique
+  companyName String  // 物业公司名称
+  contactName String  // 联系人姓名
+  contactPhone String // 联系人电话
+  licenseUrl  String  // 营业执照URL
+  proofUrl    String? // 其他证明资料URL
+  status      CommunityVerificationStatus @default(pending)
+  rejectReason String? // 拒绝原因
+  reviewedBy  String? // 审核人ID（OperationStaff）
+  reviewedAt  DateTime? // 审核时间
+
+  // 关联关系
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@map("community_verifications")
+}
+
+// 小区活动
+enum CommunityActivityType {
+  announcement // 公告
+  market       // 摆摊
+  festival     // 过节
+  event        // 活动
+  other        // 其他
+}
+
+enum CommunityActivityStatus {
+  draft      // 草稿
+  published  // 已发布
+  ended      // 已结束
+  cancelled  // 已取消
+}
+
+model CommunityActivity {
+  id          String                 @id @default(cuid())
+  communityId String
+  creatorId   String // 创建人ID（User role=property）
+  type        CommunityActivityType
+  title       String // 活动标题
+  description String? // 活动描述
+  images      String[] // 活动图片
+  startTime   DateTime? // 开始时间
+  endTime     DateTime? // 结束时间
+  location    String? // 活动地点
+  status      CommunityActivityStatus @default(draft)
+  viewCount   Int     @default(0) // 浏览次数
+  participantCount Int @default(0) // 参与人数
+
+  // 关联关系
+  community Community @relation(fields: [communityId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([communityId])
+  @@index([status])
+  @@index([type])
+  @@map("community_activities")
 }
 
 // ==================== 商品系统 ====================

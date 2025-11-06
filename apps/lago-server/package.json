@@ -13,6 +13,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx scripts/seed.ts",
     "db:studio": "prisma studio",
+    "seed-regions": "tsx scripts/seed-regions.ts",
+    "fetch-communities": "tsx scripts/fetch-communities.ts",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit"
   },
