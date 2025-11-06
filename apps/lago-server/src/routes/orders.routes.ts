@@ -15,10 +15,17 @@ router.use(authOperation);
 
 /**
  * @swagger
+ * tags:
+ *   name: AdminOrders
+ *   description: 运营系统订单管理相关接口
+ */
+
+/**
+ * @swagger
  * /api/admin/orders:
  *   get:
  *     summary: 获取订单列表
- *     tags: [Admin Orders]
+ *     tags: [AdminOrders, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -104,7 +111,7 @@ router.get(
  * /api/admin/orders/{id}:
  *   get:
  *     summary: 获取订单详情
- *     tags: [Admin Orders]
+ *     tags: [AdminOrders, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -147,7 +154,7 @@ router.get('/:id', getOrder);
  * /api/admin/orders/{id}/status:
  *   put:
  *     summary: 更新订单状态
- *     tags: [Admin Orders]
+ *     tags: [AdminOrders, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:

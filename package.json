@@ -4,7 +4,8 @@
   "private": true,
   "description": "Lago - 来购（社区二手租售平台）",
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=apps/lago",
@@ -30,7 +31,10 @@
     "dev:ui": "npm run dev --workspace=apps/ui",
     "build:ui": "npm run build --workspace=apps/ui",
     "start:ui": "npm run start --workspace=apps/ui",
-    "build:all": "npm run build:lago && npm run build:app && npm run build:minigrame && npm run build:operation && npm run build:server && npm run build:ui"
+    "build:all": "npm run build:lago && npm run build:app && npm run build:minigrame && npm run build:operation && npm run build:server && npm run build:ui",
+    "generate-api:app": "node scripts/generate-api.js --project=app",
+    "generate-api:operation": "node scripts/generate-api.js --project=operation",
+    "generate-api": "npm run generate-api:app && npm run generate-api:operation"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

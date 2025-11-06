@@ -15,10 +15,17 @@ router.use(authOperation);
 
 /**
  * @swagger
+ * tags:
+ *   name: AdminUsers
+ *   description: 运营系统用户管理相关接口
+ */
+
+/**
+ * @swagger
  * /api/admin/users:
  *   get:
  *     summary: 获取用户列表
- *     tags: [Admin Users]
+ *     tags: [AdminUsers, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -92,7 +99,7 @@ router.get(
  * /api/admin/users/{id}:
  *   get:
  *     summary: 获取用户详情
- *     tags: [Admin Users]
+ *     tags: [AdminUsers, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -135,7 +142,7 @@ router.get('/:id', getUser);
  * /api/admin/users/{id}/status:
  *   put:
  *     summary: 更新用户状态
- *     tags: [Admin Users]
+ *     tags: [AdminUsers, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:

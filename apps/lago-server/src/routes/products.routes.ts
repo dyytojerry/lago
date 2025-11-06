@@ -16,10 +16,17 @@ router.use(authOperation);
 
 /**
  * @swagger
+ * tags:
+ *   name: AdminProducts
+ *   description: 运营系统商品管理相关接口
+ */
+
+/**
+ * @swagger
  * /api/admin/products:
  *   get:
  *     summary: 获取商品列表
- *     tags: [Admin Products]
+ *     tags: [AdminProducts, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -99,7 +106,7 @@ router.get(
  * /api/admin/products/{id}:
  *   get:
  *     summary: 获取商品详情
- *     tags: [Admin Products]
+ *     tags: [AdminProducts, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -142,7 +149,7 @@ router.get('/:id', getProduct);
  * /api/admin/products/{id}/approve:
  *   post:
  *     summary: 审核商品
- *     tags: [Admin Products]
+ *     tags: [AdminProducts, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -215,7 +222,7 @@ router.post(
  * /api/admin/products/batch-approve:
  *   post:
  *     summary: 批量审核商品
- *     tags: [Admin Products]
+ *     tags: [AdminProducts, Operation]
  *     security:
  *       - bearerAuth: []
  *     requestBody:

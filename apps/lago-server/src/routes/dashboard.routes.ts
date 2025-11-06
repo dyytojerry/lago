@@ -10,10 +10,17 @@ const router = Router();
 
 /**
  * @swagger
+ * tags:
+ *   name: AdminDashboard
+ *   description: 运营系统仪表盘相关接口
+ */
+
+/**
+ * @swagger
  * /api/admin/dashboard/stats:
  *   get:
  *     summary: 获取仪表盘核心指标
- *     tags: [Admin Dashboard]
+ *     tags: [AdminDashboard, Operation]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -43,7 +50,7 @@ router.get('/stats', authOperation, getDashboardStats);
  * /api/admin/dashboard/trends:
  *   get:
  *     summary: 获取趋势数据
- *     tags: [Admin Dashboard]
+ *     tags: [AdminDashboard, Operation]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -81,7 +88,7 @@ router.get('/trends', authOperation, getDashboardTrends);
  * /api/admin/dashboard/pending:
  *   get:
  *     summary: 获取待处理事项
- *     tags: [Admin Dashboard]
+ *     tags: [AdminDashboard, Operation]
  *     security:
  *       - bearerAuth: []
  *     responses:

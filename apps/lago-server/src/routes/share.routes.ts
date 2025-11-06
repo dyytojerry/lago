@@ -5,10 +5,17 @@ const router = Router();
 
 /**
  * @swagger
+ * tags:
+ *   name: Share
+ *   description: 分享相关接口
+ */
+
+/**
+ * @swagger
  * /api/share:
  *   post:
  *     summary: 获取分享数据
- *     tags: [Share]
+ *     tags: [Share, App]
  *     requestBody:
  *       required: true
  *       content:

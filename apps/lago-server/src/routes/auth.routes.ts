@@ -20,10 +20,17 @@ const router = Router();
 
 /**
  * @swagger
+ * tags:
+ *   name: Auth
+ *   description: 用户认证相关接口
+ */
+
+/**
+ * @swagger
  * /api/auth/wechat/login:
  *   post:
  *     summary: 微信登录（小程序端）
- *     tags: [Auth]
+ *     tags: [Auth, App]
  *     requestBody:
  *       required: true
  *       content:
@@ -51,7 +58,7 @@ router.post('/wechat/login', validateRequest(wechatLoginSchema), wechatLogin);
  * /api/auth/phone/login:
  *   post:
  *     summary: 手机号登录（小程序端）
- *     tags: [Auth]
+ *     tags: [Auth, App]
  *     requestBody:
  *       required: true
  *       content:
@@ -79,7 +86,7 @@ router.post('/phone/login', validateRequest(phoneLoginSchema), phoneLogin);
  * /api/auth/phone/register:
  *   post:
  *     summary: 手机号注册（小程序端）
- *     tags: [Auth]
+ *     tags: [Auth, App]
  *     requestBody:
  *       required: true
  *       content:
@@ -107,7 +114,7 @@ router.post('/phone/register', validateRequest(phoneRegisterSchema), phoneRegist
  * /api/auth/operation/login:
  *   post:
  *     summary: 运营系统登录
- *     tags: [Auth]
+ *     tags: [Auth, Operation]
  *     requestBody:
  *       required: true
  *       content:
@@ -135,7 +142,7 @@ router.post('/operation/login', validateRequest(operationLoginSchema), operation
  * /api/auth/me:
  *   get:
  *     summary: 获取当前用户信息（小程序端）
- *     tags: [Auth]
+ *     tags: [Auth, App]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -162,7 +169,7 @@ router.get('/me', authUser, getCurrentUser);
  * /api/auth/operation/me:
  *   get:
  *     summary: 获取当前运营人员信息
- *     tags: [Auth]
+ *     tags: [Auth, Operation]
  *     security:
  *       - bearerAuth: []
  *     responses:
