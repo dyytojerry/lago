@@ -2,6 +2,132 @@ import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { generateUserToken, generateOperationToken, hashPassword, comparePassword } from '../lib/auth';
 import { createSuccessResponse, createErrorResponse } from '../lib/response';
+import { addTokenToBlacklist } from '../lib/token-blacklist';
+
+// 通用登录接口（支持手机号/邮箱/微信ID + 密码）
+export async function universalLogin(req: Request, res: Response) {
+  try {
+    const { identifier, password, wechatOpenid } = req.body;
+
+    // 如果没有提供任何标识符
+    if (!identifier && !wechatOpenid) {
+      return createErrorResponse(res, '请提供登录标识（手机号/邮箱/微信ID）', 400);
+    }
+
+    let user = null;
+
+    // 优先处理微信登录
+    if (wechatOpenid) {
+      user = await prisma.user.findUnique({
+        where: { wechatOpenid },
+      });
+
+      // 如果用户不存在，创建新用户
+      if (!user) {
+        // TODO: 调用微信API获取unionid等信息
+        const mockUnionid = `mock_unionid_${Date.now()}`;
+        
+        user = await prisma.user.create({
+          data: {
+            wechatOpenid,
+            wechatUnionid: mockUnionid,
+            role: 'user',
+          },
+        });
+      }
+    } else if (identifier) {
+      // 通过手机号、邮箱或微信ID查找用户
+      const isEmail = identifier.includes('@');
+      const isPhone = /^1[3-9]\d{9}$/.test(identifier);
+
+      if (isEmail) {
+        user = await prisma.user.findUnique({
+          where: { email: identifier },
+        });
+      } else if (isPhone) {
+        user = await prisma.user.findUnique({
+          where: { phone: identifier },
+        });
+      } else {
+        // 可能是微信ID
+        user = await prisma.user.findUnique({
+          where: { wechatOpenid: identifier },
+        });
+      }
+
+      // 如果用户不存在且提供了密码，创建新用户
+      if (!user && password) {
+        if (isEmail) {
+          user = await prisma.user.create({
+            data: {
+              email: identifier,
+              password: await hashPassword(password),
+              role: 'user',
+            },
+          });
+        } else if (isPhone) {
+          user = await prisma.user.create({
+            data: {
+              phone: identifier,
+              password: await hashPassword(password),
+              role: 'user',
+            },
+          });
+        } else {
+          return createErrorResponse(res, '无效的登录标识', 400);
+        }
+      } else if (!user) {
+        return createErrorResponse(res, '账号不存在', 404);
+      }
+
+      // 如果提供了密码，验证密码
+      if (password && user.password) {
+        const isValid = await comparePassword(password, user.password);
+        if (!isValid) {
+          return createErrorResponse(res, '密码错误', 401);
+        }
+      } else if (password && !user.password) {
+        // 用户存在但没有设置密码，设置密码
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            password: await hashPassword(password),
+          },
+        });
+      }
+    }
+
+    if (!user) {
+      return createErrorResponse(res, '登录失败', 400);
+    }
+
+    if (!user.isActive) {
+      return createErrorResponse(res, '账号已被禁用', 403);
+    }
+
+    const token = generateUserToken({
+      userId: user.id,
+      role: user.role,
+    });
+
+    return createSuccessResponse(res, {
+      token,
+      user: {
+        id: user.id,
+        nickname: user.nickname,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+        phone: user.phone,
+        email: user.email,
+        isVerified: user.isVerified,
+        creditScore: user.creditScore,
+      },
+    });
+  } catch (error) {
+    console.error('通用登录失败:', error);
+    return createErrorResponse(res, '登录失败', 500);
+  }
+}
 
 // 小程序端：微信登录
 export async function wechatLogin(req: Request, res: Response) {
@@ -228,6 +354,44 @@ export async function operationLogin(req: Request, res: Response) {
   }
 }
 
+// C端用户：退出登录
+export async function userLogout(req: Request, res: Response) {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return createErrorResponse(res, '未提供认证令牌', 401);
+    }
+
+    // 将token加入黑名单
+    await addTokenToBlacklist(token);
+
+    return createSuccessResponse(res, { message: '退出登录成功' });
+  } catch (error) {
+    console.error('退出登录失败:', error);
+    return createErrorResponse(res, '退出登录失败', 500);
+  }
+}
+
+// 运营系统：退出登录
+export async function operationLogout(req: Request, res: Response) {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return createErrorResponse(res, '未提供认证令牌', 401);
+    }
+
+    // 将token加入黑名单
+    await addTokenToBlacklist(token);
+
+    return createSuccessResponse(res, { message: '退出登录成功' });
+  } catch (error) {
+    console.error('退出登录失败:', error);
+    return createErrorResponse(res, '退出登录失败', 500);
+  }
+}
+
 // 获取当前用户信息（小程序端）
 export async function getCurrentUser(req: Request, res: Response) {
   try {
@@ -291,4 +455,3 @@ export async function getCurrentStaff(req: Request, res: Response) {
     return createErrorResponse(res, '获取运营人员信息失败', 500);
   }
 }
-

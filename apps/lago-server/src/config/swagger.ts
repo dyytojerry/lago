@@ -69,6 +69,13 @@ export const swaggerSchemas = {
         type: 'integer',
         description: '信用积分',
       },
+      communityIds: {
+        type: 'array',
+        items: {
+          type: 'string',
+        },
+        description: '小区ID列表',
+      },
     },
     required: ['id', 'role', 'isVerified', 'creditScore'],
   },
@@ -200,6 +207,25 @@ export const swaggerSchemas = {
       },
     },
     required: ['username', 'password'],
+  },
+
+  UniversalLoginRequest: {
+    type: 'object',
+    properties: {
+      identifier: {
+        type: 'string',
+        description: '登录标识（手机号/邮箱/微信ID）',
+      },
+      password: {
+        type: 'string',
+        description: '密码（可选，微信登录时不需要）',
+      },
+      wechatOpenid: {
+        type: 'string',
+        description: '微信OpenID（可选，用于微信登录）',
+      },
+    },
+    required: ['identifier 或 wechatOpenid'],
   },
 
   // ==================== 通用响应 ====================

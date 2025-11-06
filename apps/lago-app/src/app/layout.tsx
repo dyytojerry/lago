@@ -9,30 +9,13 @@ import {
   MiniprogramProvider,
 } from "@lago/ui";
 import { Toaster } from "react-hot-toast";
-import { apiRequest, HTTPResponse } from "@lago/common";
+import { authLogin, authLogout, authMe } from "@/lib/apis";
 
 // 定义 authApi 对象（小程序端）
 const authApi = {
-  authMe: async (noAuthorize?: boolean): Promise<HTTPResponse<any>> => {
-    return apiRequest("/api/auth/me", {
-      method: "GET",
-      noAuthorize,
-    });
-  },
-  authLogin: async (
-    loginData: any,
-    noAuthorize?: boolean
-  ): Promise<HTTPResponse<any>> => {
-    return apiRequest("/api/auth/phone/login", {
-      method: "POST",
-      body: JSON.stringify(loginData),
-      noAuthorize,
-    });
-  },
-  authLogout: async (): Promise<void> => {
-    // 小程序端的登出逻辑（如果需要）
-    return;
-  },
+  authMe: authMe,
+  authLogin: authLogin,
+  authLogout: authLogout,
 };
 
 export default function RootLayout({

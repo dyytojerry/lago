@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated, getUser, User } from '@/lib/auth';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { ProductCard } from '@/components/ProductCard';
 import { apiRequest, HTTPResponse } from '@lago/common';
+import {useAuth} from '@lago/ui';
 
 interface Product {
   id: string;
@@ -34,22 +34,11 @@ interface Product {
 
 export default function HomePage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoading } = useAuth();
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
-
   useEffect(() => {
     async function loadData() {
-      const authenticated = await isAuthenticated();
-      if (!authenticated) {
-        router.push('/login');
-        return;
-      }
-
-      const userData = await getUser();
-      setUser(userData);
-
       try {
         // 获取推荐商品
         const recommendedResponse = await apiRequest<{ products: Product[] }>('/api/products/recommended', {
@@ -68,20 +57,10 @@ export default function HomePage() {
         }
       } catch (error) {
         console.error('加载商品失败:', error);
-      } finally {
-        setLoading(false);
       }
     }
     loadData();
-  }, [router]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-text-secondary">加载中...</div>
-      </div>
-    );
-  }
+  }, [router, isLoading]);
 
   return (
     <div className="min-h-screen bg-background pb-20">

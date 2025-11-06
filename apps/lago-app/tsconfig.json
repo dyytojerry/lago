@@ -19,7 +19,7 @@
     "emitDecoratorMetadata": true,
     "useDefineForClassFields": false,
     "strictNullChecks": false,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
     "plugins": [

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma';
 import { verifyToken, isUserToken, isOperationToken } from '../lib/auth';
 import { createErrorResponse } from '../lib/response';
+import { isTokenBlacklisted } from '../lib/token-blacklist';
 
 // 扩展Express Request类型
 declare global {
@@ -30,6 +31,12 @@ export async function authUser(req: Request, res: Response, next: NextFunction) 
     
     if (!token) {
       return createErrorResponse(res, '未提供认证令牌', 401);
+    }
+
+    // 检查token是否在黑名单中
+    const isBlacklisted = await isTokenBlacklisted(token);
+    if (isBlacklisted) {
+      return createErrorResponse(res, '认证令牌已失效', 401);
     }
 
     const payload = verifyToken(token);
@@ -70,6 +77,12 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
     
     if (!token) {
       return createErrorResponse(res, '未提供认证令牌', 401);
+    }
+
+    // 检查token是否在黑名单中
+    const isBlacklisted = await isTokenBlacklisted(token);
+    if (isBlacklisted) {
+      return createErrorResponse(res, '认证令牌已失效', 401);
     }
 
     const payload = verifyToken(token);

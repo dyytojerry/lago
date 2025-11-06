@@ -1,5 +1,22 @@
 import * as Joi from 'joi';
 
+// 通用登录Schema
+export const universalLoginSchema = Joi.object({
+  body: Joi.object({
+    identifier: Joi.string().optional().messages({
+      'string.empty': '登录标识不能为空',
+    }),
+    password: Joi.string().optional().messages({
+      'string.empty': '密码不能为空',
+    }),
+    wechatOpenid: Joi.string().optional().messages({
+      'string.empty': '微信OpenID不能为空',
+    }),
+  }).or('identifier', 'wechatOpenid').messages({
+    'object.missing': '请提供登录标识（identifier或wechatOpenid）',
+  }),
+});
+
 // 小程序端微信登录
 export const wechatLoginSchema = Joi.object({
   body: Joi.object({
@@ -54,4 +71,3 @@ export const operationLoginSchema = Joi.object({
     verifyCode: Joi.string().optional(),
   }),
 });
-

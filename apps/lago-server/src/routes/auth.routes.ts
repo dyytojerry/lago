@@ -1,15 +1,19 @@
 import { Router } from 'express';
 import {
+  universalLogin,
   wechatLogin,
   phoneLogin,
   phoneRegister,
   operationLogin,
+  userLogout,
+  operationLogout,
   getCurrentUser,
   getCurrentStaff,
 } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validateRequest';
 import { authUser, authOperation } from '../middleware/auth';
 import {
+  universalLoginSchema,
   wechatLoginSchema,
   phoneLoginSchema,
   phoneRegisterSchema,
@@ -24,6 +28,53 @@ const router = Router();
  *   name: Auth
  *   description: 用户认证相关接口
  */
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: 通用登录接口（支持手机号/邮箱/微信ID + 密码）
+ *     tags: [Auth, App]
+ *     description: |
+ *       支持多种登录方式：
+ *       - 手机号 + 密码
+ *       - 邮箱 + 密码
+ *       - 微信ID + 密码
+ *       - 微信OpenID（无需密码）
+ *       如果账号不存在且提供了密码，会自动创建账号并登录
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UniversalLoginRequest'
+ *     responses:
+ *       200:
+ *         description: 登录成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: 参数错误
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: 登录失败（密码错误等）
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: 账号已被禁用
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/login', validateRequest(universalLoginSchema), universalLogin);
 
 /**
  * @swagger
@@ -190,6 +241,72 @@ router.get('/me', authUser, getCurrentUser);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/operation/me', authOperation, getCurrentStaff);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: 用户退出登录（C端）
+ *     tags: [Auth, App]
+ *     security:
+ *       - bearerAuth: []
+ *     description: 退出登录后，JWT Token将被加入黑名单，无法继续使用
+ *     responses:
+ *       200:
+ *         description: 退出登录成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *       401:
+ *         description: 未认证
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/logout', authUser, userLogout);
+
+/**
+ * @swagger
+ * /api/auth/operation/logout:
+ *   post:
+ *     summary: 运营系统退出登录
+ *     tags: [Auth, Operation]
+ *     security:
+ *       - bearerAuth: []
+ *     description: 退出登录后，JWT Token将被加入黑名单，无法继续使用
+ *     responses:
+ *       200:
+ *         description: 退出登录成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *       401:
+ *         description: 未认证
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/operation/logout', authOperation, operationLogout);
 
 export default router;
 
