@@ -104,3 +104,8 @@ npm run dev
 
 两个账号体系完全独立，不能互相登录。
 
+
+## 填充数据
+
+1. 填充省市区数据 `npm run seed-regions --workspace=apps/lago-server`
+2. 填充杭州市小区数据 `npm run fetch-communities --workspace=apps/lago-server`
