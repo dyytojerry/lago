@@ -6,22 +6,19 @@
     "outDir": "./dist",
     "paths": {
       "@/*": ["./src/*"],
-      "@lago/common": ["../../packages/common/src/index.ts"]
+      "@lago/common": ["../common/src/index.ts"]
     }
   },
   "references": [
     {
-      "path": "../../packages/common"
+      "path": "../common"
     }
   ],
   "include": [
-    "next-env.d.ts",
-    "next.config.ts",
     "**/*.ts",
     "**/*.tsx"
   ],
   "exclude": [
-    "node_modules",
-    ".next"
+    "node_modules"
   ]
 }

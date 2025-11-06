@@ -1,48 +1,63 @@
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export enum UserRoleEnum {
-  // TODO: 添加枚举值
+export enum UserRole {
+  USER = 'user',
+  MERCHANT = 'merchant',
+  PROPERTY = 'property',
+  ADMIN = 'admin',
 }
 
-export enum OperationStaffRoleEnum {
-  // TODO: 添加枚举值
+export enum OperationStaffRole {
+  SUPER_ADMIN = 'super_admin',
+  AUDIT_STAFF = 'audit_staff',
+  SERVICE_STAFF = 'service_staff',
+  OPERATION_STAFF = 'operation_staff',
+  FINANCE_STAFF = 'finance_staff',
 }
 
-export enum ProductCategoryEnum {
-  // TODO: 添加枚举值
+export enum ProductCategory {
+  TOYS = 'toys',
+  GAMING = 'gaming',
 }
 
-export enum ProductTypeEnum {
-  // TODO: 添加枚举值
+export enum ProductType {
+  RENT = 'rent',
+  SELL = 'sell',
+  BOTH = 'both',
 }
 
-export enum ProductStatusEnum {
-  // TODO: 添加枚举值
+export enum ProductStatus {
+  PENDING = 'pending',
+  ACTIVE = 'active',
+  SOLD = 'sold',
+  RENTED = 'rented',
+  OFFLINE = 'offline',
 }
 
-export enum ProductApproveRequestActionEnum {
-  // TODO: 添加枚举值
+export enum ProductApproveRequestAction {
+  APPROVE = 'approve',
+  REJECT = 'reject',
 }
 
-export enum ProductBatchApproveRequestActionEnum {
-  // TODO: 添加枚举值
+export enum OrderType {
+  RENT = 'rent',
+  SELL = 'sell',
 }
 
-export enum OrderTypeEnum {
-  // TODO: 添加枚举值
+export enum OrderStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  CONFIRMED = 'confirmed',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  REFUNDED = 'refunded',
 }
 
-export enum OrderStatusEnum {
-  // TODO: 添加枚举值
-}
-
-export enum OrderDeliveryTypeEnum {
-  // TODO: 添加枚举值
-}
-
-export enum OrderStatusUpdateRequestStatusEnum {
-  // TODO: 添加枚举值
+export enum OrderDeliveryType {
+  SELF_PICKUP = 'self_pickup',
+  DELIVERY = 'delivery',
+  CABINET = 'cabinet',
 }
 
 export class User {
@@ -57,8 +72,8 @@ export class User {
   @IsOptional()
   avatarUrl?: string;
 
-  @IsEnum(String)
-  role: string;
+  @IsEnum(UserRole)
+  role: UserRole;
 
   @IsString()
   @IsOptional()
@@ -82,8 +97,8 @@ export class OperationStaff {
   @IsString()
   email: string;
 
-  @IsEnum(String)
-  role: string;
+  @IsEnum(OperationStaffRole)
+  role: OperationStaffRole;
 
   @IsString()
   @IsOptional()
@@ -100,7 +115,6 @@ export class LoginResponse {
   token: string;
 
   @ValidateNested()
-  @Type(() => Types.User)
   user: User;
 
 }
@@ -110,7 +124,6 @@ export class OperationLoginResponse {
   token: string;
 
   @ValidateNested()
-  @Type(() => Types.OperationStaff)
   staff: OperationStaff;
 
 }
@@ -183,11 +196,11 @@ export class Product {
   @IsOptional()
   description?: string;
 
-  @IsEnum(String)
-  category: string;
+  @IsEnum(ProductCategory)
+  category: ProductCategory;
 
-  @IsEnum(String)
-  type: string;
+  @IsEnum(ProductType)
+  type: ProductType;
 
   @IsString()
   price: string;
@@ -196,12 +209,10 @@ export class Product {
   @IsOptional()
   deposit?: string;
 
-  @IsEnum(String)
-  status: string;
+  @IsEnum(ProductStatus)
+  status: ProductStatus;
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Object)
   images: string[];
 
   @IsString()
@@ -233,26 +244,22 @@ export class Product {
 
 export class ProductListResponse {
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Types.ProductWithRelations)
   products: ProductWithRelations[];
 
   @ValidateNested()
-  @Type(() => Types.Pagination)
   pagination: Pagination;
 
 }
 
 export class ProductDetailResponse {
   @ValidateNested()
-  @Type(() => Types.ProductWithRelations)
   product: ProductWithRelations;
 
 }
 
 export class ProductApproveRequest {
-  @IsEnum(String)
-  action: string;
+  @IsEnum(ProductApproveRequestAction)
+  action: ProductApproveRequestAction;
 
   @IsString()
   @IsOptional()
@@ -262,12 +269,10 @@ export class ProductApproveRequest {
 
 export class ProductBatchApproveRequest {
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Object)
   ids: string[];
 
-  @IsEnum(String)
-  action: string;
+  @IsEnum(ProductApproveRequestAction)
+  action: ProductApproveRequestAction;
 
   @IsString()
   @IsOptional()
@@ -279,11 +284,11 @@ export class Order {
   @IsString()
   id: string;
 
-  @IsEnum(String)
-  type: string;
+  @IsEnum(OrderType)
+  type: OrderType;
 
-  @IsEnum(String)
-  status: string;
+  @IsEnum(OrderStatus)
+  status: OrderStatus;
 
   @IsString()
   amount: string;
@@ -300,8 +305,8 @@ export class Order {
   @IsOptional()
   endDate?: string;
 
-  @IsEnum(String)
-  deliveryType: string;
+  @IsEnum(OrderDeliveryType)
+  deliveryType: OrderDeliveryType;
 
   @IsString()
   @IsOptional()
@@ -324,12 +329,9 @@ export class Order {
 
 export class OrderListResponse {
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Types.OrderWithRelations)
   orders: OrderWithRelations[];
 
   @ValidateNested()
-  @Type(() => Types.Pagination)
   pagination: Pagination;
 
 }
@@ -341,8 +343,8 @@ export class OrderDetailResponse {
 }
 
 export class OrderStatusUpdateRequest {
-  @IsEnum(String)
-  status: string;
+  @IsEnum(OrderStatus)
+  status: OrderStatus;
 
   @IsString()
   @IsOptional()
@@ -353,12 +355,9 @@ export class OrderStatusUpdateRequest {
 
 export class UserListResponse {
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Types.UserWithCount)
   users: UserWithCount[];
 
   @ValidateNested()
-  @Type(() => Types.Pagination)
   pagination: Pagination;
 
 }
@@ -368,14 +367,10 @@ export class UserDetailResponse {
   user: any;
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Object)
   @IsOptional()
   products?: any[];
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Types.OrderWithRelations)
   @IsOptional()
   orders?: OrderWithRelations[];
 
@@ -412,31 +407,21 @@ export class DashboardStats {
 
 export class DashboardTrends {
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Object)
   gmv: any[];
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Object)
   users: any[];
 
 }
 
 export class PendingItems {
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Types.ProductWithRelations)
   products: ProductWithRelations[];
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Object)
   approvals: any[];
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Object)
   complaints: any[];
 
 }

@@ -2,91 +2,88 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOpti
 import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
 
-export class GetApiAdminDashboardTrendsQueryParams {
-  @IsEnum(String)
+export class AdminDashboardTrendsQueryParams {
+  @IsEnum(['7d', '30d', '90d'])
   @IsOptional()
-  period?: string;
+  period?: '7d' | '30d' | '90d';
 
 }
 
 /**
  * 获取仪表盘核心指标
  */
-export async function getApiAdminDashboardStats(
+export async function adminDashboardStats(
   noAuthorize?: boolean
 ): Promise<HTTPResponse<Types.DashboardStats>> {
   return await apiRequest("/api/admin/dashboard/stats", {
     method: 'GET',
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
  * 获取趋势数据
  */
-export async function getApiAdminDashboardTrends(
-  queryParams?: GetApiAdminDashboardTrendsQueryParams,
+export async function adminDashboardTrends(
+  queryParams?: AdminDashboardTrendsQueryParams,
   noAuthorize?: boolean
 ): Promise<HTTPResponse<Types.DashboardTrends>> {
   return await apiRequest("/api/admin/dashboard/trends", {
     method: 'GET',
+    noAuthorize: noAuthorize,
     params: queryParams,
-    noAuthorize,
   });
 }
 
 /**
  * 获取待处理事项
  */
-export async function getApiAdminDashboardPending(
+export async function adminDashboardPending(
   noAuthorize?: boolean
 ): Promise<HTTPResponse<Types.PendingItems>> {
   return await apiRequest("/api/admin/dashboard/pending", {
     method: 'GET',
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
- * 获取仪表盘核心指标 - Query Hook
+ * 获取仪表盘核心指标 Hook
  */
-export function useGetApiAdminDashboardStats(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.DashboardStats>, Error>
+export function useAdminDashboardStats(
+  options?: UseQueryOptions<HTTPResponse<AdminDashboardStatsResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAdminDashboardStats', vars],
-    queryFn: () => getApiAdminDashboardStats(...vars),
+    queryKey: ['admindashboard', '获取仪表盘核心指标'],
+    queryFn: () => adminDashboardStats(),
     ...options,
   });
 }
 
 /**
- * 获取趋势数据 - Query Hook
+ * 获取趋势数据 Hook
  */
-export function useGetApiAdminDashboardTrends(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.DashboardTrends>, Error>
+export function useAdminDashboardTrends(
+  queryParams?: AdminDashboardTrendsQueryParams,
+  options?: UseQueryOptions<HTTPResponse<AdminDashboardTrendsResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAdminDashboardTrends', vars],
-    queryFn: () => getApiAdminDashboardTrends(...vars),
+    queryKey: ['admindashboard', '获取趋势数据', queryParams?.period],
+    queryFn: () => adminDashboardTrends(queryParams),
     ...options,
   });
 }
 
 /**
- * 获取待处理事项 - Query Hook
+ * 获取待处理事项 Hook
  */
-export function useGetApiAdminDashboardPending(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.PendingItems>, Error>
+export function useAdminDashboardPending(
+  options?: UseQueryOptions<HTTPResponse<AdminDashboardPendingResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAdminDashboardPending', vars],
-    queryFn: () => getApiAdminDashboardPending(...vars),
+    queryKey: ['admindashboard', '获取待处理事项'],
+    queryFn: () => adminDashboardPending(),
     ...options,
   });
 }

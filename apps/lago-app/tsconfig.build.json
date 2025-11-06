@@ -16,7 +16,7 @@
   ],
   "include": [
     "next-env.d.ts",
-    "next.config.ts",
+    "next.config.js",
     "**/*.ts",
     "**/*.tsx"
   ],
@@ -25,3 +25,4 @@
     ".next"
   ]
 }
+

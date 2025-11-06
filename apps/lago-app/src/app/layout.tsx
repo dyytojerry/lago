@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { MiniProgramProvider } from "@/components/MiniProgramProvider";
+import { MiniprogramProvider } from "@/providers/MiniprogramProvider";
 
 export const metadata: Metadata = {
   title: "来购 - 社区化二手与租赁平台",
@@ -15,9 +15,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
-        <MiniProgramProvider>
+        <MiniprogramProvider>
           {children}
-        </MiniProgramProvider>
+        </MiniprogramProvider>
       </body>
     </html>
   );

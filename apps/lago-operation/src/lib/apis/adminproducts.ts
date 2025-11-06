@@ -2,9 +2,8 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOpti
 import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
 
-export class GetApiAdminProductsQueryParams {
+export class AdminProductsQueryParams {
   @IsString()
   @IsOptional()
   page?: string;
@@ -13,13 +12,13 @@ export class GetApiAdminProductsQueryParams {
   @IsOptional()
   limit?: string;
 
-  @IsEnum(String)
+  @IsEnum(Types.ProductStatus)
   @IsOptional()
-  status?: string;
+  status?: Types.ProductStatus;
 
-  @IsEnum(String)
+  @IsEnum(Types.ProductCategory)
   @IsOptional()
-  category?: string;
+  category?: Types.ProductCategory;
 
   @IsString()
   @IsOptional()
@@ -31,124 +30,151 @@ export class GetApiAdminProductsQueryParams {
 
 }
 
-export class GetApiAdminProducts1PathParams {
+export type AdminProductsResponse = Types.ProductListResponse;
+
+export class AdminProductDetailPathParams {
   @IsString()
-  id!: string;
+  id: string;
 
 }
 
-export class PostApiAdminProductsApprovePathParams {
+export type AdminProductDetailResponse = Types.ProductDetailResponse;
+
+export class AdminProductsApprovePathParams {
   @IsString()
-  id!: string;
+  id: string;
 
 }
+
+export type AdminProductsApproveResponse = Types.SuccessResponse;
+
+export type AdminProductsBatchApproveResponse = Types.SuccessResponse;
 
 /**
  * 获取商品列表
  */
-export async function getApiAdminProducts(
-  queryParams?: GetApiAdminProductsQueryParams,
+export async function adminProducts(
+  queryParams?: AdminProductsQueryParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.ProductListResponse>> {
+): Promise<HTTPResponse<AdminProductsResponse>> {
   return await apiRequest("/api/admin/products", {
     method: 'GET',
+    noAuthorize: noAuthorize,
     params: queryParams,
-    noAuthorize,
   });
 }
 
 /**
  * 获取商品详情
  */
-export async function getApiAdminProducts1(
-  pathParams: GetApiAdminProducts1PathParams,
+export async function adminProductDetail(
+  pathParams: AdminProductDetailPathParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.ProductDetailResponse>> {
+): Promise<HTTPResponse<AdminProductDetailResponse>> {
   return await apiRequest(`/api/admin/products/${pathParams.id}`, {
     method: 'GET',
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
  * 审核商品
  */
-export async function postApiAdminProductsApprove(
-  pathParams: PostApiAdminProductsApprovePathParams,
+export async function adminProductsApprove(
+  pathParams: AdminProductsApprovePathParams,
   data: Types.ProductApproveRequest,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.SuccessResponse>> {
+): Promise<HTTPResponse<AdminProductsApproveResponse>> {
   return await apiRequest(`/api/admin/products/${pathParams.id}/approve`, {
     method: 'POST',
     body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' },
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
  * 批量审核商品
  */
-export async function postApiAdminProductsBatch-approve(
+export async function adminProductsBatchApprove(
   data: Types.ProductBatchApproveRequest,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.SuccessResponse>> {
+): Promise<HTTPResponse<AdminProductsBatchApproveResponse>> {
   return await apiRequest("/api/admin/products/batch-approve", {
     method: 'POST',
     body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' },
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
- * 获取商品列表 - Query Hook
+ * 获取商品列表 Hook
  */
-export function useGetApiAdminProducts(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.ProductListResponse>, Error>
+export function useAdminProducts(
+  queryParams?: AdminProductsQueryParams,
+  options?: UseQueryOptions<HTTPResponse<AdminProductsResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAdminProducts', vars],
-    queryFn: () => getApiAdminProducts(...vars),
+    queryKey: ['adminproducts', '获取商品列表', queryParams?.page, queryParams?.limit, queryParams?.status, queryParams?.category, queryParams?.search, queryParams?.ownerId],
+    queryFn: () => adminProducts(queryParams),
     ...options,
   });
 }
 
 /**
- * 获取商品详情 - Query Hook
+ * 获取商品详情 Hook
  */
-export function useGetApiAdminProducts1(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.ProductDetailResponse>, Error>
+export function useAdminProductDetail(
+  pathParams: AdminProductDetailPathParams,
+  options?: UseQueryOptions<HTTPResponse<AdminProductDetailResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAdminProducts1', vars],
-    queryFn: () => getApiAdminProducts1(...vars),
+    queryKey: ['adminproducts', '获取商品详情', pathParams.id],
+    queryFn: () => adminProductDetail(pathParams),
     ...options,
   });
 }
 
 /**
- * 审核商品 - Mutation Hook
+ * 审核商品 Hook
  */
-export function usePostApiAdminProductsApprove(
-  options?: UseMutationOptions<HTTPResponse<Types.SuccessResponse>, Error, any>
+export function useAdminProductsApprove(
+  pathParams: AdminProductsApprovePathParams,
+  options?: UseMutationOptions<HTTPResponse<AdminProductsApproveResponse>, Error, Types.ProductApproveRequest>
 ) {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: (vars: any) => postApiAdminProductsApprove(...vars),
+    mutationFn: (data) => adminProductsApprove(pathParams, data),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['adminproducts'] });
+      queryClient.invalidateQueries({ queryKey: ['operation'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
     ...options,
   });
 }
 
 /**
- * 批量审核商品 - Mutation Hook
+ * 批量审核商品 Hook
  */
-export function usePostApiAdminProductsBatch-approve(
-  options?: UseMutationOptions<HTTPResponse<Types.SuccessResponse>, Error, any>
+export function useAdminProductsBatchApprove(
+  options?: UseMutationOptions<HTTPResponse<AdminProductsBatchApproveResponse>, Error, Types.ProductBatchApproveRequest>
 ) {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: (vars: any) => postApiAdminProductsBatch-approve(...vars),
+    mutationFn: (data) => adminProductsBatchApprove(data),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['adminproducts'] });
+      queryClient.invalidateQueries({ queryKey: ['operation'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
     ...options,
   });
 }

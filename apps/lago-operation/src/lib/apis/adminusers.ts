@@ -2,9 +2,8 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOpti
 import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
 
-export class GetApiAdminUsersQueryParams {
+export class AdminUsersQueryParams {
   @IsString()
   @IsOptional()
   page?: string;
@@ -13,13 +12,13 @@ export class GetApiAdminUsersQueryParams {
   @IsOptional()
   limit?: string;
 
-  @IsEnum(String)
+  @IsEnum(Types.UserRole)
   @IsOptional()
-  role?: string;
+  role?: Types.UserRole;
 
-  @IsEnum(String)
+  @IsEnum(['active', 'inactive'])
   @IsOptional()
-  status?: string;
+  status?: 'active' | 'inactive';
 
   @IsString()
   @IsOptional()
@@ -27,97 +26,113 @@ export class GetApiAdminUsersQueryParams {
 
 }
 
-export class GetApiAdminUsers1PathParams {
+export type AdminUsersResponse = Types.UserListResponse;
+
+export class AdminUserDetailPathParams {
   @IsString()
-  id!: string;
+  id: string;
 
 }
 
-export class PutApiAdminUsersStatusPathParams {
+export type AdminUserDetailResponse = Types.UserDetailResponse;
+
+export class AdminUsersStatuPathParams {
   @IsString()
-  id!: string;
+  id: string;
 
 }
+
+export type AdminUsersStatuResponse = Types.SuccessResponse;
 
 /**
  * 获取用户列表
  */
-export async function getApiAdminUsers(
-  queryParams?: GetApiAdminUsersQueryParams,
+export async function adminUsers(
+  queryParams?: AdminUsersQueryParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.UserListResponse>> {
+): Promise<HTTPResponse<AdminUsersResponse>> {
   return await apiRequest("/api/admin/users", {
     method: 'GET',
+    noAuthorize: noAuthorize,
     params: queryParams,
-    noAuthorize,
   });
 }
 
 /**
  * 获取用户详情
  */
-export async function getApiAdminUsers1(
-  pathParams: GetApiAdminUsers1PathParams,
+export async function adminUserDetail(
+  pathParams: AdminUserDetailPathParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.UserDetailResponse>> {
+): Promise<HTTPResponse<AdminUserDetailResponse>> {
   return await apiRequest(`/api/admin/users/${pathParams.id}`, {
     method: 'GET',
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
  * 更新用户状态
  */
-export async function putApiAdminUsersStatus(
-  pathParams: PutApiAdminUsersStatusPathParams,
+export async function adminUsersStatu(
+  pathParams: AdminUsersStatuPathParams,
   data: Types.UserStatusUpdateRequest,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.SuccessResponse>> {
+): Promise<HTTPResponse<AdminUsersStatuResponse>> {
   return await apiRequest(`/api/admin/users/${pathParams.id}/status`, {
     method: 'PUT',
     body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' },
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
- * 获取用户列表 - Query Hook
+ * 获取用户列表 Hook
  */
-export function useGetApiAdminUsers(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.UserListResponse>, Error>
+export function useAdminUsers(
+  queryParams?: AdminUsersQueryParams,
+  options?: UseQueryOptions<HTTPResponse<AdminUsersResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAdminUsers', vars],
-    queryFn: () => getApiAdminUsers(...vars),
+    queryKey: ['adminusers', '获取用户列表', queryParams?.page, queryParams?.limit, queryParams?.role, queryParams?.status, queryParams?.search],
+    queryFn: () => adminUsers(queryParams),
     ...options,
   });
 }
 
 /**
- * 获取用户详情 - Query Hook
+ * 获取用户详情 Hook
  */
-export function useGetApiAdminUsers1(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.UserDetailResponse>, Error>
+export function useAdminUserDetail(
+  pathParams: AdminUserDetailPathParams,
+  options?: UseQueryOptions<HTTPResponse<AdminUserDetailResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAdminUsers1', vars],
-    queryFn: () => getApiAdminUsers1(...vars),
+    queryKey: ['adminusers', '获取用户详情', pathParams.id],
+    queryFn: () => adminUserDetail(pathParams),
     ...options,
   });
 }
 
 /**
- * 更新用户状态 - Mutation Hook
+ * 更新用户状态 Hook
  */
-export function usePutApiAdminUsersStatus(
-  options?: UseMutationOptions<HTTPResponse<Types.SuccessResponse>, Error, any>
+export function useAdminUsersStatu(
+  pathParams: AdminUsersStatuPathParams,
+  options?: UseMutationOptions<HTTPResponse<AdminUsersStatuResponse>, Error, Types.UserStatusUpdateRequest>
 ) {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: (vars: any) => putApiAdminUsersStatus(...vars),
+    mutationFn: (data) => adminUsersStatu(pathParams, data),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['adminusers'] });
+      queryClient.invalidateQueries({ queryKey: ['operation'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
     ...options,
   });
 }

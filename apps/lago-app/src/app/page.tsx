@@ -1,20 +1,29 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated, getUser } from '@/lib/auth';
+import { isAuthenticated, getUser, User } from '@/lib/auth';
 
 export default function HomePage() {
   const router = useRouter();
-  const user = getUser();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/login');
+    async function checkAuth() {
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        router.push('/login');
+        return;
+      }
+      const userData = await getUser();
+      setUser(userData);
+      setLoading(false);
     }
+    checkAuth();
   }, [router]);
 
-  if (!isAuthenticated()) {
+  if (loading) {
     return null;
   }
 

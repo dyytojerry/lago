@@ -2,57 +2,68 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOpti
 import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+
+export type AuthOperationLoginResponse = Types.OperationLoginResponse;
+
+export type AuthOperationMeResponse = any;
 
 /**
  * 运营系统登录
  */
-export async function postApiAuthOperationLogin(
+export async function authOperationLogin(
   data: Types.OperationLoginRequest,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.OperationLoginResponse>> {
+): Promise<HTTPResponse<AuthOperationLoginResponse>> {
   return await apiRequest("/api/auth/operation/login", {
     method: 'POST',
     body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' },
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
  * 获取当前运营人员信息
  */
-export async function getApiAuthOperationMe(
+export async function authOperationMe(
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.GetApiAuthOperationMeResponse>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/auth/operation/me", {
     method: 'GET',
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
- * 运营系统登录 - Mutation Hook
+ * 运营系统登录 Hook
  */
-export function usePostApiAuthOperationLogin(
-  options?: UseMutationOptions<HTTPResponse<Types.OperationLoginResponse>, Error, any>
+export function useAuthOperationLogin(
+  options?: UseMutationOptions<HTTPResponse<AuthOperationLoginResponse>, Error, Types.OperationLoginRequest>
 ) {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: (vars: any) => postApiAuthOperationLogin(...vars),
+    mutationFn: (data) => authOperationLogin(data),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
+      queryClient.invalidateQueries({ queryKey: ['operation'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
     ...options,
   });
 }
 
 /**
- * 获取当前运营人员信息 - Query Hook
+ * 获取当前运营人员信息 Hook
  */
-export function useGetApiAuthOperationMe(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.GetApiAuthOperationMeResponse>, Error>
+export function useAuthOperationMe(
+  options?: UseQueryOptions<HTTPResponse<AuthOperationMeResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAuthOperationMe', vars],
-    queryFn: () => getApiAuthOperationMe(...vars),
+    queryKey: ['auth', '获取当前运营人员信息'],
+    queryFn: () => authOperationMe(),
     ...options,
   });
 }

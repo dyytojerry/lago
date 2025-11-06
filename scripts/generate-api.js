@@ -86,171 +86,127 @@ function generateTypeDefinition(schema, name, enumTypes = null, inline = false) 
 function getTypeFromSchema(schema, enumTypes = null, inline = false) {
   if (schema.$ref) {
     const refName = schema.$ref.split('/').pop();
-    return refName;
+    return inline ? refName : `Types.${refName}`;
   }
   
-  if (schema.type === 'array') {
-    const itemsType = schema.items ? getTypeFromSchema(schema.items, enumTypes, inline) : 'any';
-    return `${itemsType}[]`;
+  if (schema.type === 'array' && schema.items) {
+    const itemType = getTypeFromSchema(schema.items, enumTypes, inline);
+    return `${itemType}[]`;
   }
   
   if (schema.enum) {
-    if (enumTypes && enumTypes[schema.enum[0]]) {
-      return enumTypes[schema.enum[0]];
+    // 如果有枚举类型映射，使用枚举类型
+    if (enumTypes) {
+      const enumKey = schema.enum.join('_');
+      for (const [key, enumType] of enumTypes) {
+        if (key === enumKey) {
+          return inline ? enumType.name : `Types.${enumType.name}`;
+        }
+      }
     }
-    return 'string';
+    // 否则使用联合类型
+    return schema.enum.map(e => `'${e}'`).join(' | ');
+  }
+  
+  if (schema.format === 'date-time') {
+    return 'string'; // 或者 Date
+  }
+  if (schema.format === 'binary') {
+    return 'File';
   }
   
   return typeMapping[schema.type] || 'any';
 }
 
-// 生成验证装饰器调用
-function generateValidatorCall(schema, enumTypes = null, inline = false) {
+// 从schema获取验证装饰器
+function getValidatorFromSchema(schema) {
   if (schema.$ref) {
-    return '@ValidateNested()\n  @Type(() => Types.' + schema.$ref.split('/').pop() + ')';
+    return 'ValidateNested';
   }
   
   if (schema.type === 'array') {
-    return '@IsArray()\n  @ValidateNested({ each: true })\n  @Type(() => ' + (schema.items && schema.items.$ref ? 'Types.' + schema.items.$ref.split('/').pop() : 'Object') + ')';
+    return 'IsArray';
   }
   
   if (schema.enum) {
-    return `@IsEnum(${enumTypes && enumTypes[schema.enum[0]] ? enumTypes[schema.enum[0]] : 'String'})`;
+    return 'IsEnum';
+  }
+  
+  return validatorMapping[schema.type] || 'IsString';
+}
+
+// 生成验证装饰器调用
+function generateValidatorCall(schema, enumTypes = null, inline = false) {
+  if (schema.$ref) {
+    return '@ValidateNested()';
+  }
+  
+  if (schema.type === 'array') {
+    return '@IsArray()';
+  }
+  
+  if (schema.enum) {
+    // 如果有枚举类型映射，使用枚举类型
+    if (enumTypes) {
+      const enumKey = schema.enum.join('_');
+      for (const [key, enumType] of enumTypes) {
+        if (key === enumKey) {
+          return inline ? `@IsEnum(${enumType.name})` : `@IsEnum(Types.${enumType.name})`;
+        }
+      }
+    }
+    // 否则使用数组形式
+    const enumValues = schema.enum.map(e => `'${e}'`).join(', ');
+    return `@IsEnum([${enumValues}])`;
   }
   
   const validator = validatorMapping[schema.type] || 'IsString';
   return `@${validator}()`;
 }
 
-// 提取枚举类型
-function extractEnumTypes(schemas) {
-  const enumTypes = {};
-  
-  for (const [name, schema] of Object.entries(schemas)) {
-    if (schema.enum) {
-      enumTypes[name] = name;
-    }
-    
-    if (schema.properties) {
-      for (const [propName, propSchema] of Object.entries(schema.properties)) {
-        if (propSchema.enum) {
-          const enumName = `${name}${propName.charAt(0).toUpperCase() + propName.slice(1)}Enum`;
-          enumTypes[enumName] = enumName;
-        }
-      }
-    }
-  }
-  
-  return enumTypes;
+function upperFirst(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// 生成参数类型
-function generateParamTypes(path, method, operation, functionName, enumTypes) {
-  let types = '';
-  
-  // 路径参数
-  const pathParams = getPathParams(path);
-  if (pathParams.length > 0) {
-    const pathParamsType = getParamTypeName(functionName, 'PathParams');
-    types += `export class ${pathParamsType} {\n`;
-    pathParams.forEach(param => {
-      types += `  @IsString()\n  ${param}!: string;\n\n`;
-    });
-    types += '}\n\n';
-  }
-  
-  // 查询参数
-  if (operation.parameters) {
-    const queryParams = operation.parameters.filter(p => p.in === 'query');
-    if (queryParams.length > 0) {
-      const queryParamsType = getParamTypeName(functionName, 'QueryParams');
-      types += `export class ${queryParamsType} {\n`;
-      queryParams.forEach(param => {
-        const isOptional = !param.required;
-        const type = getTypeFromSchema(param.schema || { type: param.type || 'string' }, enumTypes);
-        const validatorCall = generateValidatorCall(param.schema || { type: param.type || 'string' }, enumTypes);
-        types += `  ${validatorCall}\n`;
-        if (isOptional) {
-          types += `  @IsOptional()\n`;
-        }
-        types += `  ${param.name}${isOptional ? '?' : ''}: ${type};\n\n`;
-      });
-      types += '}\n\n';
-    }
-  }
-  
-  return types;
+function camelCase(str) {
+  return str.replace(/[_-]([a-z])/g, (_, letter) => letter.toUpperCase());
 }
 
-// 获取路径参数
-function getPathParams(path) {
-  const matches = path.match(/\{([^}]+)\}/g);
-  return matches ? matches.map(m => m.slice(1, -1)) : [];
-}
-
-// 获取参数类型名
-function getParamTypeName(functionName, suffix) {
-  const baseName = functionName.charAt(0).toUpperCase() + functionName.slice(1);
-  return `${baseName}${suffix}`;
-}
-
-// 获取请求体类型
-function getRequestBodyType(operation, functionName) {
-  if (!operation.requestBody || !operation.requestBody.content) {
-    return null;
-  }
-  
-  const jsonContent = operation.requestBody.content['application/json'];
-  if (!jsonContent || !jsonContent.schema) {
-    return null;
-  }
-  
-  if (jsonContent.schema.$ref) {
-    return 'Types.' + jsonContent.schema.$ref.split('/').pop();
-  }
-  
-  const requestBodyType = getParamTypeName(functionName, 'RequestBody');
-  return requestBodyType;
-}
-
-// 获取响应类型
-function getResponseType(operation, functionName) {
-  const responses = operation.responses || {};
-  const successResponse = responses['200'] || responses['201'] || responses['204'];
-  
-  if (!successResponse || !successResponse.content) {
-    return 'any';
-  }
-  
-  const jsonContent = successResponse.content['application/json'];
-  if (!jsonContent || !jsonContent.schema) {
-    return 'any';
-  }
-  
-  if (jsonContent.schema.$ref) {
-    return 'Types.' + jsonContent.schema.$ref.split('/').pop();
-  }
-  
-  return getResponseTypeName(functionName);
-}
-
-// 获取响应类型名
-function getResponseTypeName(functionName) {
-  const baseName = functionName.charAt(0).toUpperCase() + functionName.slice(1).replace('-', '');
-  return `Types.${baseName}Response`;
-}
-
-// 生成函数名
+// 生成函数名 - 根据method和路径最后一个单词组合，避免数字后缀
 function getFunctionName(path, method, operation) {
   if (operation.operationId) {
     return operation.operationId;
   }
   
-  const pathParts = path.split('/').filter(p => p && !p.startsWith('{'));
   const methodPrefix = method.toLowerCase();
-  const pathName = pathParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+  const pathParts = path.split('/').filter(p => p && p !== 'api').filter(name => name[0] !== '{');
+  const single = pathParts.length === 1
+  if (pathParts[0] && !single && pathParts[0].endsWith('s')) {
+    pathParts[0] = pathParts[0].slice(0, -1);
+  }
   
-  return methodPrefix + pathName;
+  // 处理复数形式
+  let resource = camelCase(pathParts.join('-'));
+  if (resource.endsWith('s') && !single && methodPrefix !== 'get') {
+    resource = resource.slice(0, -1);
+  }
+  const operateSuffix = !usedFunctionNames.has(resource) ? '' : methodPrefix === 'get' ? 'Detail' : methodPrefix === 'post' ? 'Create' : methodPrefix === 'put' ? 'Update' : methodPrefix === 'delete' ? 'Delete' : '';
+  // 根据路径和操作生成更具体的函数名
+  let functionName = camelCase(`${operateSuffix && resource.endsWith('s') ? resource.slice(0, -1) : resource}${operateSuffix}`);
+  
+  return functionName;
+}
+
+// 生成参数类型名
+function getParamTypeName(functionName, paramType) {
+  const baseName = functionName.charAt(0).toUpperCase() + functionName.slice(1);
+  return `${baseName}${paramType}`;
+}
+
+// 生成返回类型名
+function getResponseTypeName(functionName) {
+  const baseName = functionName.charAt(0).toUpperCase() + functionName.slice(1).replace('-', '');
+  return `${baseName}Response`;
 }
 
 // 生成API函数
@@ -277,7 +233,7 @@ export async function ${functionName}(\n`;
     if (requestBodyType) {
       paramList.push(`  data: ${requestBodyType}`);
     } else {
-      hasBody = false;
+      hasBody = false
     }
   }
   
@@ -288,7 +244,7 @@ export async function ${functionName}(\n`;
       paramList.push(`  queryParams?: ${queryParamsType}`);
     }
   }
-  
+
   paramList.push('  noAuthorize?: boolean');
   
   func += paramList.join(',\n');
@@ -303,7 +259,7 @@ export async function ${functionName}(\n`;
     url = path.replace(/\{([^}]+)\}/g, (match, param) => `\${pathParams.${param}}`);
     url = `\`${url}\``;
   } else {
-    url = `"${url}"`;
+    url = `"${url}"`
   }
   
   // 构建请求选项
@@ -311,14 +267,15 @@ export async function ${functionName}(\n`;
   func += `    method: '${method.toUpperCase()}',\n`;
   
   if (hasBody) {
-    const hasFormData = operation.requestBody?.content?.['multipart/form-data'];
+    const hasFormData = operation.requestBody.content['multipart/form-data'];
     if (hasFormData) {
       func += '    body: jsonToFormData(data),\n';
+      func += '    headers: { "Content-Type": null },\n';
     } else {
       func += '    body: JSON.stringify(data),\n';
-      func += "    headers: { 'Content-Type': 'application/json' },\n";
     }
   }
+  func += '    noAuthorize: noAuthorize,\n';
   
   if (isGet && operation.parameters) {
     const queryParams = operation.parameters.filter(p => p.in === 'query');
@@ -327,71 +284,345 @@ export async function ${functionName}(\n`;
     }
   }
   
-  func += '    noAuthorize,\n';
   func += '  });\n';
   func += '}\n\n';
   
   return func;
 }
 
-// 生成 React Query Hook
-function generateHook(path, method, operation, functionName) {
-  const isMutation = ['post', 'put', 'patch', 'delete'].includes(method.toLowerCase());
+// 生成React Query Hook
+function generateHook(path, method, operation, customFunctionName = null) {
+  const functionName = customFunctionName || getFunctionName(path, method, operation);
+  const hookName = `use${functionName.charAt(0).toUpperCase() + functionName.slice(1)}`;
+  const isGet = method.toLowerCase() === 'get';
+  const isMutation = !isGet;
   
   if (isMutation) {
-    return `/**
- * ${operation.summary || functionName} - Mutation Hook
- */
-export function use${functionName.charAt(0).toUpperCase() + functionName.slice(1)}(
-  options?: UseMutationOptions<HTTPResponse<${getResponseType(operation, functionName)}>, Error, any>
-) {
-  return useMutation({
-    mutationFn: (vars: any) => ${functionName}(...vars),
-    ...options,
-  });
-}\n\n`;
+    return generateMutationHook(hookName, functionName, operation, path, method);
   } else {
-    return `/**
- * ${operation.summary || functionName} - Query Hook
- */
-export function use${functionName.charAt(0).toUpperCase() + functionName.slice(1)}(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<${getResponseType(operation, functionName)}>, Error>
-) {
-  return useQuery({
-    queryKey: ['${functionName}', vars],
-    queryFn: () => ${functionName}(...vars),
-    ...options,
-  });
-}\n\n`;
+    return generateQueryHook(hookName, functionName, operation, path, method);
   }
 }
 
-// 生成枚举类型
+// 生成Query Hook
+function generateQueryHook(hookName, functionName, operation, path, method) {
+  const cacheKey = getCacheKey(operation);
+  const params = getPathParams(path);
+  const isGet = method.toLowerCase() === 'get';
+  
+  let hook = `/**
+ * ${operation.summary || operation.operationId || hookName} Hook
+ */
+export function ${hookName}(\n`;
+  
+  const paramList = [];
+  if (params.length > 0) {
+    const pathParamsType = getParamTypeName(functionName, 'PathParams');
+    paramList.push(`  pathParams: ${pathParamsType}`);
+  }
+  
+  if (isGet && operation.parameters) {
+    const queryParams = operation.parameters.filter(p => p.in === 'query');
+    if (queryParams.length > 0) {
+      const queryParamsType = getParamTypeName(functionName, 'QueryParams');
+      paramList.push(`  queryParams?: ${queryParamsType}`);
+    }
+  }
+  
+  paramList.push(`  options?: UseQueryOptions<HTTPResponse<${upperFirst(functionName)}Response>, Error>`);
+  
+  hook += paramList.join(',\n');
+  hook += '\n) {\n';
+  
+  hook += `  return useQuery({\n`;
+  
+  // 构建queryKey
+  let queryKeyParts = [cacheKey];
+  if (params.length > 0) {
+    queryKeyParts.push(...params.map(name => `pathParams.${name}`));
+  }
+  if (isGet && operation.parameters) {
+    const queryParams = operation.parameters.filter(p => p.in === 'query');
+    if (queryParams.length > 0) {
+      queryKeyParts.push(...queryParams.map(item => `queryParams?.${item.name}`));
+    }
+  }
+  hook += `    queryKey: [${queryKeyParts.join(', ')}],\n`;
+  
+  // 构建queryFn
+  let queryFnParams = [];
+  if (params.length > 0) {
+    queryFnParams.push('pathParams');
+  }
+  if (isGet && operation.parameters) {
+    const queryParams = operation.parameters.filter(p => p.in === 'query');
+    if (queryParams.length > 0) {
+      queryFnParams.push('queryParams');
+    }
+  }
+  hook += `    queryFn: () => ${functionName}(${queryFnParams.join(', ')}),\n`;
+  hook += `    ...options,\n`;
+  hook += `  });\n`;
+  
+  hook += '}\n\n';
+  
+  return hook;
+}
+
+// 生成Mutation Hook
+function generateMutationHook(hookName, functionName, operation, path, method) {
+  const cachePatterns = getCacheInvalidationPatterns(operation);
+  const params = getPathParams(path);
+  const hasBody = ['post', 'put', 'patch'].includes(method.toLowerCase());
+  
+  let hook = `/**
+ * ${operation.summary || operation.operationId || hookName} Hook
+ */
+export function ${hookName}(\n`;
+  
+  // 构建参数类型
+  const paramList = [];
+  if (params.length > 0) {
+    const pathParamsType = getParamTypeName(functionName, 'PathParams');
+    paramList.push(`  pathParams: ${pathParamsType}`);
+  }
+  
+  const requestBodyType = hasBody ? getRequestBodyType(operation, functionName) : 'any';
+  
+  paramList.push(`  options?: UseMutationOptions<HTTPResponse<${upperFirst(functionName)}Response>, Error, ${requestBodyType}>`);
+  
+  hook += paramList.join(',\n');
+  hook += '\n) {\n';
+  hook += '  const queryClient = useQueryClient();\n\n';
+  hook += '  return useMutation({\n';
+  
+  // 构建mutationFn
+  let mutationFnParams = [];
+  let mutationFnCallParams = [];
+  if (params.length > 0) {
+    mutationFnCallParams.push('pathParams');
+  }
+  if (hasBody) {
+    const requestBodyType = getRequestBodyType(operation, functionName);
+    if (requestBodyType) {
+      mutationFnParams.push('data');
+      mutationFnCallParams.push('data');
+    }
+  }
+  hook += `    mutationFn: (${mutationFnParams.join(', ')}) => ${functionName}(${mutationFnCallParams.join(', ')}),\n`;
+  
+  if (cachePatterns.length > 0) {
+    hook += '    onSuccess: () => {\n';
+    hook += '      // 清除相关缓存\n';
+    cachePatterns.forEach(pattern => {
+      hook += `      queryClient.invalidateQueries({ queryKey: [${pattern}] });\n`;
+    });
+    hook += '    },\n';
+  }
+  
+  hook += '    onError: (error: any) => {\n';
+  hook += '      console.error(\'Mutation failed:\', error);\n';
+  hook += '    },\n';
+  hook += '    ...options,\n';
+  hook += '  });\n';
+  
+  hook += '}\n\n';
+  
+  return hook;
+}
+
+// 辅助函数
+function getPathParams(path) {
+  const matches = path.match(/\{([^}]+)\}/g);
+  return matches ? matches.map(m => m.slice(1, -1)) : [];
+}
+
+function getRequestBodyType(operation, functionName) {
+  if (!operation.requestBody || !operation.requestBody.content) {
+    return null;
+  }
+  
+  const content = operation.requestBody.content['application/json'] || operation.requestBody.content['multipart/form-data'];
+  if (!content || !content.schema) {
+    return null;
+  }
+  
+  // 如果是内联schema，生成DTO类型
+  if (content.schema.type === 'object' && content.schema.properties) {
+    return getParamTypeName(functionName, 'DTO');
+  }
+  
+  return getTypeFromSchema(content.schema);
+}
+
+function getResponseType(operation, functionName) {
+  const response = operation.responses['200'];
+  if (!response || !response.content) {
+    return 'any';
+  }
+  
+  const content = response.content['application/json'];
+  if (!content || !content.schema) {
+    return 'any';
+  }
+  
+  // 处理swagger.json中的复杂响应结构
+  if (content.schema.type === 'object' && content.schema.properties) {
+    // 查找data部分的类型定义
+    const dataSchema = content.schema.properties.data;
+    
+    if (dataSchema) {
+      if (dataSchema.type === 'object' && dataSchema.properties) {
+        return getResponseTypeName(functionName);
+      }
+      return getTypeFromSchema(dataSchema);
+    }
+  }
+  
+  // 如果是ApiResponse引用
+  if (content.schema.$ref && content.schema.$ref.endsWith('Response')) {
+    return getResponseTypeName(functionName); //'any'; // ApiResponse的data部分是any类型
+  }
+  
+  return getTypeFromSchema(content.schema);
+}
+
+function getCacheKey(operation) {
+  const tags = operation.tags || ['default'];
+  const summary = operation.summary || operation.operationId || 'unknown';
+  return `'${tags[0].toLowerCase()}', '${summary.toLowerCase().replace(/\s+/g, '_')}'`;
+}
+
+function getCacheInvalidationPatterns(operation) {
+  const tags = operation.tags || ['default'];
+  return tags.map(tag => `'${tag.toLowerCase()}'`);
+}
+
+// 生成参数类型定义
+function generateParamTypes(path, method, operation, functionName, enumTypes = null) {
+  const types = [];
+  const params = getPathParams(path);
+  const hasBody = ['post', 'put', 'patch'].includes(method.toLowerCase());
+  const isGet = method.toLowerCase() === 'get';
+  
+  // 生成PathParams类型
+  if (params.length > 0) {
+    const pathParamsType = getParamTypeName(functionName, 'PathParams');
+    let typeDef = `export class ${pathParamsType} {\n`;
+    params.forEach(param => {
+      typeDef += `  @IsString()\n`;
+      typeDef += `  ${param}: string;\n\n`;
+    });
+    typeDef += '}\n\n';
+    types.push(typeDef);
+  }
+  
+  // 生成QueryParams类型
+  if (isGet && operation.parameters) {
+    const queryParams = operation.parameters.filter(p => p.in === 'query');
+    if (queryParams.length > 0) {
+      const queryParamsType = getParamTypeName(functionName, 'QueryParams');
+      let typeDef = `export class ${queryParamsType} {\n`;
+      queryParams.forEach(param => {
+        const isOptional = !param.required;
+        const type = getTypeFromSchema(param.schema, enumTypes);
+        const validatorCall = generateValidatorCall(param.schema, enumTypes);
+        
+        typeDef += `  ${validatorCall}\n`;
+        if (isOptional) {
+          typeDef += `  @IsOptional()\n`;
+        }
+        typeDef += `  ${param.name}${isOptional ? '?' : ''}: ${type};\n\n`;
+      });
+      typeDef += '}\n\n';
+      types.push(typeDef);
+    }
+  }
+  
+  // 生成DTO类型
+  if (hasBody && operation.requestBody && operation.requestBody.content) {
+    const content = operation.requestBody.content['application/json'] || operation.requestBody.content['multipart/form-data'];
+    if (content && content.schema && content.schema.type === 'object' && content.schema.properties) {
+      const dtoType = getParamTypeName(functionName, 'DTO');
+      types.push(generateTypeDefinition(content.schema, dtoType, enumTypes));
+    }
+  }
+  
+  // 生成Response类型
+  const response = operation.responses['200'];
+  const responseType = getResponseTypeName(functionName);
+  if (response && response.content) {
+    const content = response.content['application/json'];
+    if (content && content.schema && content.schema.type === 'object' && content.schema.properties) {
+      const dataSchema = content.schema.properties.data;
+      if (dataSchema && dataSchema.type === 'object' && dataSchema.properties) {
+        types.push(generateTypeDefinition(dataSchema, responseType, enumTypes));
+      } else {
+        types.push(`export type ${responseType} = any;\n\n`);
+      }
+    } else if (content && content.schema.$ref && content.schema.$ref.endsWith('Response')) {
+      types.push(`export type ${responseType} = Types.${content.schema.$ref.split('/').pop()};\n\n`);
+    }
+  }
+  
+  return types.join('');
+}
+
+const enumTypes = new Map();
+// 提取枚举类型
+function extractEnumTypes(schemas) {
+  
+  for (const [name, schema] of Object.entries(schemas)) {
+    // if (name === 'ApiResponse' || name === 'ErrorResponse') continue;
+    
+    if (schema.properties) {
+      for (const [propName, propSchema] of Object.entries(schema.properties)) {
+        if (propSchema.enum) {
+          const enumKey = propSchema.enum.join('_');
+          const enumName = `${name}${propName.charAt(0).toUpperCase() + propName.slice(1)}`;
+          
+          if (!enumTypes.has(enumKey)) {
+            enumTypes.set(enumKey, {
+              name: enumName,
+              values: propSchema.enum
+            });
+          }
+        }
+      }
+    }
+  }
+  
+  return enumTypes;
+}
+
+// 生成枚举类型定义
 function generateEnumTypes(enumTypes) {
   let enumContent = '';
   
-  for (const [name, enumName] of Object.entries(enumTypes)) {
-    enumContent += `export enum ${enumName} {\n`;
-    // 这里需要从 schema 中获取枚举值，简化处理
-    enumContent += `  // TODO: 添加枚举值\n`;
+  for (const [key, enumType] of enumTypes) {
+    enumContent += `export enum ${enumType.name} {\n`;
+    enumType.values.forEach(value => {
+      const enumKey = value.toUpperCase().replace(/-/g, '_');
+      enumContent += `  ${enumKey} = '${value}',\n`;
+    });
     enumContent += '}\n\n';
   }
   
   return enumContent;
 }
 
+
 // 用于跟踪已生成的函数名，避免重复
 const usedFunctionNames = new Set();
-
 // 确定需要过滤的 tags
 const allowedTags = tagMappings[projectType] || [];
+
 // 主生成函数
 function generateApiFiles() {
-  console.log(`开始生成API代码 (项目: ${projectType}, 标签过滤: ${allowedTags.join(', ')})...`);
+  console.log('开始生成API代码...');
   
   // 提取枚举类型
-  const enumTypes = extractEnumTypes(swagger.components?.schemas || {});
+  const enumTypes = extractEnumTypes(swagger.components.schemas);
   
   // 生成所有类型定义到types.ts
   const typesFile = path.join(outputDir, 'types.ts');
@@ -402,26 +633,25 @@ function generateApiFiles() {
   typesContent += generateEnumTypes(enumTypes);
   
   // 生成schemas中的类型
-  if (swagger.components?.schemas) {
-    for (const [name, schema] of Object.entries(swagger.components.schemas)) {
-      typesContent += generateTypeDefinition(schema, name, enumTypes, true);
-      typesContent += '\n';
-    }
+  for (const [name, schema] of Object.entries(swagger.components.schemas)) {
+    // if (!name.endsWith('Response') || (name === 'ApiResponse' || name === 'ErrorResponse')) {
+    typesContent += generateTypeDefinition(schema, name, enumTypes, true);
+    typesContent += '\n';
+    // }
   }
   
   fs.writeFileSync(typesFile, typesContent);
   console.log(`生成类型定义: ${typesFile}`);
   
+  console.log(`开始生成API代码 (项目: ${projectType}, 标签过滤: ${allowedTags.join(', ')})...`);
   // 按标签分组生成API文件
   const tagGroups = {};
   
-  for (const [path, methods] of Object.entries(swagger.paths || {})) {
+  for (const [path, methods] of Object.entries(swagger.paths)) {
     for (const [method, operation] of Object.entries(methods)) {
-      const tags = operation.tags || ['default'];
-      const [tag, project] = tags;
-
+      const [tag, project] = operation.tags;
       // 过滤：只包含指定项目的 tags
-      if(project !== projectType.charAt(0).toUpperCase() + projectType.slice(1) && !allowedTags?.includes(tag)) {
+      if(project !== upperFirst(projectType) && !allowedTags?.includes(tag)) {
         continue;  // 跳过不符合的接口
       }
       
@@ -432,7 +662,7 @@ function generateApiFiles() {
       tagGroups[tag].push({ path, method, operation });
     }
   }
-  
+
   if (Object.keys(tagGroups).length === 0) {
     console.warn(`警告: 没有找到匹配的接口 (项目: ${projectType}, 标签: ${allowedTags.join(', ')})`);
     return;
@@ -446,12 +676,7 @@ function generateApiFiles() {
     let content = `import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';\n`;
     content += `import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';\n`;
     content += `import * as Types from './types';\n`;
-    content += `import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';\n`;
-    content += `import { Type } from 'class-transformer';\n\n`;
-    
-    // 收集使用的类型
-    const usedEnumTypes = new Set();
-    const usedEntityTypes = new Set();
+    content += `import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';\n\n`;
     
     // 生成参数和响应类型定义
     for (const { path, method, operation } of apis) {
@@ -468,6 +693,11 @@ function generateApiFiles() {
       
       const paramTypes = generateParamTypes(path, method, operation, functionName, enumTypes);
       content += paramTypes;
+    
+      content = content.replace(
+        `import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';\n\n`,
+        `import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';\n\n`
+      );
     }
     
     // 重置用于API函数
@@ -526,6 +756,7 @@ function generateApiFiles() {
   
   console.log('API代码生成完成！');
 }
+
 
 // 运行生成器
 generateApiFiles();

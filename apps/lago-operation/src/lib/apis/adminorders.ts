@@ -2,9 +2,8 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOpti
 import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
 
-export class GetApiAdminOrdersQueryParams {
+export class AdminOrdersQueryParams {
   @IsString()
   @IsOptional()
   page?: string;
@@ -13,13 +12,13 @@ export class GetApiAdminOrdersQueryParams {
   @IsOptional()
   limit?: string;
 
-  @IsEnum(String)
+  @IsEnum(Types.OrderStatus)
   @IsOptional()
-  status?: string;
+  status?: Types.OrderStatus;
 
-  @IsEnum(String)
+  @IsEnum(Types.OrderType)
   @IsOptional()
-  type?: string;
+  type?: Types.OrderType;
 
   @IsString()
   @IsOptional()
@@ -35,97 +34,113 @@ export class GetApiAdminOrdersQueryParams {
 
 }
 
-export class GetApiAdminOrders1PathParams {
+export type AdminOrdersResponse = Types.OrderListResponse;
+
+export class AdminOrderDetailPathParams {
   @IsString()
-  id!: string;
+  id: string;
 
 }
 
-export class PutApiAdminOrdersStatusPathParams {
+export type AdminOrderDetailResponse = Types.OrderDetailResponse;
+
+export class AdminOrdersStatuPathParams {
   @IsString()
-  id!: string;
+  id: string;
 
 }
+
+export type AdminOrdersStatuResponse = Types.SuccessResponse;
 
 /**
  * 获取订单列表
  */
-export async function getApiAdminOrders(
-  queryParams?: GetApiAdminOrdersQueryParams,
+export async function adminOrders(
+  queryParams?: AdminOrdersQueryParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.OrderListResponse>> {
+): Promise<HTTPResponse<AdminOrdersResponse>> {
   return await apiRequest("/api/admin/orders", {
     method: 'GET',
+    noAuthorize: noAuthorize,
     params: queryParams,
-    noAuthorize,
   });
 }
 
 /**
  * 获取订单详情
  */
-export async function getApiAdminOrders1(
-  pathParams: GetApiAdminOrders1PathParams,
+export async function adminOrderDetail(
+  pathParams: AdminOrderDetailPathParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.OrderDetailResponse>> {
+): Promise<HTTPResponse<AdminOrderDetailResponse>> {
   return await apiRequest(`/api/admin/orders/${pathParams.id}`, {
     method: 'GET',
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
  * 更新订单状态
  */
-export async function putApiAdminOrdersStatus(
-  pathParams: PutApiAdminOrdersStatusPathParams,
+export async function adminOrdersStatu(
+  pathParams: AdminOrdersStatuPathParams,
   data: Types.OrderStatusUpdateRequest,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.SuccessResponse>> {
+): Promise<HTTPResponse<AdminOrdersStatuResponse>> {
   return await apiRequest(`/api/admin/orders/${pathParams.id}/status`, {
     method: 'PUT',
     body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' },
-    noAuthorize,
+    noAuthorize: noAuthorize,
   });
 }
 
 /**
- * 获取订单列表 - Query Hook
+ * 获取订单列表 Hook
  */
-export function useGetApiAdminOrders(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.OrderListResponse>, Error>
+export function useAdminOrders(
+  queryParams?: AdminOrdersQueryParams,
+  options?: UseQueryOptions<HTTPResponse<AdminOrdersResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAdminOrders', vars],
-    queryFn: () => getApiAdminOrders(...vars),
+    queryKey: ['adminorders', '获取订单列表', queryParams?.page, queryParams?.limit, queryParams?.status, queryParams?.type, queryParams?.buyerId, queryParams?.sellerId, queryParams?.search],
+    queryFn: () => adminOrders(queryParams),
     ...options,
   });
 }
 
 /**
- * 获取订单详情 - Query Hook
+ * 获取订单详情 Hook
  */
-export function useGetApiAdminOrders1(
-  vars: any,
-  options?: UseQueryOptions<HTTPResponse<Types.OrderDetailResponse>, Error>
+export function useAdminOrderDetail(
+  pathParams: AdminOrderDetailPathParams,
+  options?: UseQueryOptions<HTTPResponse<AdminOrderDetailResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['getApiAdminOrders1', vars],
-    queryFn: () => getApiAdminOrders1(...vars),
+    queryKey: ['adminorders', '获取订单详情', pathParams.id],
+    queryFn: () => adminOrderDetail(pathParams),
     ...options,
   });
 }
 
 /**
- * 更新订单状态 - Mutation Hook
+ * 更新订单状态 Hook
  */
-export function usePutApiAdminOrdersStatus(
-  options?: UseMutationOptions<HTTPResponse<Types.SuccessResponse>, Error, any>
+export function useAdminOrdersStatu(
+  pathParams: AdminOrdersStatuPathParams,
+  options?: UseMutationOptions<HTTPResponse<AdminOrdersStatuResponse>, Error, Types.OrderStatusUpdateRequest>
 ) {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: (vars: any) => putApiAdminOrdersStatus(...vars),
+    mutationFn: (data) => adminOrdersStatu(pathParams, data),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['adminorders'] });
+      queryClient.invalidateQueries({ queryKey: ['operation'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
     ...options,
   });
 }
