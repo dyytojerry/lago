@@ -1,7 +1,7 @@
 {
   "name": "@lago/ui",
   "version": "1.0.0",
-  "description": "Lago 公共工具函数库",
+  "description": "Lago 公共组件库",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -17,7 +17,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "@tanstack/react-query": "^5.8.4",
     "@tanstack/react-query-devtools": "^5.8.4",
-    "@lago/common": "workspace:*"
+    "@lago/common": "*"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

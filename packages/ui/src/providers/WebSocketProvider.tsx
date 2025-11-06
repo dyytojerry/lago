@@ -2,8 +2,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useWebSocketChat, type WebSocketHook } from "@/hooks/useWebSocket";
-import { useAuth } from "@/providers/AuthProvider";
+import { useWebSocketChat, type WebSocketHook } from "../hooks/useWebSocket";
+import { useAuth } from "./AuthProvider";
 import { toast } from "react-hot-toast";
 
 // WebSocket Context

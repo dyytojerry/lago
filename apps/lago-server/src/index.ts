@@ -22,6 +22,11 @@ import authRoutes from './routes/auth.routes';
 import shareRoutes from './routes/share.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import productsRoutes from './routes/products.routes';
+import productsAppRoutes from './routes/products.app.routes';
+import ordersAppRoutes from './routes/orders.app.routes';
+import chatAppRoutes from './routes/chat.app.routes';
+import communitiesAppRoutes from './routes/communities.app.routes';
+import usersAppRoutes from './routes/users.app.routes';
 import usersRoutes from './routes/users.routes';
 import ordersRoutes from './routes/orders.routes';
 
@@ -104,8 +109,13 @@ app.get('/health', (_req, res) => {
 
 
 // 路由
-app.use('/api/auth', authUser, authRoutes);
-app.use('/api/share', authUser, shareRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/share', shareRoutes);
+app.use('/api/products', productsAppRoutes);
+app.use('/api/orders', ordersAppRoutes);
+app.use('/api/chat', chatAppRoutes);
+app.use('/api/communities', communitiesAppRoutes);
+app.use('/api/users', usersAppRoutes);
 app.use('/api/admin/dashboard', authOperation, dashboardRoutes);
 app.use('/api/admin/products', authOperation, productsRoutes);
 app.use('/api/admin/users', authOperation, usersRoutes);

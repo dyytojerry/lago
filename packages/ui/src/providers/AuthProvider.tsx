@@ -25,7 +25,10 @@ export const setRequestOptions = (
     noAuthorize?: boolean
   ) => Promise<HTTPResponse<any>>
 ) => {
-  defaultRequestOptions.fallback = async (statusCode, retry) => {
+  defaultRequestOptions.fallback = async (
+    statusCode: number,
+    retry: () => Promise<any>
+  ) => {
     if (statusCode === 401) {
       redirectToLogin();
     } else if (statusCode === 422) {

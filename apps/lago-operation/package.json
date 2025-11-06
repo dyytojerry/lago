@@ -56,7 +56,8 @@
     "tailwindcss": "^3.3.6",
     "typescript": "^5.3.2",
     "zustand": "^4.4.7",
-    "@lago/common": "*"
+    "@lago/common": "*",
+    "@lago/ui": "*"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

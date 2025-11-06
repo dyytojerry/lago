@@ -4,6 +4,7 @@
     "composite": true,
     "noEmit": false,
     "outDir": "./dist",
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@lago/common": ["../common/src/index.ts"]
@@ -13,12 +14,5 @@
     {
       "path": "../common"
     }
-  ],
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
   ]
 }

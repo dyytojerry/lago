@@ -6,12 +6,16 @@
     "outDir": "./dist",
     "paths": {
       "@/*": ["./src/*"],
-      "@lago/common": ["../../packages/common/src/index.ts"]
+      "@lago/common": ["../../packages/common/src/index.ts"],
+      "@lago/ui": ["../../packages/ui/src/index.ts"]
     }
   },
   "references": [
     {
       "path": "../../packages/common"
+    },
+    {
+      "path": "../../packages/ui"
     }
   ],
   "include": [
