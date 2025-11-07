@@ -598,9 +598,9 @@ function generateParamTypes(path, method, operation, functionName, enumTypes = n
         }  else {
           types.push(`export type ${responseType} = any;\n\n`);
         }
+      } else if (content.schema.$ref && content.schema.$ref.endsWith('Response')) {
+        types.push(`export type ${responseType} = Types.${content.schema.$ref.split('/').pop()};\n\n`);
       }
-    } else if (content && content.schema.$ref && content.schema.$ref.endsWith('Response')) {
-      types.push(`export type ${responseType} = Types.${content.schema.$ref.split('/').pop()};\n\n`);
     }
   }
   

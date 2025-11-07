@@ -21,6 +21,7 @@ import { createSuccessResponse } from './lib/response';
 // Routes
 import authRoutes from './routes/auth.routes';
 import shareRoutes from './routes/share.routes';
+import publicRoutes from './routes/public.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import productsRoutes from './routes/products.routes';
 import productsAppRoutes from './routes/products.app.routes';
@@ -30,7 +31,6 @@ import communitiesAppRoutes from './routes/communities.app.routes';
 import usersAppRoutes from './routes/users.app.routes';
 import usersRoutes from './routes/users.routes';
 import ordersRoutes from './routes/orders.routes';
-import regionsRoutes from './routes/regions.routes';
 import communitiesRoutes from './routes/communities.routes';
 
 
@@ -112,9 +112,9 @@ app.get('/health', (_req, res) => {
 
 
 // 路由
+app.use('/api', publicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/share', shareRoutes);
-app.use('/api/regions', regionsRoutes);
 app.use('/api/products', productsAppRoutes);
 app.use('/api/orders', ordersAppRoutes);
 app.use('/api/chat', chatAppRoutes);

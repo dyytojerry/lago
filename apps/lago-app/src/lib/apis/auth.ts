@@ -3,6 +3,16 @@ import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
+export type AuthLoginResponse = Types.LoginResponse;
+
+export type AuthWechatLoginResponse = Types.LoginResponse;
+
+export type AuthPhoneLoginResponse = Types.LoginResponse;
+
+export type AuthPhoneRegisterResponse = Types.LoginResponse;
+
+export type AuthOperationLoginResponse = Types.OperationLoginResponse;
+
 export type AuthMeResponse = any;
 
 export type AuthOperationMeResponse = any;

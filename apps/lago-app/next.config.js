@@ -6,7 +6,7 @@ const nextConfig = {
   // this includes files from the monorepo base two directories up
   outputFileTracingRoot: path.join(__dirname, '../../'),
   images: {
-    domains: ['localhost', 'test.cunguangcanlan.com'],
+    domains: ['localhost', 'test.cunguangcanlan.com', 'images.unsplash.com'],
   },
   async rewrites() {
     return [

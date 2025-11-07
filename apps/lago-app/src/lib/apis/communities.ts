@@ -8,6 +8,52 @@ export class CommunitieMyResponse {
   communities: Types.Community[];
 
 }
+export class CommunitieJoinPathParams {
+  @IsString()
+  id: string;
+
+}
+
+export type CommunitieJoinResponse = Types.SuccessResponse;
+
+export class CommunitieLeavePathParams {
+  @IsString()
+  id: string;
+
+}
+
+export type CommunitieLeaveResponse = Types.SuccessResponse;
+
+export class CommunitieVerifyPathParams {
+  @IsString()
+  id: string;
+
+}
+
+export class CommunitieVerifyDTO {
+  @IsString()
+  @IsOptional()
+  companyName?: string;
+
+  @IsString()
+  @IsOptional()
+  contactName?: string;
+
+  @IsString()
+  @IsOptional()
+  contactPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  licenseUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  proofUrl?: string;
+
+}
+export type CommunitieVerifyResponse = Types.SuccessResponse;
+
 export class CommunitieNearbyQueryParams {
   @IsNumber()
   latitude: number;
@@ -76,46 +122,6 @@ export class CommunitiesResponse {
   community: Types.Community;
 
 }
-export class CommunitieJoinPathParams {
-  @IsString()
-  id: string;
-
-}
-
-export class CommunitieLeavePathParams {
-  @IsString()
-  id: string;
-
-}
-
-export class CommunitieVerifyPathParams {
-  @IsString()
-  id: string;
-
-}
-
-export class CommunitieVerifyDTO {
-  @IsString()
-  @IsOptional()
-  companyName?: string;
-
-  @IsString()
-  @IsOptional()
-  contactName?: string;
-
-  @IsString()
-  @IsOptional()
-  contactPhone?: string;
-
-  @IsString()
-  @IsOptional()
-  licenseUrl?: string;
-
-  @IsString()
-  @IsOptional()
-  proofUrl?: string;
-
-}
 /**
  * 获取用户加入的小区
  */
@@ -123,47 +129,6 @@ export async function communitieMy(
   noAuthorize?: boolean
 ): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/communities/my", {
-    method: 'GET',
-    noAuthorize: noAuthorize,
-  });
-}
-
-/**
- * 获取附近小区（1公里内）
- */
-export async function communitieNearby(
-  queryParams?: CommunitieNearbyQueryParams,
-  noAuthorize?: boolean
-): Promise<HTTPResponse<any>> {
-  return await apiRequest("/api/communities/nearby", {
-    method: 'GET',
-    noAuthorize: noAuthorize,
-    params: queryParams,
-  });
-}
-
-/**
- * 搜索小区
- */
-export async function communitieSearch(
-  queryParams?: CommunitieSearchQueryParams,
-  noAuthorize?: boolean
-): Promise<HTTPResponse<any>> {
-  return await apiRequest("/api/communities/search", {
-    method: 'GET',
-    noAuthorize: noAuthorize,
-    params: queryParams,
-  });
-}
-
-/**
- * 获取小区详情
- */
-export async function communities(
-  pathParams: CommunitiesPathParams,
-  noAuthorize?: boolean
-): Promise<HTTPResponse<any>> {
-  return await apiRequest(`/api/communities/${pathParams.id}`, {
     method: 'GET',
     noAuthorize: noAuthorize,
   });
@@ -211,6 +176,47 @@ export async function communitieVerify(
 }
 
 /**
+ * 获取附近小区（1公里内）
+ */
+export async function communitieNearby(
+  queryParams?: CommunitieNearbyQueryParams,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<any>> {
+  return await apiRequest("/api/communities/nearby", {
+    method: 'GET',
+    noAuthorize: noAuthorize,
+    params: queryParams,
+  });
+}
+
+/**
+ * 搜索小区
+ */
+export async function communitieSearch(
+  queryParams?: CommunitieSearchQueryParams,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<any>> {
+  return await apiRequest("/api/communities/search", {
+    method: 'GET',
+    noAuthorize: noAuthorize,
+    params: queryParams,
+  });
+}
+
+/**
+ * 获取小区详情
+ */
+export async function communities(
+  pathParams: CommunitiesPathParams,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<any>> {
+  return await apiRequest(`/api/communities/${pathParams.id}`, {
+    method: 'GET',
+    noAuthorize: noAuthorize,
+  });
+}
+
+/**
  * 获取用户加入的小区 Hook
  */
 export function useCommunitieMy(
@@ -219,48 +225,6 @@ export function useCommunitieMy(
   return useQuery({
     queryKey: ['communities', '获取用户加入的小区'],
     queryFn: () => communitieMy(),
-    ...options,
-  });
-}
-
-/**
- * 获取附近小区（1公里内） Hook
- */
-export function useCommunitieNearby(
-  queryParams?: CommunitieNearbyQueryParams,
-  options?: UseQueryOptions<HTTPResponse<CommunitieNearbyResponse>, Error>
-) {
-  return useQuery({
-    queryKey: ['communities', '获取附近小区（1公里内）', queryParams?.latitude, queryParams?.longitude, queryParams?.radius],
-    queryFn: () => communitieNearby(queryParams),
-    ...options,
-  });
-}
-
-/**
- * 搜索小区 Hook
- */
-export function useCommunitieSearch(
-  queryParams?: CommunitieSearchQueryParams,
-  options?: UseQueryOptions<HTTPResponse<CommunitieSearchResponse>, Error>
-) {
-  return useQuery({
-    queryKey: ['communities', '搜索小区', queryParams?.search, queryParams?.provinceId, queryParams?.cityId, queryParams?.districtId, queryParams?.verificationStatus, queryParams?.page, queryParams?.limit],
-    queryFn: () => communitieSearch(queryParams),
-    ...options,
-  });
-}
-
-/**
- * 获取小区详情 Hook
- */
-export function useCommunities(
-  pathParams: CommunitiesPathParams,
-  options?: UseQueryOptions<HTTPResponse<CommunitiesResponse>, Error>
-) {
-  return useQuery({
-    queryKey: ['communities', '获取小区详情', pathParams.id],
-    queryFn: () => communities(pathParams),
     ...options,
   });
 }
@@ -330,6 +294,48 @@ export function useCommunitieVerify(
     onError: (error: any) => {
       console.error('Mutation failed:', error);
     },
+    ...options,
+  });
+}
+
+/**
+ * 获取附近小区（1公里内） Hook
+ */
+export function useCommunitieNearby(
+  queryParams?: CommunitieNearbyQueryParams,
+  options?: UseQueryOptions<HTTPResponse<CommunitieNearbyResponse>, Error>
+) {
+  return useQuery({
+    queryKey: ['communities', '获取附近小区（1公里内）', queryParams?.latitude, queryParams?.longitude, queryParams?.radius],
+    queryFn: () => communitieNearby(queryParams),
+    ...options,
+  });
+}
+
+/**
+ * 搜索小区 Hook
+ */
+export function useCommunitieSearch(
+  queryParams?: CommunitieSearchQueryParams,
+  options?: UseQueryOptions<HTTPResponse<CommunitieSearchResponse>, Error>
+) {
+  return useQuery({
+    queryKey: ['communities', '搜索小区', queryParams?.search, queryParams?.provinceId, queryParams?.cityId, queryParams?.districtId, queryParams?.verificationStatus, queryParams?.page, queryParams?.limit],
+    queryFn: () => communitieSearch(queryParams),
+    ...options,
+  });
+}
+
+/**
+ * 获取小区详情 Hook
+ */
+export function useCommunities(
+  pathParams: CommunitiesPathParams,
+  options?: UseQueryOptions<HTTPResponse<CommunitiesResponse>, Error>
+) {
+  return useQuery({
+    queryKey: ['communities', '获取小区详情', pathParams.id],
+    queryFn: () => communities(pathParams),
     ...options,
   });
 }

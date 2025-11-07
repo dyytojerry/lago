@@ -42,7 +42,7 @@ export async function getNearbyCommunities(req: Request, res: Response) {
     const allCommunities = await prisma.community.findMany({
       where: {
         isActive: true,
-        verificationStatus: 'approved', // 只返回已认证的小区
+        // verificationStatus: 'approved', // 只返回已认证的小区
       },
       include: {
         province: { select: { name: true } },

@@ -1,24 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { ProductCard } from "@/components/ProductCard";
-import { LocationSelector } from "@/components/LocationSelector";
+import { BannerSwiper } from "@/components/BannerSwiper";
 import { Loading } from "@/components/Loading";
 import { EmptyState } from "@/components/EmptyState";
-import { apiRequest, HTTPResponse } from "@lago/common";
+import { apiRequest } from "@lago/common";
 import { useAuth } from "@lago/ui";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { MapPin, Users, Search, ArrowRight } from "lucide-react";
-import { productRecommended } from "@/lib/apis";
+import { communitieMy, communitieNearby, productDetail } from "@/lib/apis";
+import {
+  Bell,
+  MapPin,
+  MoreHorizontal,
+  Search,
+  Users,
+  ArrowRight,
+  Plus,
+  Calendar,
+  Play,
+} from "lucide-react";
 
 interface Product {
   id: string;
   title: string;
   price: number;
-  deposit?: number;
   images: string[];
   location?: string;
   community?: {
@@ -26,27 +35,17 @@ interface Product {
     name: string;
     location?: string;
   };
-  owner?: {
-    id: string;
-    nickname?: string;
-    avatarUrl?: string;
-    creditScore: number;
-    isVerified: boolean;
-  };
   viewCount: number;
   likeCount: number;
   type: "rent" | "sell" | "both";
   isVerified: boolean;
 }
 
-interface Community {
+interface CommunitySummary {
   id: string;
   name: string;
   address?: string;
   images: string[];
-  province?: { name: string };
-  city?: { name: string };
-  district?: { name: string };
   _count?: {
     members: number;
     products: number;
@@ -54,255 +53,413 @@ interface Community {
   distance?: number;
 }
 
+interface CommunityActivityItem {
+  id: string;
+  title: string;
+  description?: string;
+  images: string[];
+  startTime?: string;
+  location?: string;
+  communityId: string;
+  communityName: string;
+  communityCover?: string;
+}
+
+interface CommunityDetailResponse {
+  community: {
+    id: string;
+    name: string;
+    description?: string;
+    images: string[];
+    activities: Array<{
+      id: string;
+      title: string;
+      description?: string;
+      images: string[];
+      startTime?: string;
+      location?: string;
+      status: string;
+    }>;
+  };
+}
+
+const DEFAULT_BANNERS = [
+  {
+    id: "banner-1",
+    image:
+      "https://images.unsplash.com/photo-1529429617124-aee80789dd0c?auto=format&fit=crop&w=1400&q=60",
+    link: "/search",
+  },
+  {
+    id: "banner-2",
+    image:
+      "https://images.unsplash.com/photo-1536067398034-21f2b182c5ee?auto=format&fit=crop&w=1400&q=60",
+    link: "/communities/search",
+  },
+  {
+    id: "banner-3",
+    image:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=60",
+    link: "/publish",
+  },
+];
+
 export default function HomePage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const { latitude, longitude, loading: geoLoading } = useGeolocation();
-  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
-  const [hotProducts, setHotProducts] = useState<Product[]>([]);
-  const [myCommunities, setMyCommunities] = useState<Community[]>([]);
-  const [nearbyCommunities, setNearbyCommunities] = useState<Community[]>([]);
-  const [loading, setLoading] = useState(true);
-  console.log(latitude && longitude);
+
+  const [pageLoading, setPageLoading] = useState(true);
+  const [myCommunities, setMyCommunities] = useState<CommunitySummary[]>([]);
+  const [nearbyCommunities, setNearbyCommunities] = useState<
+    CommunitySummary[]
+  >([]);
+  const [communityProducts, setCommunityProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+
+  const [activityFeed, setActivityFeed] = useState<CommunityActivityItem[]>([]);
+  const [activityCursor, setActivityCursor] = useState(0);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [hasMoreActivities, setHasMoreActivities] = useState(true);
+  const loadedCommunityIdsRef = useRef<Set<string>>(new Set());
+  const activityObserverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    async function loadData() {
-      if (authLoading) return;
+    if (!geoLoading && latitude && longitude) {
+      communitieNearby(
+        {
+          latitude,
+          longitude,
+          radius: 2000,
+        },
+        true
+      ).then((nearbyRes) => {
+        if (nearbyRes.success && nearbyRes.data?.communities) {
+          setNearbyCommunities(nearbyRes.data.communities || []);
+        }
+      });
+    }
 
-      setLoading(true);
+    if (authLoading) return;
+
+    async function loadInitial() {
       try {
-        // 获取推荐商品
-        const recommendedResponse = await productRecommended({ limit: 10 });
-        if (recommendedResponse.success && recommendedResponse.data) {
-          setRecommendedProducts(recommendedResponse.data.products || []);
-        }
+        setPageLoading(true);
 
-        // 获取热门商品
-        const hotResponse = await apiRequest<{ products: Product[] }>(
-          "/api/products/hot",
-          {
-            method: "GET",
-          }
-        );
-        if (hotResponse.success && hotResponse.data) {
-          setHotProducts(hotResponse.data.products || []);
-        }
-
-        // 获取用户加入的小区
         if (user) {
-          try {
-            const myCommunitiesResponse = await apiRequest<{
-              communities: Community[];
-            }>("/api/communities/my", {
-              method: "GET",
-            });
-            if (myCommunitiesResponse.success && myCommunitiesResponse.data) {
-              setMyCommunities(myCommunitiesResponse.data.communities || []);
-            }
-          } catch (error) {
-            console.error("获取我的小区失败:", error);
+          const myRes = await communitieMy(true);
+          if (myRes.success && myRes.data?.communities) {
+            setMyCommunities(myRes.data.communities || []);
           }
-        }
-
-        // 获取周边小区（需要GPS定位）
-        if (latitude && longitude) {
-          try {
-            const nearbyResponse = await apiRequest<{
-              communities: Community[];
-            }>("/api/communities/nearby", {
-              method: "GET",
-              params: {
-                latitude,
-                longitude,
-                radius: 1000, // 1公里
-              },
-            });
-            if (nearbyResponse.success && nearbyResponse.data) {
-              setNearbyCommunities(nearbyResponse.data.communities || []);
-            }
-          } catch (error) {
-            console.error("获取周边小区失败:", error);
-          }
+        } else {
+          setMyCommunities([]);
         }
       } catch (error) {
-        console.error("加载数据失败:", error);
+        console.error("加载首页数据失败:", error);
       } finally {
-        setLoading(false);
+        setPageLoading(false);
       }
     }
-    loadData();
-  }, [router, authLoading, user, latitude, longitude]);
 
-  if (loading || authLoading) {
-    return (
-      <div className="min-h-screen bg-background pb-20">
-        <header className="bg-white shadow-sm sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-primary">来购</h1>
-              <LocationSelector />
-            </div>
+    loadInitial();
+  }, [authLoading, user, latitude, longitude, geoLoading]);
+
+  const communitySequence = useMemo(() => {
+    const map = new Map<string, CommunitySummary>();
+    for (const community of myCommunities) {
+      map.set(community.id, community);
+    }
+    for (const community of nearbyCommunities) {
+      if (!map.has(community.id)) {
+        map.set(community.id, community);
+      }
+    }
+    return Array.from(map.values());
+  }, [myCommunities, nearbyCommunities]);
+
+  const primaryCommunityId = useMemo(() => {
+    return communitySequence[0]?.id;
+  }, [communitySequence]);
+
+  useEffect(() => {
+    if (!primaryCommunityId) {
+      setCommunityProducts([]);
+      return;
+    }
+
+    async function loadProducts() {
+      try {
+        setProductsLoading(true);
+        const response = await productDetail(
+          {
+            communityId: primaryCommunityId,
+            limit: "6",
+            page: "1",
+          },
+          true
+        );
+        if (response.success && response.data?.products) {
+          setCommunityProducts(response.data.products || []);
+        } else {
+          setCommunityProducts([]);
+        }
+      } catch (error) {
+        console.error("加载小区商品失败:", error);
+        setCommunityProducts([]);
+      } finally {
+        setProductsLoading(false);
+      }
+    }
+
+    loadProducts();
+  }, [primaryCommunityId]);
+
+  const loadMoreActivities = useCallback(async () => {
+    if (activityLoading || !hasMoreActivities) return;
+
+    try {
+      setActivityLoading(true);
+
+      let nextIndex = activityCursor;
+      const newFeed: CommunityActivityItem[] = [];
+
+      while (nextIndex < communitySequence.length) {
+        const community = communitySequence[nextIndex];
+        nextIndex += 1;
+
+        if (!community || loadedCommunityIdsRef.current.has(community.id)) {
+          continue;
+        }
+
+        loadedCommunityIdsRef.current.add(community.id);
+
+        try {
+          const detailResponse = await apiRequest<CommunityDetailResponse>(
+            `/api/communities/${community.id}`,
+            {
+              method: "GET",
+              noAuthorize: true,
+            }
+          );
+
+          const activities = detailResponse.data?.community?.activities || [];
+          if (activities.length > 0) {
+            for (const activity of activities) {
+              newFeed.push({
+                id: activity.id,
+                title: activity.title,
+                description: activity.description,
+                images: activity.images || [],
+                startTime: activity.startTime,
+                location: activity.location,
+                communityId: community.id,
+                communityName:
+                  detailResponse.data?.community?.name || community.name,
+                communityCover:
+                  activity.images?.[0] ||
+                  detailResponse.data?.community?.images?.[0] ||
+                  community.images?.[0],
+              });
+            }
+            break;
+          }
+        } catch (error) {
+          console.error("加载小区活动失败:", error);
+        }
+      }
+
+      setActivityCursor(nextIndex);
+
+      if (newFeed.length > 0) {
+        setActivityFeed((prev) => [...prev, ...newFeed]);
+      }
+
+      if (nextIndex >= communitySequence.length) {
+        setHasMoreActivities(false);
+      }
+    } finally {
+      setActivityLoading(false);
+    }
+  }, [activityCursor, activityLoading, communitySequence, hasMoreActivities]);
+
+  useEffect(() => {
+    setActivityFeed([]);
+    setActivityCursor(0);
+    setHasMoreActivities(true);
+    loadedCommunityIdsRef.current.clear();
+  }, [communitySequence]);
+
+  useEffect(() => {
+    if (
+      communitySequence.length === 0 ||
+      activityFeed.length > 0 ||
+      activityLoading
+    )
+      return;
+    loadMoreActivities();
+  }, [
+    communitySequence,
+    activityFeed.length,
+    activityLoading,
+    loadMoreActivities,
+  ]);
+
+  useEffect(() => {
+    const target = activityObserverRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreActivities();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMoreActivities]);
+
+  const handlePublish = () => {
+    router.push("/publish");
+  };
+
+  const renderHeader = () => (
+    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur">
+      <div className="px-4 pt-3 pb-2 space-y-3 border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="text-2xl font-semibold text-primary">来购</div>
+          <div className="flex items-center gap-2 text-text-secondary">
+            <button
+              onClick={() => router.push("/messages")}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <Bell className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => router.push("/profile")}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
           </div>
-        </header>
+        </div>
+        <div>
+          <button
+            onClick={() => router.push("/communities/search")}
+            className="w-full flex items-center gap-2 rounded-full bg-gray-100 px-4 py-2 text-left text-sm text-text-secondary hover:bg-gray-200 transition-colors"
+          >
+            <Search className="w-4 h-4" />
+            <span className="flex-1">搜小区</span>
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        {renderHeader()}
         <Loading text="加载中..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* 头部 */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-primary">来购</h1>
-            <LocationSelector />
+    <div className="min-h-screen bg-background pb-24">
+      {renderHeader()}
+
+      <main className="max-w-6xl mx-auto px-4 pb-24">
+        <section className="mt-4 mb-6">
+          <div className="rounded-3xl overflow-hidden shadow-sm">
+            <BannerSwiper
+              banners={DEFAULT_BANNERS}
+              onBannerClick={(banner) => {
+                if (banner.link) {
+                  router.push(banner.link);
+                }
+              }}
+            />
           </div>
-        </div>
-      </header>
+        </section>
 
-      <main className="max-w-7xl mx-auto px-4 py-4">
-        {/* 搜索栏 */}
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="搜索商品..."
-            className="w-full px-4 py-2 bg-container rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
-            onClick={() => router.push("/search")}
-          />
-        </div>
-
-        {/* 我加入的小区 */}
-        {myCommunities.length > 0 && (
-          <section className="mb-6">
+        {communitySequence.length > 0 && (
+          <section className="mb-8">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-text-primary">
-                我的小区
+                推荐小区
               </h2>
               <button
                 onClick={() => router.push("/communities/search")}
                 className="text-sm text-primary flex items-center gap-1"
               >
-                查看全部
+                查看更多
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {myCommunities.map((community) => (
-                <div
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {communitySequence.map((community) => (
+                <button
                   key={community.id}
+                  type="button"
                   onClick={() => router.push(`/communities/${community.id}`)}
-                  className="flex-shrink-0 w-32 bg-white rounded-lg shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                  className="flex-shrink-0 w-40 bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow text-left"
                 >
-                  {community.images?.[0] ? (
-                    <div className="relative w-32 h-24 bg-gray-100">
+                  <div className="relative w-full h-32">
+                    {community.images?.[0] ? (
                       <Image
                         src={community.images[0]}
                         alt={community.name}
                         fill
                         className="object-cover"
-                        sizes="128px"
+                        sizes="160px"
                       />
-                    </div>
-                  ) : (
-                    <div className="w-32 h-24 bg-gray-100 flex items-center justify-center">
-                      <MapPin className="w-8 h-8 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="p-2">
-                    <h3 className="text-xs font-medium text-text-primary line-clamp-1 mb-1">
-                      {community.name}
-                    </h3>
-                    <div className="flex items-center gap-1 text-xs text-text-secondary">
-                      <Users className="w-3 h-3" />
-                      <span>{community._count?.members || 0}人</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* 周边小区 */}
-        {nearbyCommunities.length > 0 && (
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-text-primary">
-                周边小区
-              </h2>
-              <button
-                onClick={() => router.push("/communities/search")}
-                className="text-sm text-primary flex items-center gap-1"
-              >
-                查看全部
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {nearbyCommunities.slice(0, 5).map((community) => (
-                <div
-                  key={community.id}
-                  onClick={() => router.push(`/communities/${community.id}`)}
-                  className="bg-white rounded-lg p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-3">
-                    {community.images?.[0] ? (
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                        <Image
-                          src={community.images[0]}
-                          alt={community.name}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      </div>
                     ) : (
-                      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-6 h-6 text-gray-400" />
+                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                        <MapPin className="w-8 h-8 text-gray-400" />
                       </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-text-primary mb-1">
-                        {community.name}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-text-secondary">
-                        {community.distance && (
-                          <span>距离 {community.distance}m</span>
-                        )}
-                        {community._count && (
-                          <>
-                            <span>·</span>
-                            <span>{community._count.members}人</span>
-                            <span>·</span>
-                            <span>{community._count.products}件商品</span>
-                          </>
-                        )}
-                      </div>
+                    <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      <span>{community._count?.members ?? 0}</span>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-text-secondary flex-shrink-0" />
                   </div>
-                </div>
+                  <div className="p-3">
+                    <h3 className="text-sm font-medium text-text-primary line-clamp-1">
+                      {community.name}
+                    </h3>
+                    <p className="text-xs text-text-secondary line-clamp-1">
+                      {community.address || "点击查看详情"}
+                    </p>
+                  </div>
+                </button>
               ))}
             </div>
           </section>
         )}
 
-        {/* AI推荐商品 */}
-        {recommendedProducts.length > 0 && (
+        {communityProducts.length > 0 && (
           <section className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="bg-primary-50 px-3 py-1 rounded-full">
-                <span className="text-sm text-primary font-medium">
-                  AI 推荐
-                </span>
-              </div>
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-text-primary">
-                为你推荐
+                小区闲置
               </h2>
+              {primaryCommunityId && (
+                <button
+                  onClick={() =>
+                    router.push(`/communities/${primaryCommunityId}`)
+                  }
+                  className="text-sm text-primary flex items-center gap-1"
+                >
+                  前往小区
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {recommendedProducts.map((product) => (
+              {communityProducts.map((product) => (
                 <ProductCard
                   key={product.id}
                   id={product.id}
@@ -321,49 +478,127 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* 热门榜单 */}
-        {hotProducts.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg font-semibold text-text-primary mb-4">
-              热门商品
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              {hotProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  title={product.title}
-                  price={product.price}
-                  images={product.images}
-                  location={product.location}
-                  communityName={product.community?.name}
-                  viewCount={product.viewCount}
-                  likeCount={product.likeCount}
-                  type={product.type}
-                  isVerified={product.isVerified}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* 空状态 */}
-        {recommendedProducts.length === 0 && hotProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-text-secondary mb-4">
-              暂无商品，快来发布第一个吧！
-            </p>
-            <button
-              onClick={() => router.push("/publish")}
-              className="px-6 py-2 bg-accent text-white rounded-lg font-medium"
-            >
-              发布商品
-            </button>
+        {productsLoading && communityProducts.length === 0 && (
+          <div className="bg-white rounded-2xl p-8 text-center mb-8 shadow-sm">
+            <Loading text="加载小区商品中..." />
           </div>
         )}
+
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-text-primary">
+              小区活动
+            </h2>
+            <span className="text-xs text-text-secondary">下拉加载更多</span>
+          </div>
+
+          {activityFeed.length === 0 && activityLoading && (
+            <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+              <Loading text="加载活动中..." />
+            </div>
+          )}
+
+          {activityFeed.length === 0 && !activityLoading && (
+            <EmptyState
+              icon="message"
+              title="暂无社区活动"
+              description="关注你的小区，第一时间获取活动动态"
+            />
+          )}
+
+          <div className="space-y-4">
+            {activityFeed.map((activity) => (
+              <button
+                key={activity.id}
+                type="button"
+                className="w-full text-left bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                onClick={() =>
+                  router.push(
+                    `/communities/${activity.communityId}/activities/${activity.id}`
+                  )
+                }
+              >
+                <div className="relative h-56">
+                  {activity.communityCover ? (
+                    <Image
+                      src={activity.communityCover}
+                      alt={activity.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 600px"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-r from-emerald-400 to-teal-500 flex items-center justify-center text-white text-lg font-semibold">
+                      {activity.title}
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 top-0 p-4 flex justify-between">
+                    <span className="bg-black/50 text-white text-xs px-3 py-1 rounded-full">
+                      {activity.communityName}
+                    </span>
+                    <span className="bg-white/80 text-primary text-xs px-3 py-1 rounded-full flex items-center gap-1">
+                      <Play className="w-3 h-3" />
+                      走进活动
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 space-y-2">
+                  <h3 className="text-lg font-semibold text-text-primary line-clamp-1">
+                    {activity.title}
+                  </h3>
+                  {activity.description && (
+                    <p className="text-sm text-text-secondary line-clamp-2">
+                      {activity.description}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between text-xs text-text-secondary">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      <span>
+                        {activity.startTime
+                          ? new Date(activity.startTime).toLocaleString(
+                              "zh-CN",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )
+                          : "时间待定"}
+                      </span>
+                    </div>
+                    <span>{activity.location || "线下活动"}</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div ref={activityObserverRef} className="h-6" />
+
+          {activityLoading && activityFeed.length > 0 && (
+            <div className="py-4 text-center text-sm text-text-secondary">
+              加载更多活动...
+            </div>
+          )}
+
+          {!hasMoreActivities && activityFeed.length > 0 && (
+            <div className="py-4 text-center text-xs text-text-tertiary">
+              没有更多活动了
+            </div>
+          )}
+        </section>
       </main>
 
-      {/* 底部导航 */}
+      <button
+        onClick={handlePublish}
+        className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+        aria-label="发布闲置"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
       <BottomNavigation />
     </div>
   );

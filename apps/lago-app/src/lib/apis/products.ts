@@ -3,7 +3,58 @@ import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
-export class ProductsQueryParams {
+export class ProductRecommendedQueryParams {
+  @IsString()
+  @IsOptional()
+  limit?: string;
+
+}
+
+export class ProductRecommendedResponse {
+  @IsArray()
+  products: Types.Product[];
+
+}
+export class ProductsDTO {
+  @IsString()
+  title: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(Types.ProductCategory)
+  category: Types.ProductCategory;
+
+  @IsEnum(Types.ProductType)
+  type: Types.ProductType;
+
+  @IsNumber()
+  price: number;
+
+  @IsNumber()
+  @IsOptional()
+  deposit?: number;
+
+  @IsArray()
+  @IsOptional()
+  images?: string[];
+
+  @IsString()
+  @IsOptional()
+  communityId?: string;
+
+  @IsString()
+  @IsOptional()
+  location?: string;
+
+}
+export class ProductsResponse {
+  @ValidateNested()
+  product: Types.Product;
+
+}
+export class ProductDetailQueryParams {
   @IsString()
   @IsOptional()
   page?: string;
@@ -38,86 +89,12 @@ export class ProductsQueryParams {
 
 }
 
-export class ProductsResponse {
+export class ProductDetailResponse {
   @IsArray()
   products: Types.Product[];
 
   @ValidateNested()
   pagination: Types.Pagination;
-
-}
-export class ProductCreateDTO {
-  @IsString()
-  title: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
-
-  @IsEnum(Types.ProductCategory)
-  category: Types.ProductCategory;
-
-  @IsEnum(Types.ProductType)
-  type: Types.ProductType;
-
-  @IsNumber()
-  price: number;
-
-  @IsNumber()
-  @IsOptional()
-  deposit?: number;
-
-  @IsArray()
-  @IsOptional()
-  images?: string[];
-
-  @IsString()
-  @IsOptional()
-  communityId?: string;
-
-  @IsString()
-  @IsOptional()
-  location?: string;
-
-}
-export class ProductCreateResponse {
-  @ValidateNested()
-  product: Types.Product;
-
-}
-export class ProductRecommendedQueryParams {
-  @IsString()
-  @IsOptional()
-  limit?: string;
-
-}
-
-export class ProductRecommendedResponse {
-  @IsArray()
-  products: Types.Product[];
-
-}
-export class ProductHotQueryParams {
-  @IsString()
-  @IsOptional()
-  limit?: string;
-
-}
-
-export class ProductHotResponse {
-  @IsArray()
-  products: Types.Product[];
-
-}
-export class ProductDetailPathParams {
-  @IsString()
-  id: string;
-
-}
-
-export class ProductDetailResponse {
-  @ValidateNested()
-  product: Types.Product;
 
 }
 export class ProductUpdatePathParams {
@@ -176,6 +153,17 @@ export class ProductDeleteResponse {
   message: string;
 
 }
+export class ProductDetail1PathParams {
+  @IsString()
+  id: string;
+
+}
+
+export class ProductDetail1Response {
+  @ValidateNested()
+  product: Types.Product;
+
+}
 export class ProductLikePathParams {
   @IsString()
   id: string;
@@ -198,34 +186,18 @@ export class ProductUnlikeResponse {
   message: string;
 
 }
-/**
- * 获取商品列表（小程序端）
- */
-export async function products(
-  queryParams?: ProductsQueryParams,
-  noAuthorize?: boolean
-): Promise<HTTPResponse<any>> {
-  return await apiRequest("/api/products", {
-    method: 'GET',
-    noAuthorize: noAuthorize,
-    params: queryParams,
-  });
+export class ProductHotQueryParams {
+  @IsString()
+  @IsOptional()
+  limit?: string;
+
 }
 
-/**
- * 创建商品
- */
-export async function productCreate(
-  data: ProductCreateDTO,
-  noAuthorize?: boolean
-): Promise<HTTPResponse<any>> {
-  return await apiRequest("/api/products", {
-    method: 'POST',
-    body: JSON.stringify(data),
-    noAuthorize: noAuthorize,
-  });
-}
+export class ProductHotResponse {
+  @IsArray()
+  products: Types.Product[];
 
+}
 /**
  * 获取推荐商品
  */
@@ -241,29 +213,30 @@ export async function productRecommended(
 }
 
 /**
- * 获取热门商品
+ * 创建商品
  */
-export async function productHot(
-  queryParams?: ProductHotQueryParams,
+export async function products(
+  data: ProductsDTO,
   noAuthorize?: boolean
 ): Promise<HTTPResponse<any>> {
-  return await apiRequest("/api/products/hot", {
-    method: 'GET',
+  return await apiRequest("/api/products", {
+    method: 'POST',
+    body: JSON.stringify(data),
     noAuthorize: noAuthorize,
-    params: queryParams,
   });
 }
 
 /**
- * 获取商品详情
+ * 获取商品列表
  */
 export async function productDetail(
-  pathParams: ProductDetailPathParams,
+  queryParams?: ProductDetailQueryParams,
   noAuthorize?: boolean
 ): Promise<HTTPResponse<any>> {
-  return await apiRequest(`/api/products/${pathParams.id}`, {
+  return await apiRequest("/api/products", {
     method: 'GET',
     noAuthorize: noAuthorize,
+    params: queryParams,
   });
 }
 
@@ -296,6 +269,19 @@ export async function productDelete(
 }
 
 /**
+ * 获取商品详情
+ */
+export async function productDetail1(
+  pathParams: ProductDetail1PathParams,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<any>> {
+  return await apiRequest(`/api/products/${pathParams.id}`, {
+    method: 'GET',
+    noAuthorize: noAuthorize,
+  });
+}
+
+/**
  * 收藏商品
  */
 export async function productLike(
@@ -322,38 +308,16 @@ export async function productUnlike(
 }
 
 /**
- * 获取商品列表（小程序端） Hook
+ * 获取热门商品
  */
-export function useProducts(
-  queryParams?: ProductsQueryParams,
-  options?: UseQueryOptions<HTTPResponse<ProductsResponse>, Error>
-) {
-  return useQuery({
-    queryKey: ['products', '获取商品列表（小程序端）', queryParams?.page, queryParams?.limit, queryParams?.category, queryParams?.type, queryParams?.search, queryParams?.communityId, queryParams?.sortBy, queryParams?.sortOrder],
-    queryFn: () => products(queryParams),
-    ...options,
-  });
-}
-
-/**
- * 创建商品 Hook
- */
-export function useProductCreate(
-  options?: UseMutationOptions<HTTPResponse<ProductCreateResponse>, Error, ProductCreateDTO>
-) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data) => productCreate(data),
-    onSuccess: () => {
-      // 清除相关缓存
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['app'] });
-    },
-    onError: (error: any) => {
-      console.error('Mutation failed:', error);
-    },
-    ...options,
+export async function productHot(
+  queryParams?: ProductHotQueryParams,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<any>> {
+  return await apiRequest("/api/products/hot", {
+    method: 'GET',
+    noAuthorize: noAuthorize,
+    params: queryParams,
   });
 }
 
@@ -372,29 +336,37 @@ export function useProductRecommended(
 }
 
 /**
- * 获取热门商品 Hook
+ * 创建商品 Hook
  */
-export function useProductHot(
-  queryParams?: ProductHotQueryParams,
-  options?: UseQueryOptions<HTTPResponse<ProductHotResponse>, Error>
+export function useProducts(
+  options?: UseMutationOptions<HTTPResponse<ProductsResponse>, Error, ProductsDTO>
 ) {
-  return useQuery({
-    queryKey: ['products', '获取热门商品', queryParams?.limit],
-    queryFn: () => productHot(queryParams),
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => products(data),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['app'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
     ...options,
   });
 }
 
 /**
- * 获取商品详情 Hook
+ * 获取商品列表 Hook
  */
 export function useProductDetail(
-  pathParams: ProductDetailPathParams,
+  queryParams?: ProductDetailQueryParams,
   options?: UseQueryOptions<HTTPResponse<ProductDetailResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['products', '获取商品详情', pathParams.id],
-    queryFn: () => productDetail(pathParams),
+    queryKey: ['products', '获取商品列表', queryParams?.page, queryParams?.limit, queryParams?.category, queryParams?.type, queryParams?.search, queryParams?.communityId, queryParams?.sortBy, queryParams?.sortOrder],
+    queryFn: () => productDetail(queryParams),
     ...options,
   });
 }
@@ -446,6 +418,20 @@ export function useProductDelete(
 }
 
 /**
+ * 获取商品详情 Hook
+ */
+export function useProductDetail1(
+  pathParams: ProductDetail1PathParams,
+  options?: UseQueryOptions<HTTPResponse<ProductDetail1Response>, Error>
+) {
+  return useQuery({
+    queryKey: ['products', '获取商品详情', pathParams.id],
+    queryFn: () => productDetail1(pathParams),
+    ...options,
+  });
+}
+
+/**
  * 收藏商品 Hook
  */
 export function useProductLike(
@@ -487,6 +473,20 @@ export function useProductUnlike(
     onError: (error: any) => {
       console.error('Mutation failed:', error);
     },
+    ...options,
+  });
+}
+
+/**
+ * 获取热门商品 Hook
+ */
+export function useProductHot(
+  queryParams?: ProductHotQueryParams,
+  options?: UseQueryOptions<HTTPResponse<ProductHotResponse>, Error>
+) {
+  return useQuery({
+    queryKey: ['products', '获取热门商品', queryParams?.limit],
+    queryFn: () => productHot(queryParams),
     ...options,
   });
 }

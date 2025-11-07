@@ -1,55 +1,89 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { Header } from '@/components/Header';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
 import { BannerSwiper } from '@/components/BannerSwiper';
+import { ProductCard } from '@/components/ProductCard';
 import { apiRequest } from '@lago/common';
 import { useAuth } from '@lago/ui';
-import { MapPin, Users, Package, Calendar, Shield, LogIn, CheckCircle, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  LogIn,
+  MapPin,
+  Package,
+  Plus,
+  Shield,
+  Users,
+  X,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import MediaPreview from '@lago/ui/src/components/MediaPreview';
+import { productDetail } from '@/lib/apis';
 
-interface Community {
+interface CommunityMember {
   id: string;
-  name: string;
-  address?: string;
-  images: string[];
-  description?: string;
-  province?: { id: string; name: string };
-  city?: { id: string; name: string };
-  district?: { id: string; name: string };
-  verificationStatus: 'pending' | 'approved' | 'rejected';
-  isJoined: boolean;
-  members: Array<{
+  user: {
     id: string;
-    user: {
-      id: string;
-      nickname?: string;
-      avatarUrl?: string;
-      creditScore: number;
-      isVerified: boolean;
-    };
-  }>;
-  activities: Array<{
-    id: string;
-    type: string;
-    title: string;
-    description?: string;
-    images: string[];
-    startTime?: string;
-    endTime?: string;
-    location?: string;
-    status: string;
-  }>;
-  _count?: {
-    members: number;
-    products: number;
-    activities: number;
+    nickname?: string;
+    avatarUrl?: string;
+    creditScore: number;
+    isVerified: boolean;
   };
+}
+
+interface CommunityActivity {
+  id: string;
+  type: string;
+  title: string;
+  description?: string;
+  images: string[];
+  startTime?: string;
+  endTime?: string;
+  location?: string;
+  status: string;
+}
+
+interface CommunityResponse {
+  community: {
+    id: string;
+    name: string;
+    address?: string;
+    images: string[];
+    description?: string;
+    province?: { id: string; name: string };
+    city?: { id: string; name: string };
+    district?: { id: string; name: string };
+    verificationStatus: 'pending' | 'approved' | 'rejected';
+    isJoined: boolean;
+    members: CommunityMember[];
+    activities: CommunityActivity[];
+    _count?: {
+      members: number;
+      products: number;
+      activities: number;
+    };
+  };
+}
+
+interface Product {
+  id: string;
+  title: string;
+  price: number;
+  images: string[];
+  location?: string;
+  community?: {
+    id: string;
+    name: string;
+  };
+  viewCount: number;
+  likeCount: number;
+  type: 'rent' | 'sell' | 'both';
+  isVerified: boolean;
 }
 
 export default function CommunityDetailPage() {
@@ -58,32 +92,76 @@ export default function CommunityDetailPage() {
   const communityId = params.id as string;
   const { user } = useAuth();
 
-  const [community, setCommunity] = useState<Community | null>(null);
+  const [community, setCommunity] = useState<CommunityResponse['community'] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [showMediaPreview, setShowMediaPreview] = useState(false);
   const [mediaPreviewIndex, setMediaPreviewIndex] = useState(0);
 
   useEffect(() => {
+    function handleScroll() {
+      setShowStickyHeader(window.scrollY > 120);
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
     async function loadCommunity() {
       try {
-        const response = await apiRequest<{ community: Community }>(
-          `/api/communities/${communityId}`,
-          {
-            method: 'GET',
-          }
-        );
-        if (response.success && response.data) {
+        setLoading(true);
+        const response = await apiRequest<CommunityResponse>(`/api/communities/${communityId}`, {
+          method: 'GET',
+          noAuthorize: true,
+        });
+        if (response.success && response.data?.community) {
           setCommunity(response.data.community);
+        } else {
+          setCommunity(null);
         }
       } catch (error) {
         console.error('加载小区详情失败:', error);
+        setCommunity(null);
       } finally {
         setLoading(false);
       }
     }
+
     loadCommunity();
   }, [communityId]);
+
+  useEffect(() => {
+    async function loadProducts() {
+      if (!community) return;
+      try {
+        setProductsLoading(true);
+        const response = await productDetail(
+          {
+            communityId: community.id,
+            limit: '6',
+            page: '1',
+          },
+          true
+        );
+        if (response.success && response.data?.products) {
+          setProducts(response.data.products || []);
+        } else {
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error('加载小区商品失败:', error);
+        setProducts([]);
+      } finally {
+        setProductsLoading(false);
+      }
+    }
+
+    loadProducts();
+  }, [community]);
 
   const handleJoin = async () => {
     if (!user) {
@@ -103,15 +181,12 @@ export default function CommunityDetailPage() {
       });
       if (response.success) {
         toast.success('加入小区成功');
-        // 重新加载数据
-        const refreshResponse = await apiRequest<{ community: Community }>(
-          `/api/communities/${communityId}`,
-          {
-            method: 'GET',
-          }
-        );
-        if (refreshResponse.success && refreshResponse.data) {
-          setCommunity(refreshResponse.data.community);
+        const refresh = await apiRequest<CommunityResponse>(`/api/communities/${communityId}`, {
+          method: 'GET',
+          noAuthorize: true,
+        });
+        if (refresh.success && refresh.data?.community) {
+          setCommunity(refresh.data.community);
         }
       }
     } catch (error: any) {
@@ -126,15 +201,12 @@ export default function CommunityDetailPage() {
       });
       if (response.success) {
         toast.success('已退出小区');
-        // 重新加载数据
-        const refreshResponse = await apiRequest<{ community: Community }>(
-          `/api/communities/${communityId}`,
-          {
-            method: 'GET',
-          }
-        );
-        if (refreshResponse.success && refreshResponse.data) {
-          setCommunity(refreshResponse.data.community);
+        const refresh = await apiRequest<CommunityResponse>(`/api/communities/${communityId}`, {
+          method: 'GET',
+          noAuthorize: true,
+        });
+        if (refresh.success && refresh.data?.community) {
+          setCommunity(refresh.data.community);
         }
       }
     } catch (error: any) {
@@ -146,11 +218,21 @@ export default function CommunityDetailPage() {
     router.push(`/communities/${communityId}/verify`);
   };
 
+  const handlePublish = () => {
+    router.push('/publish');
+  };
+
+  const mediaItems = useMemo(
+    () => community?.images?.map((url) => ({ url, type: 'image' as const })) || [],
+    [community]
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header title="小区详情" showBack />
-        <Loading text="加载中..." />
+        <div className="flex items-center justify-center pt-24">
+          <Loading text="加载中..." />
+        </div>
       </div>
     );
   }
@@ -158,7 +240,6 @@ export default function CommunityDetailPage() {
   if (!community) {
     return (
       <div className="min-h-screen bg-background">
-        <Header title="小区详情" showBack />
         <EmptyState
           icon="package"
           title="小区不存在"
@@ -172,250 +253,317 @@ export default function CommunityDetailPage() {
     );
   }
 
-  const mediaItems = community.images.map((url) => ({
-    url,
-    type: 'image' as const,
-  }));
-
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header title="小区详情" showBack />
+    <div className="min-h-screen bg-background pb-24">
+      <header
+        className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 ${
+          showStickyHeader ? 'translate-y-0 bg-white/95 backdrop-blur border-b border-gray-100' : '-translate-y-full'
+        }`}
+      >
+        <div className="px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => router.back()}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="返回"
+          >
+            <ArrowLeft className="w-5 h-5 text-text-primary" />
+          </button>
+          <h1 className="text-base font-semibold text-text-primary line-clamp-1 flex-1 text-center">
+            {community.name}
+          </h1>
+          <div className="w-9" />
+        </div>
+      </header>
 
-      <main className="max-w-7xl mx-auto">
-        {/* 小区相册 */}
-        {community.images.length > 0 ? (
-          <div className="relative w-full h-64 bg-gray-100">
+      <main className="max-w-6xl mx-auto pb-20">
+        <section className="relative h-[320px] bg-gray-200">
+          {community.images?.length ? (
             <BannerSwiper
-              banners={community.images.map((img, index) => ({
-                id: String(index),
-                image: img,
-              }))}
-              onBannerClick={() => {
-                setMediaPreviewIndex(0);
+              banners={community.images.map((image, index) => ({ id: `${index}`, image }))}
+              onBannerClick={(banner) => {
+                const index = community.images.findIndex((img) => img === banner.image);
+                setMediaPreviewIndex(Math.max(index, 0));
                 setShowMediaPreview(true);
               }}
             />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              <MapPin className="w-12 h-12" />
+            </div>
+          )}
+          <div className="absolute top-6 left-4 z-30">
+            <button
+              onClick={() => router.back()}
+              className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label="返回"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
           </div>
-        ) : (
-          <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
-            <MapPin className="w-16 h-16 text-gray-400" />
+        </section>
+
+        <section className="relative px-4">
+          <div className="-mt-12 bg-white rounded-3xl shadow-lg p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-semibold text-text-primary">{community.name}</h1>
+                  {community.verificationStatus === 'approved' && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">
+                      <CheckCircle className="w-4 h-4" />
+                      已认证
+                    </span>
+                  )}
+                </div>
+                {community.address && (
+                  <div className="flex items-center gap-1 text-sm text-text-secondary mt-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>{community.address}</span>
+                  </div>
+                )}
+                {community.description && (
+                  <p className="text-sm text-text-secondary mt-2 line-clamp-2">
+                    {community.description}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {community.verificationStatus !== 'approved' && user?.role === 'property' && (
+                  <button
+                    onClick={handleVerify}
+                    className="px-4 py-2 rounded-full bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <Shield className="w-4 h-4" />申请认证
+                    </span>
+                  </button>
+                )}
+                {community.verificationStatus === 'approved' && (
+                  community.isJoined ? (
+                    <button
+                      onClick={handleLeave}
+                      className="px-4 py-2 rounded-full border border-gray-200 text-sm text-text-primary hover:bg-gray-50 transition-colors"
+                    >
+                      退出小区
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleJoin}
+                      className="px-4 py-2 rounded-full bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <LogIn className="w-4 h-4" />加入小区
+                      </span>
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 text-center text-sm text-text-secondary">
+              <div className="bg-gray-50 rounded-2xl py-3">
+                <div className="text-base font-semibold text-text-primary">
+                  {community._count?.members ?? 0}
+                </div>
+                <div className="mt-1 flex items-center justify-center gap-1 text-xs">
+                  <Users className="w-3 h-3" />
+                  成员
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-2xl py-3">
+                <div className="text-base font-semibold text-text-primary">
+                  {community._count?.products ?? 0}
+                </div>
+                <div className="mt-1 flex items-center justify-center gap-1 text-xs">
+                  <Package className="w-3 h-3" />
+                  闲置
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-2xl py-3">
+                <div className="text-base font-semibold text-text-primary">
+                  {community._count?.activities ?? 0}
+                </div>
+                <div className="mt-1 flex items-center justify-center gap-1 text-xs">
+                  <Calendar className="w-3 h-3" />
+                  活动
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {products.length > 0 && (
+          <section className="px-4 mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-text-primary">小区闲置商品</h2>
+              <button
+                onClick={() => router.push(`/property/${community.id}`)}
+                className="text-sm text-primary hover:underline"
+              >
+                查看更多
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  title={product.title}
+                  price={product.price}
+                  images={product.images}
+                  location={product.location}
+                  communityName={product.community?.name || community.name}
+                  viewCount={product.viewCount}
+                  likeCount={product.likeCount}
+                  type={product.type}
+                  isVerified={product.isVerified}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {productsLoading && products.length === 0 && (
+          <div className="px-4 mt-8">
+            <div className="bg-white rounded-3xl p-6 shadow-sm text-center">
+              <Loading text="加载小区闲置商品..." />
+            </div>
           </div>
         )}
 
-        {/* 小区基本信息 */}
-        <div className="bg-white px-4 py-4 mb-2">
-          <div className="flex items-start justify-between mb-2">
-            <h1 className="text-xl font-bold text-text-primary flex-1">{community.name}</h1>
-            {community.verificationStatus === 'approved' && (
-              <div className="flex items-center gap-1 text-primary text-sm">
-                <Shield className="w-4 h-4" />
-                <span>已认证</span>
-              </div>
-            )}
-          </div>
-
-          {community.address && (
-            <div className="flex items-center gap-1 text-sm text-text-secondary mb-2">
-              <MapPin className="w-4 h-4" />
-              <span>{community.address}</span>
-            </div>
-          )}
-
-          {community.province && community.city && (
-            <div className="text-sm text-text-secondary mb-3">
-              {community.province.name} {community.city.name}
-              {community.district && ` ${community.district.name}`}
-            </div>
-          )}
-
-          {/* 统计信息 */}
-          <div className="flex items-center gap-4 text-sm text-text-secondary pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              <span>{community._count?.members || 0} 位成员</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Package className="w-4 h-4" />
-              <span>{community._count?.products || 0} 件商品</span>
-            </div>
-            {community._count && community._count.activities > 0 && (
-              <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                <span>{community._count.activities} 个活动</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 小区介绍 */}
-        {community.description && (
-          <div className="bg-white px-4 py-4 mb-2">
-            <h2 className="text-base font-semibold text-text-primary mb-2">小区介绍</h2>
-            <p className="text-sm text-text-secondary whitespace-pre-wrap">
-              {community.description}
-            </p>
-          </div>
-        )}
-
-        {/* 成员列表 */}
         {community.members && community.members.length > 0 && (
-          <div className="bg-white px-4 py-4 mb-2">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-text-primary">
-                成员 ({community._count?.members || 0})
-              </h2>
-              {community._count && community._count.members > 10 && (
+          <section className="px-4 mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-text-primary">小区住户</h2>
+              {community._count?.members && community._count.members > 8 && (
                 <button
                   onClick={() => setShowAllMembers(true)}
-                  className="text-sm text-primary"
+                  className="text-sm text-primary hover:underline"
                 >
                   查看全部
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-3">
-              {community.members.slice(0, 10).map((member) => (
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {community.members.slice(0, 8).map((member) => (
                 <div
                   key={member.id}
                   onClick={() => router.push(`/users/${member.user.id}`)}
-                  className="flex flex-col items-center gap-1 cursor-pointer"
+                  className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
                     {member.user.avatarUrl ? (
                       <Image
                         src={member.user.avatarUrl}
                         alt={member.user.nickname || '用户'}
-                        width={48}
-                        height={48}
+                        width={64}
+                        height={64}
                         className="object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <span className="text-lg">
-                          {member.user.nickname?.[0] || '用'}
-                        </span>
+                      <div className="w-full h-full flex items-center justify-center text-lg text-gray-400">
+                        {member.user.nickname?.[0] || '用'}
                       </div>
                     )}
                   </div>
-                  <span className="text-xs text-text-secondary text-center max-w-[48px] truncate">
+                  <div className="text-xs text-text-secondary text-center max-w-[80px] line-clamp-1">
                     {member.user.nickname || '用户'}
-                  </span>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* 小区活动 */}
         {community.activities && community.activities.length > 0 && (
-          <div className="bg-white px-4 py-4 mb-2">
-            <h2 className="text-base font-semibold text-text-primary mb-3">
-              社区活动 ({community._count?.activities || 0})
-            </h2>
-            <div className="space-y-3">
+          <section className="px-4 mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-text-primary">小区活动</h2>
+              <span className="text-xs text-text-secondary">
+                共 {community._count?.activities ?? community.activities.length} 场
+              </span>
+            </div>
+            <div className="space-y-4">
               {community.activities.map((activity) => (
                 <div
                   key={activity.id}
                   onClick={() => router.push(`/communities/${communityId}/activities/${activity.id}`)}
-                  className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-primary transition-colors"
+                  className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className={`px-2 py-1 text-xs rounded ${
-                        activity.type === 'announcement'
-                          ? 'bg-blue-100 text-blue-600'
-                          : activity.type === 'market'
-                          ? 'bg-orange-100 text-orange-600'
-                          : activity.type === 'festival'
-                          ? 'bg-red-100 text-red-600'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}
-                    >
-                      {activity.type === 'announcement'
-                        ? '公告'
-                        : activity.type === 'market'
-                        ? '摆摊'
-                        : activity.type === 'festival'
-                        ? '过节'
-                        : '活动'}
-                    </span>
-                    <h3 className="text-sm font-medium text-text-primary flex-1">
-                      {activity.title}
-                    </h3>
-                  </div>
-                  {activity.description && (
-                    <p className="text-xs text-text-secondary line-clamp-2 mb-2">
-                      {activity.description}
-                    </p>
-                  )}
-                  {activity.startTime && (
-                    <div className="flex items-center gap-1 text-xs text-text-secondary">
-                      <Calendar className="w-3 h-3" />
-                      <span>
-                        {new Date(activity.startTime).toLocaleString('zh-CN', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
+                  {activity.images?.[0] && (
+                    <div className="relative h-48">
+                      <Image
+                        src={activity.images[0]}
+                        alt={activity.title}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                   )}
+                  <div className="p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
+                        {activity.type === 'announcement'
+                          ? '公告'
+                          : activity.type === 'market'
+                          ? '集市'
+                          : activity.type === 'festival'
+                          ? '节庆'
+                          : '活动'}
+                      </span>
+                      <h3 className="text-base font-semibold text-text-primary line-clamp-1">
+                        {activity.title}
+                      </h3>
+                    </div>
+                    {activity.description && (
+                      <p className="text-sm text-text-secondary line-clamp-2">
+                        {activity.description}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between text-xs text-text-secondary">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>
+                          {activity.startTime
+                            ? new Date(activity.startTime).toLocaleString('zh-CN', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '时间待定'}
+                        </span>
+                      </div>
+                      <span>{activity.location || '线下活动'}</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
-
-        {/* 操作按钮 */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 pb-safe">
-          <div className="max-w-7xl mx-auto px-4 py-3 flex gap-3">
-            {community.verificationStatus !== 'approved' && user?.role === 'property' && (
-              <button
-                onClick={handleVerify}
-                className="flex-1 px-4 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-              >
-                <Shield className="w-5 h-5" />
-                <span>申请认证</span>
-              </button>
-            )}
-            {community.verificationStatus === 'approved' && (
-              <>
-                {community.isJoined ? (
-                  <button
-                    onClick={handleLeave}
-                    className="flex-1 px-4 py-3 bg-gray-100 text-text-primary rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                  >
-                    退出小区
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleJoin}
-                    className="flex-1 px-4 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <LogIn className="w-5 h-5" />
-                    <span>加入小区</span>
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
       </main>
 
-      {/* 成员列表弹窗 */}
+      <button
+        onClick={handlePublish}
+        className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+        aria-label="发布闲置"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
       {showAllMembers && community.members && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md max-h-[80vh] flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-text-primary">
-                全部成员 ({community._count?.members || 0})
+          <div className="bg-white rounded-3xl w-full max-w-md max-h-[80vh] flex flex-col">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-text-primary">
+                全部成员 ({community._count?.members ?? community.members.length})
               </h3>
               <button
                 onClick={() => setShowAllMembers(false)}
-                className="text-text-secondary hover:text-text-primary"
+                className="p-1 rounded-full hover:bg-gray-100"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-text-secondary" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
@@ -429,7 +577,7 @@ export default function CommunityDetailPage() {
                     }}
                     className="flex flex-col items-center gap-2 cursor-pointer"
                   >
-                    <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
                       {member.user.avatarUrl ? (
                         <Image
                           src={member.user.avatarUrl}
@@ -439,20 +587,16 @@ export default function CommunityDetailPage() {
                           className="object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          <span className="text-xl">
-                            {member.user.nickname?.[0] || '用'}
-                          </span>
+                        <div className="w-full h-full flex items-center justify-center text-xl text-gray-400">
+                          {member.user.nickname?.[0] || '用'}
                         </div>
                       )}
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-medium text-text-primary">
+                      <p className="text-sm font-medium text-text-primary line-clamp-1">
                         {member.user.nickname || '用户'}
                       </p>
-                      <p className="text-xs text-text-secondary">
-                        信用: {member.user.creditScore}
-                      </p>
+                      <p className="text-xs text-text-secondary">信用 {member.user.creditScore}</p>
                     </div>
                   </div>
                 ))}
@@ -462,7 +606,6 @@ export default function CommunityDetailPage() {
         </div>
       )}
 
-      {/* 图片预览 */}
       {showMediaPreview && mediaItems.length > 0 && (
         <MediaPreview
           isOpen={showMediaPreview}

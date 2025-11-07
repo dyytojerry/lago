@@ -37,7 +37,7 @@
     "db:push": "npm run db:push --workspace=apps/lago-server",
     "db:migrate": "npm run db:migrate --workspace=apps/lago-server",
     "db:seed": "npm run db:seed --workspace=apps/lago-server",
-    "db:studio": "prisma studio",
+    "db:studio": "npm run db:studio --workspace=apps/lago-server",
     "generate-api:app": "node scripts/generate-api.js --project=app",
     "generate-api:operation": "node scripts/generate-api.js --project=operation",
     "generate-api": "npm run generate-api:app && npm run generate-api:operation"
