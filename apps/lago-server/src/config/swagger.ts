@@ -117,29 +117,49 @@ export const swaggerSchemas = {
   LoginResponse: {
     type: 'object',
     properties: {
-      token: {
-        type: 'string',
-        description: 'JWT Token',
+      success: {
+        type: 'boolean',
+        example: true,
       },
-      user: {
-        $ref: '#/components/schemas/User',
+      data: {
+        type: 'object',
+        properties: {
+          token: {
+            type: 'string',
+            description: 'JWT Token',
+          },
+          user: {
+            $ref: '#/components/schemas/User',
+          },
+        },
+        required: ['token', 'user'],
       },
     },
-    required: ['token', 'user'],
+    required: ['success', 'data'],
   },
 
   OperationLoginResponse: {
     type: 'object',
     properties: {
-      token: {
-        type: 'string',
-        description: 'JWT Token',
+      success: {
+        type: 'boolean',
+        example: true,
       },
-      staff: {
-        $ref: '#/components/schemas/OperationStaff',
+      data: {
+        type: 'object',
+        properties: {
+          token: {
+            type: 'string',
+            description: 'JWT Token',
+          },
+          staff: {
+            $ref: '#/components/schemas/OperationStaff',
+          },
+        },
+        required: ['token', 'staff'],
       },
     },
-    required: ['token', 'staff'],
+    required: ['success', 'data'],
   },
 
   WechatLoginRequest: {
@@ -233,12 +253,17 @@ export const swaggerSchemas = {
   ErrorResponse: {
     type: 'object',
     properties: {
+      success: {
+        type: 'boolean',
+        description: '请求是否成功',
+        example: false,
+      },
       error: {
         type: 'string',
         description: '错误信息',
       },
     },
-    required: ['error'],
+    required: ['success', 'error'],
   },
 
   SuccessResponse: {
@@ -246,12 +271,14 @@ export const swaggerSchemas = {
     properties: {
       success: {
         type: 'boolean',
-        description: '是否成功',
+        description: '请求是否成功',
+        example: true,
       },
-      message: {
-        type: 'string',
+      data: {
+        type: 'object',
         nullable: true,
-        description: '提示信息',
+        description: '业务数据载体',
+        additionalProperties: true,
       },
     },
     required: ['success'],
@@ -337,32 +364,6 @@ export const swaggerSchemas = {
       },
     },
     required: ['id', 'title', 'category', 'type', 'price', 'status', 'images'],
-  },
-
-  ProductListResponse: {
-    type: 'object',
-    properties: {
-      products: {
-        type: 'array',
-        items: {
-          $ref: '#/components/schemas/Product',
-        },
-      },
-      pagination: {
-        $ref: '#/components/schemas/Pagination',
-      },
-    },
-    required: ['products', 'pagination'],
-  },
-
-  ProductDetailResponse: {
-    type: 'object',
-    properties: {
-      product: {
-        $ref: '#/components/schemas/Product',
-      },
-    },
-    required: ['product'],
   },
 
   ProductApproveRequest: {
@@ -477,61 +478,6 @@ export const swaggerSchemas = {
     required: ['id', 'type', 'status', 'amount', 'deliveryType'],
   },
 
-  OrderListResponse: {
-    type: 'object',
-    properties: {
-      orders: {
-        type: 'array',
-        items: {
-          $ref: '#/components/schemas/Order',
-        },
-      },
-      pagination: {
-        $ref: '#/components/schemas/Pagination',
-      },
-    },
-    required: ['orders', 'pagination'],
-  },
-
-  OrderDetailResponse: {
-    type: 'object',
-    properties: {
-      order: {
-        allOf: [
-          { $ref: '#/components/schemas/Order' },
-          {
-            type: 'object',
-            properties: {
-              product: {
-                $ref: '#/components/schemas/Product',
-              },
-              buyer: {
-                $ref: '#/components/schemas/User',
-              },
-              seller: {
-                $ref: '#/components/schemas/User',
-              },
-              depositRecord: {
-                type: 'object',
-                nullable: true,
-                properties: {
-                  id: { type: 'string' },
-                  amount: { type: 'string', format: 'decimal' },
-                  refundStatus: {
-                    type: 'string',
-                    enum: ['pending', 'refunded', 'forfeited'],
-                  },
-                  refundedAt: { type: 'string', format: 'date-time', nullable: true },
-                },
-              },
-            },
-          },
-        ],
-      },
-    },
-    required: ['order'],
-  },
-
   OrderStatusUpdateRequest: {
     type: 'object',
     properties: {
@@ -549,69 +495,217 @@ export const swaggerSchemas = {
     required: ['status'],
   },
 
-  // ==================== 用户相关 ====================
+  // ==================== 聊天相关 ====================
 
-  UserListResponse: {
+  ChatMessage: {
     type: 'object',
     properties: {
-      users: {
-        type: 'array',
-        items: {
-          $ref: '#/components/schemas/User',
+      id: {
+        type: 'string',
+        description: '消息ID',
+      },
+      chatRoomId: {
+        type: 'string',
+        description: '所属聊天室ID',
+      },
+      senderId: {
+        type: 'string',
+        description: '发送者用户ID',
+      },
+      receiverId: {
+        type: 'string',
+        nullable: true,
+        description: '接收者用户ID',
+      },
+      type: {
+        type: 'string',
+        enum: ['text', 'image', 'system', 'product_card'],
+        description: '消息类型',
+      },
+      content: {
+        type: 'string',
+        description: '消息内容',
+      },
+      fileUrl: {
+        type: 'string',
+        nullable: true,
+        description: '附件URL（图片等）',
+      },
+      productId: {
+        type: 'string',
+        nullable: true,
+        description: '关联商品ID',
+      },
+      isRead: {
+        type: 'boolean',
+        description: '是否已读',
+      },
+      createdAt: {
+        type: 'string',
+        format: 'date-time',
+        description: '创建时间',
+      },
+      readAt: {
+        type: 'string',
+        format: 'date-time',
+        nullable: true,
+        description: '读取时间',
+      },
+      sender: {
+        type: 'object',
+        nullable: true,
+        properties: {
+          id: { type: 'string' },
+          nickname: { type: 'string' },
+          avatarUrl: { type: 'string', nullable: true },
         },
       },
-      pagination: {
-        $ref: '#/components/schemas/Pagination',
-      },
     },
-    required: ['users', 'pagination'],
+    required: ['id', 'chatRoomId', 'senderId', 'type', 'content', 'isRead', 'createdAt'],
   },
 
-  UserDetailResponse: {
+  ChatRoom: {
     type: 'object',
     properties: {
-      user: {
-        allOf: [
-          { $ref: '#/components/schemas/User' },
-          {
-            type: 'object',
-            properties: {
-              wechatOpenid: {
-                type: 'string',
-                nullable: true,
-                description: '微信OpenID',
-              },
-              updatedAt: {
-                type: 'string',
-                format: 'date-time',
-                description: '更新时间',
-              },
-            },
-          },
-        ],
+      id: {
+        type: 'string',
+        description: '聊天室ID',
       },
-      products: {
+      productId: {
+        type: 'string',
+        nullable: true,
+        description: '关联商品ID',
+      },
+      type: {
+        type: 'string',
+        enum: ['private', 'group'],
+        description: '聊天室类型',
+      },
+      isActive: {
+        type: 'boolean',
+        description: '是否有效',
+      },
+      product: {
+        $ref: '#/components/schemas/Product',
+        nullable: true,
+      },
+      members: {
         type: 'array',
         items: {
           type: 'object',
           properties: {
-            id: { type: 'string' },
-            title: { type: 'string' },
-            status: { type: 'string' },
-            price: { type: 'string', format: 'decimal' },
-            createdAt: { type: 'string', format: 'date-time' },
+            userId: { type: 'string' },
+            user: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                id: { type: 'string' },
+                nickname: { type: 'string' },
+                avatarUrl: { type: 'string', nullable: true },
+              },
+            },
           },
         },
       },
-      orders: {
+      messages: {
         type: 'array',
         items: {
-          $ref: '#/components/schemas/Order',
+          $ref: '#/components/schemas/ChatMessage',
         },
       },
+      createdAt: {
+        type: 'string',
+        format: 'date-time',
+        description: '创建时间',
+      },
+      updatedAt: {
+        type: 'string',
+        format: 'date-time',
+        description: '更新时间',
+      },
     },
-    required: ['user'],
+    required: ['id', 'type', 'isActive', 'createdAt', 'updatedAt'],
   },
+
+  Community: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', description: '小区ID' },
+      name: { type: 'string', description: '小区名称' },
+      location: { type: 'string', description: '地理位置（lat,lng）' },
+      address: { type: 'string', nullable: true, description: '详细地址' },
+      verificationStatus: {
+        type: 'string',
+        enum: ['pending', 'approved', 'rejected'],
+        description: '认证状态',
+      },
+      images: {
+        type: 'array',
+        items: { type: 'string' },
+        description: '小区图片',
+      },
+      description: { type: 'string', nullable: true, description: '小区介绍' },
+      distance: { type: 'integer', nullable: true, description: '距离（米）—仅附近搜索时出现' },
+      _count: {
+        type: 'object',
+        nullable: true,
+        properties: {
+          members: { type: 'integer' },
+          products: { type: 'integer' },
+        },
+      },
+      province: {
+        type: 'object',
+        nullable: true,
+        properties: { name: { type: 'string' } },
+      },
+      city: {
+        type: 'object',
+        nullable: true,
+        properties: { name: { type: 'string' } },
+      },
+      district: {
+        type: 'object',
+        nullable: true,
+        properties: { name: { type: 'string' } },
+      },
+    },
+    required: ['id', 'name', 'location', 'verificationStatus'],
+  },
+
+  Province: {
+    type: 'object',
+    properties: {
+      id: { type: 'string' },
+      code: { type: 'string' },
+      name: { type: 'string' },
+    },
+    required: ['id', 'code', 'name'],
+  },
+
+  City: {
+    type: 'object',
+    properties: {
+      id: { type: 'string' },
+      provinceId: { type: 'string' },
+      code: { type: 'string' },
+      name: { type: 'string' },
+    },
+    required: ['id', 'provinceId', 'code', 'name'],
+  },
+
+  District: {
+    type: 'object',
+    properties: {
+      id: { type: 'string' },
+      cityId: { type: 'string' },
+      code: { type: 'string' },
+      name: { type: 'string' },
+    },
+    required: ['id', 'cityId', 'code', 'name'],
+  },
+
+  // ==================== 用户相关 ====================
 
   UserStatusUpdateRequest: {
     type: 'object',
@@ -629,115 +723,6 @@ export const swaggerSchemas = {
         description: '信用积分',
       },
     },
-  },
-
-  // ==================== 仪表盘相关 ====================
-
-  DashboardStats: {
-    type: 'object',
-    properties: {
-      gmv: {
-        type: 'object',
-        properties: {
-          today: { type: 'number', description: '今日GMV' },
-          week: { type: 'number', description: '本周GMV' },
-          month: { type: 'number', description: '本月GMV' },
-          total: { type: 'number', description: '累计GMV' },
-        },
-        required: ['today', 'week', 'month', 'total'],
-      },
-      users: {
-        type: 'object',
-        properties: {
-          newToday: { type: 'integer', description: '今日新增用户' },
-          newWeek: { type: 'integer', description: '本周新增用户' },
-          activeToday: { type: 'integer', description: '今日活跃用户' },
-          total: { type: 'integer', description: '总用户数' },
-          active: { type: 'integer', description: '活跃用户数' },
-        },
-        required: ['newToday', 'newWeek', 'activeToday', 'total', 'active'],
-      },
-      communities: {
-        type: 'object',
-        properties: {
-          active: { type: 'integer', description: '活跃小区数' },
-          new: { type: 'integer', description: '新增小区数' },
-        },
-        required: ['active', 'new'],
-      },
-      orders: {
-        type: 'object',
-        properties: {
-          today: { type: 'integer', description: '今日订单数' },
-          pending: { type: 'integer', description: '待处理订单数' },
-        },
-        required: ['today', 'pending'],
-      },
-      pending: {
-        type: 'object',
-        properties: {
-          products: { type: 'integer', description: '待审核商品数' },
-          approvals: { type: 'integer', description: '待审核入驻数' },
-          complaints: { type: 'integer', description: '待处理投诉数' },
-        },
-        required: ['products', 'approvals', 'complaints'],
-      },
-    },
-    required: ['gmv', 'users', 'communities', 'orders', 'pending'],
-  },
-
-  DashboardTrends: {
-    type: 'object',
-    properties: {
-      gmv: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            date: { type: 'string', format: 'date' },
-            value: { type: 'number' },
-          },
-        },
-      },
-      users: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            date: { type: 'string', format: 'date' },
-            value: { type: 'integer' },
-          },
-        },
-      },
-    },
-    required: ['gmv', 'users'],
-  },
-
-  PendingItems: {
-    type: 'object',
-    properties: {
-      products: {
-        type: 'array',
-        items: {
-          $ref: '#/components/schemas/Product',
-        },
-      },
-      approvals: {
-        type: 'array',
-        items: {
-          type: 'object',
-        },
-        description: '待审核入驻申请（待实现）',
-      },
-      complaints: {
-        type: 'array',
-        items: {
-          type: 'object',
-        },
-        description: '待处理投诉（待实现）',
-      },
-    },
-    required: ['products', 'approvals', 'complaints'],
   },
 };
 

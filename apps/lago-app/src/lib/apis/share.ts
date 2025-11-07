@@ -17,8 +17,20 @@ export class ShareDTO {
   options?: any;
 
 }
-export type ShareResponse = any;
+export class ShareResponse {
+  @IsString()
+  title: string;
 
+  @IsString()
+  desc: string;
+
+  @IsString()
+  path: string;
+
+  @IsString()
+  imageUrl: string;
+
+}
 /**
  * 获取分享数据
  */

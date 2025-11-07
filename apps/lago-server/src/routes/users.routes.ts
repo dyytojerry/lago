@@ -64,7 +64,26 @@ router.use(authOperation);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/UserListResponse'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         users:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/User'
+ *                         _count:
+ *                           type: object
+ *                           nullable: true
+ *                           additionalProperties:
+ *                             type: number
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['users', 'pagination']
  *       401:
  *         description: 未认证
  *         content:
@@ -115,7 +134,42 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/UserDetailResponse'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         user:
+ *                           allOf:
+ *                             - $ref: '#/components/schemas/User'
+ *                             - type: object
+ *                               properties:
+ *                                 wechatOpenid:
+ *                                   type: string
+ *                                   nullable: true
+ *                                   description: '微信OpenID'
+ *                                 updatedAt:
+ *                                   type: string
+ *                                   format: date-time
+ *                                   description: '更新时间'
+ *                         products:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id: { type: 'string' }
+ *                               title: { type: 'string' }
+ *                               status: { type: 'string' }
+ *                               price: { type: 'string', format: 'decimal' }
+ *                               createdAt: { type: 'string', format: 'date-time' }
+ *                         orders:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Order'
+ *                       required: ['user']
  *       401:
  *         description: 未认证
  *         content:

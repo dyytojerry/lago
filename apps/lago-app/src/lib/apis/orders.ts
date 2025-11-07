@@ -26,16 +26,58 @@ export class OrdersQueryParams {
 
 }
 
-export type OrdersResponse = any;
+export class OrdersResponse {
+  @IsArray()
+  orders: Types.Order[];
 
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
+export class OrderCreateDTO {
+  @IsString()
+  productId: string;
+
+  @IsEnum(Types.OrderType)
+  type: Types.OrderType;
+
+  @IsString()
+  @IsOptional()
+  startDate?: string;
+
+  @IsString()
+  @IsOptional()
+  endDate?: string;
+
+  @IsEnum(Types.OrderDeliveryType)
+  @IsOptional()
+  deliveryType?: Types.OrderDeliveryType;
+
+  @IsString()
+  @IsOptional()
+  deliveryAddress?: string;
+
+  @IsString()
+  @IsOptional()
+  remark?: string;
+
+}
+export class OrderCreateResponse {
+  @IsString()
+  order: any;
+
+}
 export class OrderDetailPathParams {
   @IsString()
   id: string;
 
 }
 
-export type OrderDetailResponse = any;
+export class OrderDetailResponse {
+  @IsString()
+  order: any;
 
+}
 export class OrderStatuPathParams {
   @IsString()
   id: string;
@@ -48,12 +90,22 @@ export class OrderStatuDTO {
   status?: 'paid' | 'confirmed' | 'completed' | 'cancelled';
 
 }
+export class OrderStatuResponse {
+  @IsString()
+  message: string;
+
+}
 export class OrderCancelPathParams {
   @IsString()
   id: string;
 
 }
 
+export class OrderCancelResponse {
+  @IsString()
+  message: string;
+
+}
 /**
  * 获取订单列表（小程序端）
  */
@@ -72,7 +124,7 @@ export async function orders(
  * 创建订单
  */
 export async function orderCreate(
-  data: Types.CreateOrderRequest,
+  data: OrderCreateDTO,
   noAuthorize?: boolean
 ): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/orders", {
@@ -141,7 +193,7 @@ export function useOrders(
  * 创建订单 Hook
  */
 export function useOrderCreate(
-  options?: UseMutationOptions<HTTPResponse<OrderCreateResponse>, Error, Types.CreateOrderRequest>
+  options?: UseMutationOptions<HTTPResponse<OrderCreateResponse>, Error, OrderCreateDTO>
 ) {
   const queryClient = useQueryClient();
 

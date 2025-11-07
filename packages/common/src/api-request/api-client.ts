@@ -31,6 +31,7 @@ export function setFamilyId(id: string) {
 }
 export const redirectToLogin = () => {
   if (navitagteUrl) return;
+  debugger
   if (typeof window !== 'undefined') {
     // Redirect to login page
     if (!window.location.pathname || window.location.pathname === '/') {

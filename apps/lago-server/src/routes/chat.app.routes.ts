@@ -36,12 +36,19 @@ router.use(authUser);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 rooms:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/ChatRoom'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         rooms:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/ChatRoom'
+ *                       required: ['rooms']
  */
 router.get('/rooms', getChatRooms);
 
@@ -66,10 +73,17 @@ router.get('/rooms', getChatRooms);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 room:
- *                   $ref: '#/components/schemas/ChatRoom'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         room:
+ *                           $ref: '#/components/schemas/ChatRoom'
+ *                       required: ['room']
  */
 router.get('/rooms/:id', getChatRoom);
 
@@ -95,15 +109,22 @@ router.get('/rooms/:id', getChatRoom);
  *                 type: string
  *                 description: 对方用户ID
  *     responses:
- *       201:
+ *       200:
  *         description: 创建成功
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 room:
- *                   $ref: '#/components/schemas/ChatRoom'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         room:
+ *                           $ref: '#/components/schemas/ChatRoom'
+ *                       required: ['room']
  */
 router.post(
   '/rooms',
@@ -151,14 +172,21 @@ router.post(
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 messages:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/ChatMessage'
- *                 pagination:
- *                   $ref: '#/components/schemas/Pagination'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         messages:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/ChatMessage'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['messages', 'pagination']
  */
 router.get(
   '/rooms/:id/messages',
@@ -209,15 +237,22 @@ router.get(
  *                 type: string
  *                 description: 商品ID（商品卡片）
  *     responses:
- *       201:
+ *       200:
  *         description: 发送成功
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   $ref: '#/components/schemas/ChatMessage'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           $ref: '#/components/schemas/ChatMessage'
+ *                       required: ['message']
  */
 router.post(
   '/rooms/:id/messages',

@@ -145,7 +145,7 @@ router.post('/phone/login', validateRequest(phoneLoginSchema), phoneLogin);
  *           schema:
  *             $ref: '#/components/schemas/PhoneRegisterRequest'
  *     responses:
- *       201:
+ *       200:
  *         description: 注册成功
  *         content:
  *           application/json:

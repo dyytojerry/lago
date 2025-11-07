@@ -40,16 +40,19 @@ const router = Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 title:
- *                   type: string
- *                 desc:
- *                   type: string
- *                 path:
- *                   type: string
- *                 imageUrl:
- *                   type: string
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         title: { type: 'string' }
+ *                         desc: { type: 'string' }
+ *                         path: { type: 'string' }
+ *                         imageUrl: { type: 'string' }
+ *                       required: ['title', 'desc', 'path', 'imageUrl']
  */
 router.post('/', async (req: Request, res: Response) => {
   try {

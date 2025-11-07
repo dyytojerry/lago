@@ -117,75 +117,11 @@ router.post('/wechat/login', validateRequest(wechatLoginSchema), wechatLogin);
  */
 router.post('/operation/login', validateRequest(operationLoginSchema), operationLogin);
 
-export default router;
-```
-
-**运营系统路由示例**：
-
-```typescript
-// apps/lago-server/src/routes/products.routes.ts
-import { Router } from "express";
-import { getProducts } from "../controllers/products.controller";
-import { authOperation } from "../middleware/auth";
-import { validateRequest } from "../middleware/validateRequest";
-import * as Joi from "joi";
-
-const router = Router();
-
-// 所有路由需要运营端认证
-router.use(authOperation);
-
-/**
- * @swagger
- * tags:
- *   name: AdminProducts
- *   description: 运营系统商品管理相关接口
- */
-
-/**
- * @swagger
- * /api/admin/products:
- *   get:
- *     summary: 获取商品列表
- *     tags: [AdminProducts, Operation]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: string
- *           default: "1"
- *         description: 页码
- *     responses:
- *       200:
- *         description: 成功获取商品列表
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ProductListResponse'
- *       401:
- *         description: 未认证
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.get(
-  '/',
-  validateRequest(
-    Joi.object({
-      query: Joi.object({
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
-      }),
-    })
-  ),
-  getProducts
-);
-
-export default router;
-```
+4. **统一响应包装**：
+   - 后端必须通过 `createSuccessResponse` / `createErrorResponse` 返回数据，统一结构为：`{ success: boolean, data?: object }` 或 `{ success: false, error: string }`
+   - Swagger 描述中**必须体现这一层包装**，例如通过 `SuccessResponse` + `allOf` 或直接引用已经定义好的 `*Response` schema（内部已包含 `data` 节点）
+   - 若接口仅返回提示信息，也需要放入 `data` 中，例如 `{ success: true, data: { message: '操作成功' } }`
+   - `swagger.ts` 只保留**可复用的实体/基础结构**（如 `Product`、`Pagination`、`SuccessResponse`），**不要**为某个接口单独定义 `XXXListResponse`；在路由注释里通过 `allOf` + 内联 `data` 结构描述返回体
 
 #### 1.2 定义验证Schema
 

@@ -389,7 +389,7 @@ export function ${hookName}(\n`;
   
   const requestBodyType = hasBody ? getRequestBodyType(operation, functionName) : 'any';
   
-  paramList.push(`  options?: UseMutationOptions<HTTPResponse<${upperFirst(functionName)}Response>, Error, ${requestBodyType}>`);
+  paramList.push(`  options?: UseMutationOptions<HTTPResponse<${getResponseTypeName(functionName)}>, Error, ${requestBodyType}>`);
   
   hook += paramList.join(',\n');
   hook += '\n) {\n';
@@ -498,6 +498,22 @@ function getCacheInvalidationPatterns(operation) {
   return tags.map(tag => `'${tag.toLowerCase()}'`);
 }
 
+function generateTypeDefinitionAllOf(schema, name, enumTypes = null, inline = false) {
+  const extendsTypes = [];
+  for (const item of schema.allOf) {
+    if (item.type === 'object' && item.properties) {
+      const interfaceType = generateTypeDefinition(item, name, enumTypes, inline);
+      const classType =  interfaceType.replace(/export class ([\w]+) {/, ($0, $1) => {
+        return `export class ${$1} extends ${extendsTypes.join(', ')} {`;
+      });
+      return classType
+    } else if (item.$ref) {
+      const refName = item.$ref.split('/').pop();
+      extendsTypes.push(inline ? refName : `Types.${refName}`);
+    }
+  }
+}
+
 // 生成参数类型定义
 function generateParamTypes(path, method, operation, functionName, enumTypes = null) {
   const types = [];
@@ -542,9 +558,14 @@ function generateParamTypes(path, method, operation, functionName, enumTypes = n
   // 生成DTO类型
   if (hasBody && operation.requestBody && operation.requestBody.content) {
     const content = operation.requestBody.content['application/json'] || operation.requestBody.content['multipart/form-data'];
-    if (content && content.schema && content.schema.type === 'object' && content.schema.properties) {
+    if (content && content.schema) {
       const dtoType = getParamTypeName(functionName, 'DTO');
-      types.push(generateTypeDefinition(content.schema, dtoType, enumTypes));
+      if (content.schema.allOf) {
+        const type = generateTypeDefinitionAllOf(content.schema, dtoType, enumTypes);
+        type && types.push(type + '\n');
+      } else if (content.schema.type === 'object' && content.schema.properties) {
+        types.push(generateTypeDefinition(content.schema, dtoType, enumTypes));
+      }
     }
   }
   
@@ -553,12 +574,30 @@ function generateParamTypes(path, method, operation, functionName, enumTypes = n
   const responseType = getResponseTypeName(functionName);
   if (response && response.content) {
     const content = response.content['application/json'];
-    if (content && content.schema && content.schema.type === 'object' && content.schema.properties) {
-      const dataSchema = content.schema.properties.data;
-      if (dataSchema && dataSchema.type === 'object' && dataSchema.properties) {
-        types.push(generateTypeDefinition(dataSchema, responseType, enumTypes));
-      } else {
-        types.push(`export type ${responseType} = any;\n\n`);
+    if (content && content.schema) {
+      if (content.schema.allOf) {
+        for (const item of content.schema.allOf) {
+          if (item.type === 'object' && item.properties) {
+            const dataSchema = item.properties.data;
+            if (dataSchema) {
+              if (dataSchema.allOf) {
+                const type = generateTypeDefinitionAllOf(dataSchema, responseType, enumTypes);
+                type && types.push(type + '\n');
+              } else if (dataSchema.type === 'object' && dataSchema.properties) {
+                types.push(generateTypeDefinition(dataSchema, responseType, enumTypes));
+              }  else {
+                types.push(`export type ${responseType} = any;\n\n`);
+              }
+            }
+          }
+        }
+      } else if (content.schema.type === 'object' && content.schema.properties) {
+        const dataSchema = content.schema.properties.data;
+        if (dataSchema && dataSchema.type === 'object' && dataSchema.properties) {
+          types.push(generateTypeDefinition(dataSchema, responseType, enumTypes));
+        }  else {
+          types.push(`export type ${responseType} = any;\n\n`);
+        }
       }
     } else if (content && content.schema.$ref && content.schema.$ref.endsWith('Response')) {
       types.push(`export type ${responseType} = Types.${content.schema.$ref.split('/').pop()};\n\n`);

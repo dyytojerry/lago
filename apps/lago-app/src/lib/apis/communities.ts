@@ -3,14 +3,17 @@ import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
+export class CommunitieMyResponse {
+  @IsArray()
+  communities: Types.Community[];
+
+}
 export class CommunitieNearbyQueryParams {
   @IsNumber()
-  @IsOptional()
-  latitude?: number;
+  latitude: number;
 
   @IsNumber()
-  @IsOptional()
-  longitude?: number;
+  longitude: number;
 
   @IsNumber()
   @IsOptional()
@@ -18,24 +21,135 @@ export class CommunitieNearbyQueryParams {
 
 }
 
-export type CommunitieNearbyResponse = any;
+export class CommunitieNearbyResponse {
+  @IsArray()
+  communities: Types.Community[];
 
+}
+export class CommunitieSearchQueryParams {
+  @IsString()
+  @IsOptional()
+  search?: string;
+
+  @IsString()
+  @IsOptional()
+  provinceId?: string;
+
+  @IsString()
+  @IsOptional()
+  cityId?: string;
+
+  @IsString()
+  @IsOptional()
+  districtId?: string;
+
+  @IsEnum(Types.CommunityVerificationStatus)
+  @IsOptional()
+  verificationStatus?: Types.CommunityVerificationStatus;
+
+  @IsString()
+  @IsOptional()
+  page?: string;
+
+  @IsString()
+  @IsOptional()
+  limit?: string;
+
+}
+
+export class CommunitieSearchResponse {
+  @IsArray()
+  communities: Types.Community[];
+
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
 export class CommunitiesPathParams {
   @IsString()
   id: string;
 
 }
 
-export type CommunitiesResponse = any;
+export class CommunitiesResponse {
+  @ValidateNested()
+  community: Types.Community;
+
+}
+export class CommunitieJoinPathParams {
+  @IsString()
+  id: string;
+
+}
+
+export class CommunitieLeavePathParams {
+  @IsString()
+  id: string;
+
+}
+
+export class CommunitieVerifyPathParams {
+  @IsString()
+  id: string;
+
+}
+
+export class CommunitieVerifyDTO {
+  @IsString()
+  @IsOptional()
+  companyName?: string;
+
+  @IsString()
+  @IsOptional()
+  contactName?: string;
+
+  @IsString()
+  @IsOptional()
+  contactPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  licenseUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  proofUrl?: string;
+
+}
+/**
+ * 获取用户加入的小区
+ */
+export async function communitieMy(
+  noAuthorize?: boolean
+): Promise<HTTPResponse<any>> {
+  return await apiRequest("/api/communities/my", {
+    method: 'GET',
+    noAuthorize: noAuthorize,
+  });
+}
 
 /**
- * 获取附近小区
+ * 获取附近小区（1公里内）
  */
 export async function communitieNearby(
   queryParams?: CommunitieNearbyQueryParams,
   noAuthorize?: boolean
 ): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/communities/nearby", {
+    method: 'GET',
+    noAuthorize: noAuthorize,
+    params: queryParams,
+  });
+}
+
+/**
+ * 搜索小区
+ */
+export async function communitieSearch(
+  queryParams?: CommunitieSearchQueryParams,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<any>> {
+  return await apiRequest("/api/communities/search", {
     method: 'GET',
     noAuthorize: noAuthorize,
     params: queryParams,
@@ -56,15 +170,83 @@ export async function communities(
 }
 
 /**
- * 获取附近小区 Hook
+ * 加入小区
+ */
+export async function communitieJoin(
+  pathParams: CommunitieJoinPathParams,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<CommunitieJoinResponse>> {
+  return await apiRequest(`/api/communities/${pathParams.id}/join`, {
+    method: 'POST',
+    noAuthorize: noAuthorize,
+  });
+}
+
+/**
+ * 退出小区
+ */
+export async function communitieLeave(
+  pathParams: CommunitieLeavePathParams,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<CommunitieLeaveResponse>> {
+  return await apiRequest(`/api/communities/${pathParams.id}/leave`, {
+    method: 'POST',
+    noAuthorize: noAuthorize,
+  });
+}
+
+/**
+ * 申请小区认证
+ */
+export async function communitieVerify(
+  pathParams: CommunitieVerifyPathParams,
+  data: CommunitieVerifyDTO,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<CommunitieVerifyResponse>> {
+  return await apiRequest(`/api/communities/${pathParams.id}/verify`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    noAuthorize: noAuthorize,
+  });
+}
+
+/**
+ * 获取用户加入的小区 Hook
+ */
+export function useCommunitieMy(
+  options?: UseQueryOptions<HTTPResponse<CommunitieMyResponse>, Error>
+) {
+  return useQuery({
+    queryKey: ['communities', '获取用户加入的小区'],
+    queryFn: () => communitieMy(),
+    ...options,
+  });
+}
+
+/**
+ * 获取附近小区（1公里内） Hook
  */
 export function useCommunitieNearby(
   queryParams?: CommunitieNearbyQueryParams,
   options?: UseQueryOptions<HTTPResponse<CommunitieNearbyResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['communities', '获取附近小区', queryParams?.latitude, queryParams?.longitude, queryParams?.radius],
+    queryKey: ['communities', '获取附近小区（1公里内）', queryParams?.latitude, queryParams?.longitude, queryParams?.radius],
     queryFn: () => communitieNearby(queryParams),
+    ...options,
+  });
+}
+
+/**
+ * 搜索小区 Hook
+ */
+export function useCommunitieSearch(
+  queryParams?: CommunitieSearchQueryParams,
+  options?: UseQueryOptions<HTTPResponse<CommunitieSearchResponse>, Error>
+) {
+  return useQuery({
+    queryKey: ['communities', '搜索小区', queryParams?.search, queryParams?.provinceId, queryParams?.cityId, queryParams?.districtId, queryParams?.verificationStatus, queryParams?.page, queryParams?.limit],
+    queryFn: () => communitieSearch(queryParams),
     ...options,
   });
 }
@@ -79,6 +261,75 @@ export function useCommunities(
   return useQuery({
     queryKey: ['communities', '获取小区详情', pathParams.id],
     queryFn: () => communities(pathParams),
+    ...options,
+  });
+}
+
+/**
+ * 加入小区 Hook
+ */
+export function useCommunitieJoin(
+  pathParams: CommunitieJoinPathParams,
+  options?: UseMutationOptions<HTTPResponse<CommunitieJoinResponse>, Error, null>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => communitieJoin(pathParams),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['communities'] });
+      queryClient.invalidateQueries({ queryKey: ['app'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
+    ...options,
+  });
+}
+
+/**
+ * 退出小区 Hook
+ */
+export function useCommunitieLeave(
+  pathParams: CommunitieLeavePathParams,
+  options?: UseMutationOptions<HTTPResponse<CommunitieLeaveResponse>, Error, null>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => communitieLeave(pathParams),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['communities'] });
+      queryClient.invalidateQueries({ queryKey: ['app'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
+    ...options,
+  });
+}
+
+/**
+ * 申请小区认证 Hook
+ */
+export function useCommunitieVerify(
+  pathParams: CommunitieVerifyPathParams,
+  options?: UseMutationOptions<HTTPResponse<CommunitieVerifyResponse>, Error, CommunitieVerifyDTO>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => communitieVerify(pathParams, data),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['communities'] });
+      queryClient.invalidateQueries({ queryKey: ['app'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
     ...options,
   });
 }

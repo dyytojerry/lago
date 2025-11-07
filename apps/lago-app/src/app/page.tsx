@@ -1,17 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { ProductCard } from '@/components/ProductCard';
-import { LocationSelector } from '@/components/LocationSelector';
-import { Loading } from '@/components/Loading';
-import { EmptyState } from '@/components/EmptyState';
-import { apiRequest, HTTPResponse } from '@lago/common';
-import { useAuth } from '@lago/ui';
-import { useGeolocation } from '@/lib/hooks/useGeolocation';
-import { MapPin, Users, Search, ArrowRight } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { ProductCard } from "@/components/ProductCard";
+import { LocationSelector } from "@/components/LocationSelector";
+import { Loading } from "@/components/Loading";
+import { EmptyState } from "@/components/EmptyState";
+import { apiRequest, HTTPResponse } from "@lago/common";
+import { useAuth } from "@lago/ui";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { MapPin, Users, Search, ArrowRight } from "lucide-react";
+import { productRecommended } from "@/lib/apis";
 
 interface Product {
   id: string;
@@ -34,7 +35,7 @@ interface Product {
   };
   viewCount: number;
   likeCount: number;
-  type: 'rent' | 'sell' | 'both';
+  type: "rent" | "sell" | "both";
   isVerified: boolean;
 }
 
@@ -62,6 +63,7 @@ export default function HomePage() {
   const [myCommunities, setMyCommunities] = useState<Community[]>([]);
   const [nearbyCommunities, setNearbyCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
+  console.log(latitude && longitude);
 
   useEffect(() => {
     async function loadData() {
@@ -70,17 +72,18 @@ export default function HomePage() {
       setLoading(true);
       try {
         // 获取推荐商品
-        const recommendedResponse = await apiRequest<{ products: Product[] }>('/api/products/recommended', {
-          method: 'GET',
-        });
+        const recommendedResponse = await productRecommended({ limit: 10 });
         if (recommendedResponse.success && recommendedResponse.data) {
           setRecommendedProducts(recommendedResponse.data.products || []);
         }
 
         // 获取热门商品
-        const hotResponse = await apiRequest<{ products: Product[] }>('/api/products/hot', {
-          method: 'GET',
-        });
+        const hotResponse = await apiRequest<{ products: Product[] }>(
+          "/api/products/hot",
+          {
+            method: "GET",
+          }
+        );
         if (hotResponse.success && hotResponse.data) {
           setHotProducts(hotResponse.data.products || []);
         }
@@ -88,43 +91,41 @@ export default function HomePage() {
         // 获取用户加入的小区
         if (user) {
           try {
-            const myCommunitiesResponse = await apiRequest<{ communities: Community[] }>(
-              '/api/communities/my',
-              {
-                method: 'GET',
-              }
-            );
+            const myCommunitiesResponse = await apiRequest<{
+              communities: Community[];
+            }>("/api/communities/my", {
+              method: "GET",
+            });
             if (myCommunitiesResponse.success && myCommunitiesResponse.data) {
               setMyCommunities(myCommunitiesResponse.data.communities || []);
             }
           } catch (error) {
-            console.error('获取我的小区失败:', error);
+            console.error("获取我的小区失败:", error);
           }
         }
 
         // 获取周边小区（需要GPS定位）
         if (latitude && longitude) {
           try {
-            const nearbyResponse = await apiRequest<{ communities: Community[] }>(
-              '/api/communities/nearby',
-              {
-                method: 'GET',
-                params: {
-                  latitude,
-                  longitude,
-                  radius: 1000, // 1公里
-                },
-              }
-            );
+            const nearbyResponse = await apiRequest<{
+              communities: Community[];
+            }>("/api/communities/nearby", {
+              method: "GET",
+              params: {
+                latitude,
+                longitude,
+                radius: 1000, // 1公里
+              },
+            });
             if (nearbyResponse.success && nearbyResponse.data) {
               setNearbyCommunities(nearbyResponse.data.communities || []);
             }
           } catch (error) {
-            console.error('获取周边小区失败:', error);
+            console.error("获取周边小区失败:", error);
           }
         }
       } catch (error) {
-        console.error('加载数据失败:', error);
+        console.error("加载数据失败:", error);
       } finally {
         setLoading(false);
       }
@@ -167,7 +168,7 @@ export default function HomePage() {
             type="text"
             placeholder="搜索商品..."
             className="w-full px-4 py-2 bg-container rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
-            onClick={() => router.push('/search')}
+            onClick={() => router.push("/search")}
           />
         </div>
 
@@ -175,9 +176,11 @@ export default function HomePage() {
         {myCommunities.length > 0 && (
           <section className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-text-primary">我的小区</h2>
+              <h2 className="text-lg font-semibold text-text-primary">
+                我的小区
+              </h2>
               <button
-                onClick={() => router.push('/communities/search')}
+                onClick={() => router.push("/communities/search")}
                 className="text-sm text-primary flex items-center gap-1"
               >
                 查看全部
@@ -225,9 +228,11 @@ export default function HomePage() {
         {nearbyCommunities.length > 0 && (
           <section className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-text-primary">周边小区</h2>
+              <h2 className="text-lg font-semibold text-text-primary">
+                周边小区
+              </h2>
               <button
-                onClick={() => router.push('/communities/search')}
+                onClick={() => router.push("/communities/search")}
                 className="text-sm text-primary flex items-center gap-1"
               >
                 查看全部
@@ -288,9 +293,13 @@ export default function HomePage() {
           <section className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <div className="bg-primary-50 px-3 py-1 rounded-full">
-                <span className="text-sm text-primary font-medium">AI 推荐</span>
+                <span className="text-sm text-primary font-medium">
+                  AI 推荐
+                </span>
               </div>
-              <h2 className="text-lg font-semibold text-text-primary">为你推荐</h2>
+              <h2 className="text-lg font-semibold text-text-primary">
+                为你推荐
+              </h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {recommendedProducts.map((product) => (
@@ -315,7 +324,9 @@ export default function HomePage() {
         {/* 热门榜单 */}
         {hotProducts.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-lg font-semibold text-text-primary mb-4">热门商品</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-4">
+              热门商品
+            </h2>
             <div className="grid grid-cols-2 gap-3">
               {hotProducts.map((product) => (
                 <ProductCard
@@ -339,9 +350,11 @@ export default function HomePage() {
         {/* 空状态 */}
         {recommendedProducts.length === 0 && hotProducts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-text-secondary mb-4">暂无商品，快来发布第一个吧！</p>
+            <p className="text-text-secondary mb-4">
+              暂无商品，快来发布第一个吧！
+            </p>
             <button
-              onClick={() => router.push('/publish')}
+              onClick={() => router.push("/publish")}
               className="px-6 py-2 bg-accent text-white rounded-lg font-medium"
             >
               发布商品

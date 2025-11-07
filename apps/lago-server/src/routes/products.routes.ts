@@ -70,7 +70,21 @@ router.use(authOperation);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ProductListResponse'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         products:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Product'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['products', 'pagination']
  *       401:
  *         description: 未认证
  *         content:
@@ -122,7 +136,17 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ProductDetailResponse'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         product:
+ *                           $ref: '#/components/schemas/Product'
+ *                       required: ['product']
  *       401:
  *         description: 未认证
  *         content:

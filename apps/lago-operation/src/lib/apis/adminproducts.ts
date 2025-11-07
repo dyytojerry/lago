@@ -30,15 +30,11 @@ export class AdminProductsQueryParams {
 
 }
 
-export type AdminProductsResponse = Types.ProductListResponse;
-
 export class AdminProductDetailPathParams {
   @IsString()
   id: string;
 
 }
-
-export type AdminProductDetailResponse = Types.ProductDetailResponse;
 
 export class AdminProductsApprovePathParams {
   @IsString()
@@ -56,7 +52,7 @@ export type AdminProductsBatchApproveResponse = Types.SuccessResponse;
 export async function adminProducts(
   queryParams?: AdminProductsQueryParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<AdminProductsResponse>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/admin/products", {
     method: 'GET',
     noAuthorize: noAuthorize,
@@ -70,7 +66,7 @@ export async function adminProducts(
 export async function adminProductDetail(
   pathParams: AdminProductDetailPathParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<AdminProductDetailResponse>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest(`/api/admin/products/${pathParams.id}`, {
     method: 'GET',
     noAuthorize: noAuthorize,

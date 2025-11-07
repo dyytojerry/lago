@@ -3,8 +3,11 @@ import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
-export type ChatRoomsResponse = any;
+export class ChatRoomsResponse {
+  @IsArray()
+  rooms: Types.ChatRoom[];
 
+}
 export class ChatRoomDTO {
   @IsString()
   @IsOptional()
@@ -15,14 +18,22 @@ export class ChatRoomDTO {
   otherUserId?: string;
 
 }
+export class ChatRoomResponse {
+  @ValidateNested()
+  room: Types.ChatRoom;
+
+}
 export class ChatRoomDetailPathParams {
   @IsString()
   id: string;
 
 }
 
-export type ChatRoomDetailResponse = any;
+export class ChatRoomDetailResponse {
+  @ValidateNested()
+  room: Types.ChatRoom;
 
+}
 export class ChatRoomsMessagesPathParams {
   @IsString()
   id: string;
@@ -40,8 +51,14 @@ export class ChatRoomsMessagesQueryParams {
 
 }
 
-export type ChatRoomsMessagesResponse = any;
+export class ChatRoomsMessagesResponse {
+  @IsArray()
+  messages: Types.ChatMessage[];
 
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
 export class ChatRoomsMessagePathParams {
   @IsString()
   id: string;
@@ -64,6 +81,11 @@ export class ChatRoomsMessageDTO {
   @IsString()
   @IsOptional()
   productId?: string;
+
+}
+export class ChatRoomsMessageResponse {
+  @ValidateNested()
+  message: Types.ChatMessage;
 
 }
 /**

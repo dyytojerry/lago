@@ -34,15 +34,11 @@ export class AdminOrdersQueryParams {
 
 }
 
-export type AdminOrdersResponse = Types.OrderListResponse;
-
 export class AdminOrderDetailPathParams {
   @IsString()
   id: string;
 
 }
-
-export type AdminOrderDetailResponse = Types.OrderDetailResponse;
 
 export class AdminOrdersStatuPathParams {
   @IsString()
@@ -58,7 +54,7 @@ export type AdminOrdersStatuResponse = Types.SuccessResponse;
 export async function adminOrders(
   queryParams?: AdminOrdersQueryParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<AdminOrdersResponse>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/admin/orders", {
     method: 'GET',
     noAuthorize: noAuthorize,
@@ -72,7 +68,7 @@ export async function adminOrders(
 export async function adminOrderDetail(
   pathParams: AdminOrderDetailPathParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<AdminOrderDetailResponse>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest(`/api/admin/orders/${pathParams.id}`, {
     method: 'GET',
     noAuthorize: noAuthorize,

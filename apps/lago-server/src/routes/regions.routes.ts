@@ -13,6 +13,22 @@ const router = Router();
  *     responses:
  *       200:
  *         description: 成功获取省份列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         provinces:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Province'
+ *                       required: ['provinces']
  */
 router.get('/provinces', async (req: Request, res: Response) => {
   try {
@@ -49,6 +65,22 @@ router.get('/provinces', async (req: Request, res: Response) => {
  *     responses:
  *       200:
  *         description: 成功获取城市列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         cities:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/City'
+ *                       required: ['cities']
  */
 router.get('/cities', async (req: Request, res: Response) => {
   try {
@@ -95,6 +127,22 @@ router.get('/cities', async (req: Request, res: Response) => {
  *     responses:
  *       200:
  *         description: 成功获取区县列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         districts:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/District'
+ *                       required: ['districts']
  */
 router.get('/districts', async (req: Request, res: Response) => {
   try {
@@ -145,6 +193,21 @@ router.get('/districts', async (req: Request, res: Response) => {
  *     responses:
  *       200:
  *         description: 成功获取省市区信息
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         province: { $ref: '#/components/schemas/Province', nullable: true }
+ *                         city: { $ref: '#/components/schemas/City', nullable: true }
+ *                         district: { $ref: '#/components/schemas/District', nullable: true }
+ *                         message: { type: 'string', nullable: true }
  */
 router.get('/location', async (req: Request, res: Response) => {
   try {

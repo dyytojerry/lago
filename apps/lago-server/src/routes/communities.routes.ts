@@ -55,6 +55,24 @@ router.use(authOperation);
  *     responses:
  *       200:
  *         description: 成功获取小区列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         communities:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Community'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['communities', 'pagination']
  */
 router.get(
   '/',
@@ -99,6 +117,26 @@ router.get(
  *     responses:
  *       200:
  *         description: 成功获取认证申请列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         verifications:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             description: '认证申请详情（包含社区基础信息）'
+ *                             additionalProperties: true
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['verifications', 'pagination']
  */
 router.get(
   '/verifications',
@@ -133,6 +171,20 @@ router.get(
  *     responses:
  *       200:
  *         description: 成功获取小区详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         community:
+ *                           $ref: '#/components/schemas/Community'
+ *                       required: ['community']
  */
 router.get('/:id', getCommunity);
 
@@ -154,6 +206,21 @@ router.get('/:id', getCommunity);
  *     responses:
  *       200:
  *         description: 审批成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: '认证审批通过'
+ *                       required: ['message']
  */
 router.post(
   '/:id/approve',
@@ -189,6 +256,21 @@ router.post(
  *     responses:
  *       200:
  *         description: 审批成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: '认证审批已拒绝'
+ *                       required: ['message']
  */
 router.post(
   '/:id/reject',

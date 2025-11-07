@@ -26,15 +26,11 @@ export class AdminUsersQueryParams {
 
 }
 
-export type AdminUsersResponse = Types.UserListResponse;
-
 export class AdminUserDetailPathParams {
   @IsString()
   id: string;
 
 }
-
-export type AdminUserDetailResponse = Types.UserDetailResponse;
 
 export class AdminUsersStatuPathParams {
   @IsString()
@@ -50,7 +46,7 @@ export type AdminUsersStatuResponse = Types.SuccessResponse;
 export async function adminUsers(
   queryParams?: AdminUsersQueryParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<AdminUsersResponse>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/admin/users", {
     method: 'GET',
     noAuthorize: noAuthorize,
@@ -64,7 +60,7 @@ export async function adminUsers(
 export async function adminUserDetail(
   pathParams: AdminUserDetailPathParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<AdminUserDetailResponse>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest(`/api/admin/users/${pathParams.id}`, {
     method: 'GET',
     noAuthorize: noAuthorize,

@@ -74,7 +74,21 @@ router.use(authOperation);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/OrderListResponse'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         orders:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Order'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['orders', 'pagination']
  *       401:
  *         description: 未认证
  *         content:
@@ -127,7 +141,39 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/OrderDetailResponse'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         order:
+ *                           allOf:
+ *                             - $ref: '#/components/schemas/Order'
+ *                             - type: object
+ *                               properties:
+ *                                 product:
+ *                                   $ref: '#/components/schemas/Product'
+ *                                 buyer:
+ *                                   $ref: '#/components/schemas/User'
+ *                                 seller:
+ *                                   $ref: '#/components/schemas/User'
+ *                                 depositRecord:
+ *                                   type: object
+ *                                   nullable: true
+ *                                   properties:
+ *                                     id: { type: 'string' }
+ *                                     amount: { type: 'string', format: 'decimal' }
+ *                                     refundStatus:
+ *                                       type: 'string'
+ *                                       enum: ['pending', 'refunded', 'forfeited']
+ *                                     refundedAt:
+ *                                       type: 'string'
+ *                                       format: 'date-time'
+ *                                       nullable: true
+ *                       required: ['order']
  *       401:
  *         description: 未认证
  *         content:

@@ -38,8 +38,53 @@ export class ProductsQueryParams {
 
 }
 
-export type ProductsResponse = any;
+export class ProductsResponse {
+  @IsArray()
+  products: Types.Product[];
 
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
+export class ProductCreateDTO {
+  @IsString()
+  title: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(Types.ProductCategory)
+  category: Types.ProductCategory;
+
+  @IsEnum(Types.ProductType)
+  type: Types.ProductType;
+
+  @IsNumber()
+  price: number;
+
+  @IsNumber()
+  @IsOptional()
+  deposit?: number;
+
+  @IsArray()
+  @IsOptional()
+  images?: string[];
+
+  @IsString()
+  @IsOptional()
+  communityId?: string;
+
+  @IsString()
+  @IsOptional()
+  location?: string;
+
+}
+export class ProductCreateResponse {
+  @ValidateNested()
+  product: Types.Product;
+
+}
 export class ProductRecommendedQueryParams {
   @IsString()
   @IsOptional()
@@ -47,8 +92,11 @@ export class ProductRecommendedQueryParams {
 
 }
 
-export type ProductRecommendedResponse = any;
+export class ProductRecommendedResponse {
+  @IsArray()
+  products: Types.Product[];
 
+}
 export class ProductHotQueryParams {
   @IsString()
   @IsOptional()
@@ -56,42 +104,100 @@ export class ProductHotQueryParams {
 
 }
 
-export type ProductHotResponse = any;
+export class ProductHotResponse {
+  @IsArray()
+  products: Types.Product[];
 
+}
 export class ProductDetailPathParams {
   @IsString()
   id: string;
 
 }
 
-export type ProductDetailResponse = any;
+export class ProductDetailResponse {
+  @ValidateNested()
+  product: Types.Product;
 
+}
 export class ProductUpdatePathParams {
   @IsString()
   id: string;
 
 }
 
-export type ProductUpdateResponse = any;
+export class ProductUpdateDTO {
+  @IsString()
+  @IsOptional()
+  title?: string;
 
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(Types.ProductCategory)
+  @IsOptional()
+  category?: Types.ProductCategory;
+
+  @IsEnum(Types.ProductType)
+  @IsOptional()
+  type?: Types.ProductType;
+
+  @IsNumber()
+  @IsOptional()
+  price?: number;
+
+  @IsNumber()
+  @IsOptional()
+  deposit?: number;
+
+  @IsArray()
+  @IsOptional()
+  images?: string[];
+
+  @IsEnum(Types.ProductStatus)
+  @IsOptional()
+  status?: Types.ProductStatus;
+
+}
+export class ProductUpdateResponse {
+  @ValidateNested()
+  product: Types.Product;
+
+}
 export class ProductDeletePathParams {
   @IsString()
   id: string;
 
 }
 
+export class ProductDeleteResponse {
+  @IsString()
+  message: string;
+
+}
 export class ProductLikePathParams {
   @IsString()
   id: string;
 
 }
 
+export class ProductLikeResponse {
+  @IsString()
+  message: string;
+
+}
 export class ProductUnlikePathParams {
   @IsString()
   id: string;
 
 }
 
+export class ProductUnlikeResponse {
+  @IsString()
+  message: string;
+
+}
 /**
  * 获取商品列表（小程序端）
  */
@@ -110,7 +216,7 @@ export async function products(
  * 创建商品
  */
 export async function productCreate(
-  data: Types.CreateProductRequest,
+  data: ProductCreateDTO,
   noAuthorize?: boolean
 ): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/products", {
@@ -166,7 +272,7 @@ export async function productDetail(
  */
 export async function productUpdate(
   pathParams: ProductUpdatePathParams,
-  data: Types.UpdateProductRequest,
+  data: ProductUpdateDTO,
   noAuthorize?: boolean
 ): Promise<HTTPResponse<any>> {
   return await apiRequest(`/api/products/${pathParams.id}`, {
@@ -233,7 +339,7 @@ export function useProducts(
  * 创建商品 Hook
  */
 export function useProductCreate(
-  options?: UseMutationOptions<HTTPResponse<ProductCreateResponse>, Error, Types.CreateProductRequest>
+  options?: UseMutationOptions<HTTPResponse<ProductCreateResponse>, Error, ProductCreateDTO>
 ) {
   const queryClient = useQueryClient();
 
@@ -298,7 +404,7 @@ export function useProductDetail(
  */
 export function useProductUpdate(
   pathParams: ProductUpdatePathParams,
-  options?: UseMutationOptions<HTTPResponse<ProductUpdateResponse>, Error, Types.UpdateProductRequest>
+  options?: UseMutationOptions<HTTPResponse<ProductUpdateResponse>, Error, ProductUpdateDTO>
 ) {
   const queryClient = useQueryClient();
 

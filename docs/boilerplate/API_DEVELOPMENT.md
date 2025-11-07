@@ -177,8 +177,10 @@ router.post('/wechat/login', validateRequest(wechatLoginSchema), wechatLogin);
  */
 router.post('/operation/login', validateRequest(operationLoginSchema), operationLogin);
 
-export default router;
-```
+> **响应结构约定**：所有接口必须通过 `createSuccessResponse` / `createErrorResponse` 输出，确保实际返回形如 `{ success: true, data: {...} }` 或 `{ success: false, error: '...' }`。在 Swagger 中请显式体现这层包装：
+> - 优先引用已经定义好的 `*Response` schema（内部已包含 `success + data`）
+> - 若需要自定义数据结构，可使用 `allOf` 将 `SuccessResponse` 与具体数据对象组合，从而保证文档与真实返回保持一致
+> - `swagger.ts` 只放置可复用的实体/通用结构；**不要**为单个接口新增 `XXXListResponse`，应在路由注释里通过 `allOf` + 内联字段描述 `data`
 
 #### 2.4 运营系统路由示例
 
@@ -229,7 +231,20 @@ router.use(authOperation);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ProductListResponse'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         products:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Product'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['products', 'pagination']
  *       401:
  *         description: 未认证
  *         content:

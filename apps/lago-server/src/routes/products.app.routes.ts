@@ -86,14 +86,21 @@ const router = Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 products:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Product'
- *                 pagination:
- *                   $ref: '#/components/schemas/Pagination'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         products:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Product'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['products', 'pagination']
  *       401:
  *         description: 未认证
  *         content:
@@ -142,12 +149,19 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 products:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Product'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         products:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Product'
+ *                       required: ['products']
  *       401:
  *         description: 未认证
  *         content:
@@ -189,12 +203,19 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 products:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Product'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         products:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Product'
+ *                       required: ['products']
  *       401:
  *         description: 未认证
  *         content:
@@ -236,10 +257,17 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 product:
- *                   $ref: '#/components/schemas/Product'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         product:
+ *                           $ref: '#/components/schemas/Product'
+ *                       required: ['product']
  *       404:
  *         description: 商品不存在
  *         content:
@@ -262,17 +290,63 @@ router.get('/:id', authUser, getProductForApp);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateProductRequest'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: 商品标题
+ *               description:
+ *                 type: string
+ *                 nullable: true
+ *                 description: 商品描述
+ *               category:
+ *                 type: string
+ *                 enum: [toys, gaming]
+ *                 description: 商品分类
+ *               type:
+ *                 type: string
+ *                 enum: [rent, sell, both]
+ *                 description: 交易类型
+ *               price:
+ *                 type: number
+ *                 format: float
+ *                 description: 价格
+ *               deposit:
+ *                 type: number
+ *                 format: float
+ *                 nullable: true
+ *                 description: 押金（租赁）
+ *               images:
+ *                 type: array
+ *                 description: 商品图片
+ *                 items:
+ *                   type: string
+ *               communityId:
+ *                 type: string
+ *                 nullable: true
+ *                 description: 所属小区ID
+ *               location:
+ *                 type: string
+ *                 nullable: true
+ *                 description: 地理位置描述
+ *             required: [title, category, type, price]
  *     responses:
- *       201:
+ *       200:
  *         description: 创建成功
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 product:
- *                   $ref: '#/components/schemas/Product'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         product:
+ *                           $ref: '#/components/schemas/Product'
+ *                       required: ['product']
  *       400:
  *         description: 参数错误
  *         content:
@@ -321,17 +395,58 @@ router.post(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/UpdateProductRequest'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: 商品标题
+ *               description:
+ *                 type: string
+ *                 nullable: true
+ *                 description: 商品描述
+ *               category:
+ *                 type: string
+ *                 enum: [toys, gaming]
+ *                 description: 商品分类
+ *               type:
+ *                 type: string
+ *                 enum: [rent, sell, both]
+ *                 description: 交易类型
+ *               price:
+ *                 type: number
+ *                 format: float
+ *                 description: 价格
+ *               deposit:
+ *                 type: number
+ *                 format: float
+ *                 nullable: true
+ *                 description: 押金（租赁）
+ *               images:
+ *                 type: array
+ *                 description: 商品图片
+ *                 items:
+ *                   type: string
+ *               status:
+ *                 type: string
+ *                 enum: [pending, active, sold, rented, offline]
+ *                 description: 商品状态
  *     responses:
  *       200:
  *         description: 更新成功
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 product:
- *                   $ref: '#/components/schemas/Product'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         product:
+ *                           $ref: '#/components/schemas/Product'
+ *                       required: ['product']
  *       403:
  *         description: 无权限
  *         content:
@@ -377,6 +492,21 @@ router.put(
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: '商品已删除'
+ *                       required: ['message']
  *       403:
  *         description: 无权限
  *         content:
@@ -404,6 +534,21 @@ router.delete('/:id', authUser, deleteProduct);
  *     responses:
  *       200:
  *         description: 收藏成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: '收藏成功'
+ *                       required: ['message']
  *       401:
  *         description: 未认证
  *         content:
@@ -431,6 +576,21 @@ router.post('/:id/like', authUser, likeProduct);
  *     responses:
  *       200:
  *         description: 取消收藏成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: '取消收藏成功'
+ *                       required: ['message']
  *       401:
  *         description: 未认证
  *         content:

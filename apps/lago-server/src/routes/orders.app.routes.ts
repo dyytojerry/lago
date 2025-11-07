@@ -68,14 +68,21 @@ router.use(authUser);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 orders:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Order'
- *                 pagination:
- *                   $ref: '#/components/schemas/Pagination'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         orders:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Order'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['orders', 'pagination']
  */
 router.get(
   '/',
@@ -114,10 +121,39 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 order:
- *                   $ref: '#/components/schemas/Order'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         order:
+ *                           allOf:
+ *                             - $ref: '#/components/schemas/Order'
+ *                             - type: object
+ *                               properties:
+ *                                 product:
+ *                                   $ref: '#/components/schemas/Product'
+ *                                 buyer:
+ *                                   $ref: '#/components/schemas/User'
+ *                                 seller:
+ *                                   $ref: '#/components/schemas/User'
+ *                                 depositRecord:
+ *                                   type: object
+ *                                   nullable: true
+ *                                   properties:
+ *                                     id: { type: 'string' }
+ *                                     amount: { type: 'string', format: 'decimal' }
+ *                                     refundStatus:
+ *                                       type: 'string'
+ *                                       enum: ['pending', 'refunded', 'forfeited']
+ *                                     refundedAt:
+ *                                       type: 'string'
+ *                                       format: 'date-time'
+ *                                       nullable: true
+ *                       required: ['order']
  */
 router.get('/:id', getOrderForApp);
 
@@ -134,17 +170,77 @@ router.get('/:id', getOrderForApp);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateOrderRequest'
+ *             type: object
+ *             properties:
+ *               productId:
+ *                 type: string
+ *                 description: 商品ID
+ *               type:
+ *                 type: string
+ *                 enum: [rent, sell]
+ *                 description: 订单类型
+ *               startDate:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *                 description: 租赁开始时间（租赁订单必填）
+ *               endDate:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *                 description: 租赁结束时间（租赁订单必填）
+ *               deliveryType:
+ *                 type: string
+ *                 enum: [self_pickup, delivery, cabinet]
+ *                 description: 配送方式
+ *               deliveryAddress:
+ *                 type: string
+ *                 nullable: true
+ *                 description: 配送地址
+ *               remark:
+ *                 type: string
+ *                 nullable: true
+ *                 description: 备注信息
+ *             required: [productId, type]
  *     responses:
- *       201:
+ *       200:
  *         description: 创建成功
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 order:
- *                   $ref: '#/components/schemas/Order'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         order:
+ *                           allOf:
+ *                             - $ref: '#/components/schemas/Order'
+ *                             - type: object
+ *                               properties:
+ *                                 product:
+ *                                   $ref: '#/components/schemas/Product'
+ *                                 buyer:
+ *                                   $ref: '#/components/schemas/User'
+ *                                 seller:
+ *                                   $ref: '#/components/schemas/User'
+ *                                 depositRecord:
+ *                                   type: object
+ *                                   nullable: true
+ *                                   properties:
+ *                                     id: { type: 'string' }
+ *                                     amount: { type: 'string', format: 'decimal' }
+ *                                     refundStatus:
+ *                                       type: 'string'
+ *                                       enum: ['pending', 'refunded', 'forfeited']
+ *                                     refundedAt:
+ *                                       type: 'string'
+ *                                       format: 'date-time'
+ *                                       nullable: true
+ *                       required: ['order']
  */
 router.post(
   '/',
@@ -192,6 +288,21 @@ router.post(
  *     responses:
  *       200:
  *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: '订单状态已更新'
+ *                       required: ['message']
  */
 router.put(
   '/:id/status',
@@ -223,6 +334,21 @@ router.put(
  *     responses:
  *       200:
  *         description: 取消成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: '订单已取消'
+ *                       required: ['message']
  */
 router.post('/:id/cancel', cancelOrder);
 

@@ -3,6 +3,8 @@ import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
+export type AuthLoginResponse = Types.LoginResponse;
+
 export type AuthWechatLoginResponse = Types.LoginResponse;
 
 export type AuthPhoneLoginResponse = Types.LoginResponse;
@@ -12,6 +14,32 @@ export type AuthOperationLoginResponse = Types.OperationLoginResponse;
 export type AuthMeResponse = any;
 
 export type AuthOperationMeResponse = any;
+
+export class AuthLogoutResponse {
+  @IsString()
+  @IsOptional()
+  message?: string;
+
+}
+export class AuthOperationLogoutResponse {
+  @IsString()
+  @IsOptional()
+  message?: string;
+
+}
+/**
+ * 通用登录接口（支持手机号/邮箱/微信ID + 密码）
+ */
+export async function authLogin(
+  data: Types.UniversalLoginRequest,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<AuthLoginResponse>> {
+  return await apiRequest("/api/auth/login", {
+    method: 'POST',
+    body: JSON.stringify(data),
+    noAuthorize: noAuthorize,
+  });
+}
 
 /**
  * 微信登录（小程序端）
@@ -90,6 +118,52 @@ export async function authOperationMe(
   return await apiRequest("/api/auth/operation/me", {
     method: 'GET',
     noAuthorize: noAuthorize,
+  });
+}
+
+/**
+ * 用户退出登录（C端）
+ */
+export async function authLogout(
+  noAuthorize?: boolean
+): Promise<HTTPResponse<AuthLogoutResponse>> {
+  return await apiRequest("/api/auth/logout", {
+    method: 'POST',
+    noAuthorize: noAuthorize,
+  });
+}
+
+/**
+ * 运营系统退出登录
+ */
+export async function authOperationLogout(
+  noAuthorize?: boolean
+): Promise<HTTPResponse<AuthOperationLogoutResponse>> {
+  return await apiRequest("/api/auth/operation/logout", {
+    method: 'POST',
+    noAuthorize: noAuthorize,
+  });
+}
+
+/**
+ * 通用登录接口（支持手机号/邮箱/微信ID + 密码） Hook
+ */
+export function useAuthLogin(
+  options?: UseMutationOptions<HTTPResponse<AuthLoginResponse>, Error, Types.UniversalLoginRequest>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => authLogin(data),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
+      queryClient.invalidateQueries({ queryKey: ['app'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
+    ...options,
   });
 }
 
@@ -203,6 +277,50 @@ export function useAuthOperationMe(
   return useQuery({
     queryKey: ['auth', '获取当前运营人员信息'],
     queryFn: () => authOperationMe(),
+    ...options,
+  });
+}
+
+/**
+ * 用户退出登录（C端） Hook
+ */
+export function useAuthLogout(
+  options?: UseMutationOptions<HTTPResponse<AuthLogoutResponse>, Error, null>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => authLogout(),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
+      queryClient.invalidateQueries({ queryKey: ['app'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
+    ...options,
+  });
+}
+
+/**
+ * 运营系统退出登录 Hook
+ */
+export function useAuthOperationLogout(
+  options?: UseMutationOptions<HTTPResponse<AuthOperationLogoutResponse>, Error, null>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => authOperationLogout(),
+    onSuccess: () => {
+      // 清除相关缓存
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
+      queryClient.invalidateQueries({ queryKey: ['operation'] });
+    },
+    onError: (error: any) => {
+      console.error('Mutation failed:', error);
+    },
     ...options,
   });
 }

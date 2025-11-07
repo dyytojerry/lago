@@ -32,6 +32,22 @@ const router = Router();
  *     responses:
  *       200:
  *         description: 获取成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         communities:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Community'
+ *                       required: ['communities']
  */
 router.get('/my', authUser, getUserCommunities);
 
@@ -65,6 +81,22 @@ router.get('/my', authUser, getUserCommunities);
  *     responses:
  *       200:
  *         description: 获取成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         communities:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Community'
+ *                       required: ['communities']
  */
 router.get(
   '/nearby',
@@ -129,6 +161,24 @@ router.get(
  *     responses:
  *       200:
  *         description: 搜索成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         communities:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Community'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['communities', 'pagination']
  */
 router.get(
   '/search',
@@ -167,6 +217,20 @@ router.get(
  *     responses:
  *       200:
  *         description: 获取成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         community:
+ *                           $ref: '#/components/schemas/Community'
+ *                       required: ['community']
  */
 router.get('/:id', authUser, getCommunity);
 
@@ -188,6 +252,10 @@ router.get('/:id', authUser, getCommunity);
  *     responses:
  *       200:
  *         description: 加入成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
  */
 router.post('/:id/join', authUser, joinCommunity);
 
@@ -209,6 +277,10 @@ router.post('/:id/join', authUser, joinCommunity);
  *     responses:
  *       200:
  *         description: 退出成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
  */
 router.post('/:id/leave', authUser, leaveCommunity);
 
@@ -247,6 +319,10 @@ router.post('/:id/leave', authUser, leaveCommunity);
  *     responses:
  *       200:
  *         description: 申请成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
  */
 router.post(
   '/:id/verify',

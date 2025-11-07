@@ -32,6 +32,7 @@
     "build:ui": "npm run build --workspace=apps/ui",
     "start:ui": "npm run start --workspace=apps/ui",
     "build:all": "npm run build:lago && npm run build:app && npm run build:minigrame && npm run build:operation && npm run build:server && npm run build:ui",
+    "db:format": "npm run db:format --workspace=apps/lago-server",
     "db:generate": "npm run db:generate --workspace=apps/lago-server",
     "db:push": "npm run db:push --workspace=apps/lago-server",
     "db:migrate": "npm run db:migrate --workspace=apps/lago-server",

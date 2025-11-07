@@ -60,6 +60,24 @@ export enum OrderDeliveryType {
   CABINET = 'cabinet',
 }
 
+export enum ChatMessageType {
+  TEXT = 'text',
+  IMAGE = 'image',
+  SYSTEM = 'system',
+  PRODUCT_CARD = 'product_card',
+}
+
+export enum ChatRoomType {
+  PRIVATE = 'private',
+  GROUP = 'group',
+}
+
+export enum CommunityVerificationStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 export class Pagination {
   @IsNumber()
   page: number;
@@ -100,6 +118,10 @@ export class User {
   @IsNumber()
   creditScore: number;
 
+  @IsArray()
+  @IsOptional()
+  communityIds?: string[];
+
 }
 
 export class OperationStaff {
@@ -126,20 +148,20 @@ export class OperationStaff {
 }
 
 export class LoginResponse {
-  @IsString()
-  token: string;
+  @IsBoolean()
+  success: boolean;
 
-  @ValidateNested()
-  user: User;
+  @IsObject()
+  data: any;
 
 }
 
 export class OperationLoginResponse {
-  @IsString()
-  token: string;
+  @IsBoolean()
+  success: boolean;
 
-  @ValidateNested()
-  staff: OperationStaff;
+  @IsObject()
+  data: any;
 
 }
 
@@ -184,7 +206,25 @@ export class OperationLoginRequest {
 
 }
 
+export class UniversalLoginRequest {
+  @IsString()
+  @IsOptional()
+  identifier?: string;
+
+  @IsString()
+  @IsOptional()
+  password?: string;
+
+  @IsString()
+  @IsOptional()
+  wechatOpenid?: string;
+
+}
+
 export class ErrorResponse {
+  @IsBoolean()
+  success: boolean;
+
   @IsString()
   error: string;
 
@@ -194,9 +234,9 @@ export class SuccessResponse {
   @IsBoolean()
   success: boolean;
 
-  @IsString()
+  @IsObject()
   @IsOptional()
-  message?: string;
+  data?: any;
 
 }
 
@@ -253,21 +293,6 @@ export class Product {
   @IsString()
   @IsOptional()
   updatedAt?: string;
-
-}
-
-export class ProductListResponse {
-  @IsArray()
-  products: Product[];
-
-  @ValidateNested()
-  pagination: Pagination;
-
-}
-
-export class ProductDetailResponse {
-  @ValidateNested()
-  product: Product;
 
 }
 
@@ -340,21 +365,6 @@ export class Order {
 
 }
 
-export class OrderListResponse {
-  @IsArray()
-  orders: Order[];
-
-  @ValidateNested()
-  pagination: Pagination;
-
-}
-
-export class OrderDetailResponse {
-  @IsString()
-  order: any;
-
-}
-
 export class OrderStatusUpdateRequest {
   @IsEnum(OrderStatus)
   status: OrderStatus;
@@ -365,26 +375,170 @@ export class OrderStatusUpdateRequest {
 
 }
 
-export class UserListResponse {
-  @IsArray()
-  users: User[];
+export class ChatMessage {
+  @IsString()
+  id: string;
 
-  @ValidateNested()
-  pagination: Pagination;
+  @IsString()
+  chatRoomId: string;
+
+  @IsString()
+  senderId: string;
+
+  @IsString()
+  @IsOptional()
+  receiverId?: string;
+
+  @IsEnum(ChatMessageType)
+  type: ChatMessageType;
+
+  @IsString()
+  content: string;
+
+  @IsString()
+  @IsOptional()
+  fileUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  productId?: string;
+
+  @IsBoolean()
+  isRead: boolean;
+
+  @IsString()
+  createdAt: string;
+
+  @IsString()
+  @IsOptional()
+  readAt?: string;
+
+  @IsObject()
+  @IsOptional()
+  sender?: any;
 
 }
 
-export class UserDetailResponse {
+export class ChatRoom {
   @IsString()
-  user: any;
+  id: string;
+
+  @IsString()
+  @IsOptional()
+  productId?: string;
+
+  @IsEnum(ChatRoomType)
+  type: ChatRoomType;
+
+  @IsBoolean()
+  isActive: boolean;
+
+  @ValidateNested()
+  @IsOptional()
+  product?: Product;
 
   @IsArray()
   @IsOptional()
-  products?: any[];
+  members?: any[];
 
   @IsArray()
   @IsOptional()
-  orders?: Order[];
+  messages?: ChatMessage[];
+
+  @IsString()
+  createdAt: string;
+
+  @IsString()
+  updatedAt: string;
+
+}
+
+export class Community {
+  @IsString()
+  id: string;
+
+  @IsString()
+  name: string;
+
+  @IsString()
+  location: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsEnum(CommunityVerificationStatus)
+  verificationStatus: CommunityVerificationStatus;
+
+  @IsArray()
+  @IsOptional()
+  images?: string[];
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsNumber()
+  @IsOptional()
+  distance?: number;
+
+  @IsObject()
+  @IsOptional()
+  _count?: any;
+
+  @IsObject()
+  @IsOptional()
+  province?: any;
+
+  @IsObject()
+  @IsOptional()
+  city?: any;
+
+  @IsObject()
+  @IsOptional()
+  district?: any;
+
+}
+
+export class Province {
+  @IsString()
+  id: string;
+
+  @IsString()
+  code: string;
+
+  @IsString()
+  name: string;
+
+}
+
+export class City {
+  @IsString()
+  id: string;
+
+  @IsString()
+  provinceId: string;
+
+  @IsString()
+  code: string;
+
+  @IsString()
+  name: string;
+
+}
+
+export class District {
+  @IsString()
+  id: string;
+
+  @IsString()
+  cityId: string;
+
+  @IsString()
+  code: string;
+
+  @IsString()
+  name: string;
 
 }
 
@@ -396,45 +550,6 @@ export class UserStatusUpdateRequest {
   @IsNumber()
   @IsOptional()
   creditScore?: number;
-
-}
-
-export class DashboardStats {
-  @IsObject()
-  gmv: any;
-
-  @IsObject()
-  users: any;
-
-  @IsObject()
-  communities: any;
-
-  @IsObject()
-  orders: any;
-
-  @IsObject()
-  pending: any;
-
-}
-
-export class DashboardTrends {
-  @IsArray()
-  gmv: any[];
-
-  @IsArray()
-  users: any[];
-
-}
-
-export class PendingItems {
-  @IsArray()
-  products: Product[];
-
-  @IsArray()
-  approvals: any[];
-
-  @IsArray()
-  complaints: any[];
 
 }
 

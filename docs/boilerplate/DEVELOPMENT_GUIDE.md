@@ -130,79 +130,15 @@ router.post('/wechat/login', validateRequest(wechatLoginSchema), wechatLogin);
  */
 router.post('/operation/login', validateRequest(operationLoginSchema), operationLogin);
 
-export default router;
-```
+4. **统一响应包装**：
+   - 所有接口返回值必须通过 `createSuccessResponse` / `createErrorResponse` 输出，确保最终结构为 `{ success: true, data: {...} }` 或 `{ success: false, error: '...' }`
+   - 在 Swagger 描述中务必体现 `success + data` 包装层，可直接引用已经定义好的 `*Response` schema，或使用 `allOf` 将 `SuccessResponse` 与具体数据对象组合
+   - 如果仅返回提示信息，放在 `data` 对象中，例如 `{ success: true, data: { message: '操作成功' } }`
+   - `swagger.ts` 仅维护可复用的实体/基础结构（例如 `User`、`Product`、`Pagination`）；针对某个接口的 `data` 结构请在路由注释里用 `allOf` + 内联字段描述，不要在 `swagger.ts` 里新增 `XXXListResponse`
 
-**运营系统路由示例**：
+### 1.3 定义 DTO / 验证 Schema
 
-```typescript
-// src/routes/products.routes.ts
-import { Router } from 'express';
-import { getProducts } from '../controllers/products.controller';
-import { authOperation } from '../middleware/auth';
-import { validateRequest } from '../middleware/validateRequest';
-import * as Joi from 'joi';
-
-const router = Router();
-
-// 所有路由需要运营端认证
-router.use(authOperation);
-
-/**
- * @swagger
- * tags:
- *   name: AdminProducts
- *   description: 运营系统商品管理相关接口
- */
-
-/**
- * @swagger
- * /api/admin/products:
- *   get:
- *     summary: 获取商品列表
- *     tags: [AdminProducts, Operation]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: string
- *           default: "1"
- *         description: 页码
- *     responses:
- *       200:
- *         description: 成功获取商品列表
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ProductListResponse'
- *       401:
- *         description: 未认证
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.get(
-  '/',
-  validateRequest(
-    Joi.object({
-      query: Joi.object({
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
-      }),
-    })
-  ),
-  getProducts
-);
-
-export default router;
-```
-
-**详细规范请参考 `docs/API_DEVELOPMENT.md`**。
-
-#### 1.3 定义验证 Schema
+**位置**: `src/schemas/*.ts`
 
 使用 class-validator 定义验证规则：
 

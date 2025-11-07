@@ -15,7 +15,7 @@ export class AdminDashboardTrendsQueryParams {
  */
 export async function adminDashboardStats(
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.DashboardStats>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/admin/dashboard/stats", {
     method: 'GET',
     noAuthorize: noAuthorize,
@@ -28,7 +28,7 @@ export async function adminDashboardStats(
 export async function adminDashboardTrends(
   queryParams?: AdminDashboardTrendsQueryParams,
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.DashboardTrends>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/admin/dashboard/trends", {
     method: 'GET',
     noAuthorize: noAuthorize,
@@ -41,7 +41,7 @@ export async function adminDashboardTrends(
  */
 export async function adminDashboardPending(
   noAuthorize?: boolean
-): Promise<HTTPResponse<Types.PendingItems>> {
+): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/admin/dashboard/pending", {
     method: 'GET',
     noAuthorize: noAuthorize,

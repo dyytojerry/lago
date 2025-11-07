@@ -98,7 +98,8 @@ model Province {
   isActive  Boolean @default(true)
 
   // 关联关系
-  cities City[]
+  cities       City[]
+  communities  Community[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -496,7 +497,7 @@ model LiveEvent {
   viewCount   Int             @default(0)
 
   // 关联关系
-  community Community @relation(fields: [communityId], references: [id])
+  community Community @relation("LiveEvents", fields: [communityId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
