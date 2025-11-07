@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Loading } from '@/components/Loading';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { useProductCreate } from '@/lib/apis/products';
+import { useProducts } from '@/lib/apis/products';
 import { Package, Upload, X, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -28,7 +28,7 @@ export default function PublishPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const createMutation = useProductCreate({
+  const createMutation = useProducts({
     onSuccess: () => {
       toast.success('发布成功，等待审核');
       router.push('/profile/products');

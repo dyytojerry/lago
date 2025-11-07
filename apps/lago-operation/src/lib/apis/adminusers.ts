@@ -26,12 +26,37 @@ export class AdminUsersQueryParams {
 
 }
 
+export class AdminUsersResponse {
+  @IsArray()
+  users: Types.User[];
+
+  @IsObject()
+  @IsOptional()
+  _count?: any;
+
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
 export class AdminUserDetailPathParams {
   @IsString()
   id: string;
 
 }
 
+export class AdminUserDetailResponse {
+  @IsString()
+  user: any;
+
+  @IsArray()
+  @IsOptional()
+  products?: any[];
+
+  @IsArray()
+  @IsOptional()
+  orders?: Types.Order[];
+
+}
 export class AdminUsersStatuPathParams {
   @IsString()
   id: string;

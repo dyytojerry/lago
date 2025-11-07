@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { MapPin, Eye, Heart } from 'lucide-react';
 
 export interface ProductCardProps {
@@ -38,13 +37,7 @@ export function ProductCard({
       <div className="bg-white rounded-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md">
         {/* 商品图片 */}
         <div className="relative w-full h-48 bg-gray-100">
-          <Image
-            src={imageUrl}
-            alt={title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 50vw"
-          />
+          <img src={imageUrl} alt={title} className="w-full h-full object-cover" loading="lazy" />
           {isVerified && (
             <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded">
               认证

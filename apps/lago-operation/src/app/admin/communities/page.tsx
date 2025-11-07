@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { apiRequest } from '@lago/common';
 import { MapPin, Shield, CheckCircle, XCircle, Clock, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -180,12 +179,11 @@ export default function CommunitiesPage() {
                       <div className="flex items-center gap-3">
                         {community.images?.[0] ? (
                           <div className="relative w-12 h-12 rounded overflow-hidden">
-                            <Image
+                            <img
                               src={community.images[0]}
                               alt={community.name}
-                              fill
-                              className="object-cover"
-                              sizes="48px"
+                              className="w-full h-full object-cover"
+                              loading="lazy"
                             />
                           </div>
                         ) : (

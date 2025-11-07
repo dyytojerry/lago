@@ -1,9 +1,9 @@
 'use client';
 
-import { Package, Search, MessageCircle, ShoppingBag } from 'lucide-react';
+import { Package, Search, MessageCircle, ShoppingBag, Calendar, Users } from 'lucide-react';
 
 interface EmptyStateProps {
-  icon?: 'package' | 'search' | 'message' | 'shopping';
+  icon?: 'package' | 'search' | 'message' | 'shopping' | 'users' | 'calendar';
   title?: string;
   description?: string;
   action?: {
@@ -17,6 +17,8 @@ const iconMap = {
   search: Search,
   message: MessageCircle,
   shopping: ShoppingBag,
+  users: Users,
+  calendar: Calendar,
 };
 
 export function EmptyState({

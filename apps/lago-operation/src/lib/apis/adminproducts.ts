@@ -30,12 +30,25 @@ export class AdminProductsQueryParams {
 
 }
 
+export class AdminProductsResponse {
+  @IsArray()
+  products: Types.Product[];
+
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
 export class AdminProductDetailPathParams {
   @IsString()
   id: string;
 
 }
 
+export class AdminProductDetailResponse {
+  @ValidateNested()
+  product: Types.Product;
+
+}
 export class AdminProductsApprovePathParams {
   @IsString()
   id: string;

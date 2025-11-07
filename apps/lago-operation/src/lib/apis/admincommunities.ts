@@ -22,6 +22,14 @@ export class AdminCommunitiesQueryParams {
 
 }
 
+export class AdminCommunitiesResponse {
+  @IsArray()
+  communities: Types.Community[];
+
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
 export class AdminCommunitiesVerificationsQueryParams {
   @IsString()
   @IsOptional()
@@ -37,18 +45,36 @@ export class AdminCommunitiesVerificationsQueryParams {
 
 }
 
+export class AdminCommunitiesVerificationsResponse {
+  @IsArray()
+  verifications: any[];
+
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
 export class AdminCommunitieDetailPathParams {
   @IsString()
   id: string;
 
 }
 
+export class AdminCommunitieDetailResponse {
+  @ValidateNested()
+  community: Types.Community;
+
+}
 export class AdminCommunitiesApprovePathParams {
   @IsString()
   id: string;
 
 }
 
+export class AdminCommunitiesApproveResponse {
+  @IsString()
+  message: string;
+
+}
 export class AdminCommunitiesRejectPathParams {
   @IsString()
   id: string;
@@ -59,6 +85,11 @@ export class AdminCommunitiesRejectDTO {
   @IsString()
   @IsOptional()
   reason?: string;
+
+}
+export class AdminCommunitiesRejectResponse {
+  @IsString()
+  message: string;
 
 }
 /**

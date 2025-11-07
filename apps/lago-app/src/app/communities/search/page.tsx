@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { Loading } from "@/components/Loading";
 import { EmptyState } from "@/components/EmptyState";
 import { BottomNavigation } from "@/components/BottomNavigation";
@@ -43,7 +42,7 @@ export default function CommunitySearchPage() {
   const [districtId, setDistrictId] = useState<string | undefined>();
   const [communityId, setCommunityId] = useState<string | undefined>();
   const [verificationStatus, setVerificationStatus] = useState<"approved" | "">(
-    "approved"
+    ""
   );
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
@@ -99,7 +98,7 @@ export default function CommunitySearchPage() {
       if (communityId) params.communityId = communityId;
       if (verificationStatus) params.verificationStatus = verificationStatus;
       let response = null;
-      if (latitude !== undefined && longitude !== undefined) {
+      if (!searchQuery && latitude !== undefined && longitude !== undefined) {
         params.latitude = String(latitude);
         params.longitude = String(longitude);
         params.radius = "5000";
@@ -266,11 +265,10 @@ export default function CommunitySearchPage() {
                     <div className="flex items-start gap-3">
                       {community.images?.[0] ? (
                         <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0">
-                          <Image
+                          <img
                             src={community.images[0]}
                             alt={community.name}
-                            fill
-                            className="object-cover"
+                            className="w-full h-full object-cover"
                           />
                         </div>
                       ) : (

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Image from 'next/image';
 import { apiRequest } from '@lago/common';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
@@ -164,7 +163,12 @@ export default function ActivityDetailPage() {
       <main className="max-w-4xl mx-auto pt-20 pb-16 px-4 space-y-8">
         <section className="relative h-60 rounded-3xl overflow-hidden bg-gray-200">
           {bannerImage ? (
-            <Image src={bannerImage} alt={activity.title} fill className="object-cover" />
+            <img
+              src={bannerImage}
+              alt={activity.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
               <Calendar className="w-10 h-10" />
@@ -233,12 +237,11 @@ export default function ActivityDetailPage() {
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden">
                       {comment.author.avatarUrl ? (
-                        <Image
+                        <img
                           src={comment.author.avatarUrl}
                           alt={comment.author.nickname}
-                          width={40}
-                          height={40}
-                          className="object-cover"
+                          className="w-full h-full object-cover"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">

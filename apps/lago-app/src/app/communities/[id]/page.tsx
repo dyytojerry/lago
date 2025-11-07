@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Image from 'next/image';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
 import { BannerSwiper } from '@/components/BannerSwiper';
@@ -276,7 +275,7 @@ export default function CommunityDetailPage() {
       </header>
 
       <main className="max-w-6xl mx-auto pb-20">
-        <section className="relative h-[320px] bg-gray-200">
+        <section className="relative bg-gray-200">
           {community.images?.length ? (
             <BannerSwiper
               banners={community.images.map((image, index) => ({ id: `${index}`, image }))}
@@ -303,7 +302,7 @@ export default function CommunityDetailPage() {
         </section>
 
         <section className="relative px-4">
-          <div className="-mt-12 bg-white rounded-3xl shadow-lg p-6 space-y-4">
+          <div className="-mt-4 bg-white rounded-3xl shadow-lg p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -423,15 +422,15 @@ export default function CommunityDetailPage() {
           </section>
         )}
 
-        {productsLoading && products.length === 0 && (
+        {productsLoading && products.length === 0 ? (
           <div className="px-4 mt-8">
             <div className="bg-white rounded-3xl p-6 shadow-sm text-center">
               <Loading text="加载小区闲置商品..." />
             </div>
           </div>
-        )}
+        ) : <EmptyState icon="package" title="暂无闲置商品" description="该小区暂无闲置商品" />}
 
-        {community.members && community.members.length > 0 && (
+        {community.members && community.members.length > 0 ? (
           <section className="px-4 mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-text-primary">小区住户</h2>
@@ -453,12 +452,11 @@ export default function CommunityDetailPage() {
                 >
                   <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
                     {member.user.avatarUrl ? (
-                      <Image
+                      <img
                         src={member.user.avatarUrl}
                         alt={member.user.nickname || '用户'}
-                        width={64}
-                        height={64}
-                        className="object-cover"
+                        className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-lg text-gray-400">
@@ -473,9 +471,9 @@ export default function CommunityDetailPage() {
               ))}
             </div>
           </section>
-        )}
+        ) : <EmptyState icon="users" title="暂无住户" description="该小区暂无住户" />}
 
-        {community.activities && community.activities.length > 0 && (
+        {community.activities && community.activities.length > 0 ? (
           <section className="px-4 mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-text-primary">小区活动</h2>
@@ -490,15 +488,15 @@ export default function CommunityDetailPage() {
                   onClick={() => router.push(`/communities/${communityId}/activities/${activity.id}`)}
                   className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
-                  {activity.images?.[0] && (
-                    <div className="relative h-48">
-                      <Image
-                        src={activity.images[0]}
-                        alt={activity.title}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
+                    {activity.images?.[0] && (
+                      <div className="relative h-48">
+                        <img
+                          src={activity.images[0]}
+                          alt={activity.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
                   )}
                   <div className="p-4 space-y-2">
                     <div className="flex items-center gap-2">
@@ -541,7 +539,7 @@ export default function CommunityDetailPage() {
               ))}
             </div>
           </section>
-        )}
+        ) : <EmptyState icon="calendar" title="暂无活动" description="该小区暂无活动" />}
       </main>
 
       <button
@@ -579,12 +577,11 @@ export default function CommunityDetailPage() {
                   >
                     <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
                       {member.user.avatarUrl ? (
-                        <Image
+                        <img
                           src={member.user.avatarUrl}
                           alt={member.user.nickname || '用户'}
-                          width={64}
-                          height={64}
-                          className="object-cover"
+                          className="w-full h-full object-cover"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl text-gray-400">

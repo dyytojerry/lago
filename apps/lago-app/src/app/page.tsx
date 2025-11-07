@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { ProductCard } from "@/components/ProductCard";
 import { BannerSwiper } from "@/components/BannerSwiper";
@@ -130,7 +129,7 @@ export default function HomePage() {
         {
           latitude,
           longitude,
-          radius: 2000,
+          radius: 5000,
         },
         true
       ).then((nearbyRes) => {
@@ -409,12 +408,11 @@ export default function HomePage() {
                 >
                   <div className="relative w-full h-32">
                     {community.images?.[0] ? (
-                      <Image
+                      <img
                         src={community.images[0]}
                         alt={community.name}
-                        fill
-                        className="object-cover"
-                        sizes="160px"
+                        className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -520,12 +518,11 @@ export default function HomePage() {
               >
                 <div className="relative h-56">
                   {activity.communityCover ? (
-                    <Image
+                    <img
                       src={activity.communityCover}
                       alt={activity.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 600px"
+                      className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-r from-emerald-400 to-teal-500 flex items-center justify-center text-white text-lg font-semibold">

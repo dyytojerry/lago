@@ -237,7 +237,7 @@ async function findRegionIds(
     let district = null;
     if (districtName) {
       district = city.districts.find(
-        (d) => d.name.includes(districtName) || districtName.includes(d.name)
+        (d: any) => d.name.includes(districtName) || districtName.includes(d.name)
       );
     }
 

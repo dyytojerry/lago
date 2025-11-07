@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Banner {
@@ -66,13 +65,12 @@ export function BannerSwiper({
             index === currentIndex ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <Image
+          <img
             src={banner.image}
             alt={banner.title || 'Banner'}
-            fill
-            className="object-cover cursor-pointer"
+            className="w-full h-full object-cover cursor-pointer"
             onClick={handleBannerClick}
-            sizes="100vw"
+            loading="lazy"
           />
           {banner.title && (
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">

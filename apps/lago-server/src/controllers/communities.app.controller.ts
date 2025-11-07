@@ -96,6 +96,7 @@ export async function searchCommunities(req: Request, res: Response) {
       page = '1',
       limit = '20',
     } = req.query;
+    console.log(req.query)
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);

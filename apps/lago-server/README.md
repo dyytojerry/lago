@@ -108,4 +108,16 @@ npm run dev
 ## 填充数据
 
 1. 填充省市区数据 `npm run seed-regions --workspace=apps/lago-server`
-2. 填充杭州市小区数据 `npm run fetch-communities --workspace=apps/lago-server`
+2. 填充杭州市小区数据 `npm run fetch-communities --city=杭州 --workspace=apps/lago-server`
+
+# Default: fills missing info for up to 200 communities (existing filter)
+npm run enrich-communities --workspace=apps/lago-server
+
+# Limit the number processed
+npm run enrich-communities --workspace=apps/lago-server -- --limit=50
+
+# Target a city
+npm run enrich-communities --workspace=apps/lago-server -- --city=杭州
+
+# Force refresh even if data already exists
+npm run enrich-communities --workspace=apps/lago-server -- --force

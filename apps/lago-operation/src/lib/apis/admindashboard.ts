@@ -3,6 +3,23 @@ import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
+export class AdminDashboardStatsResponse {
+  @IsObject()
+  gmv: any;
+
+  @IsObject()
+  users: any;
+
+  @IsObject()
+  communities: any;
+
+  @IsObject()
+  orders: any;
+
+  @IsObject()
+  pending: any;
+
+}
 export class AdminDashboardTrendsQueryParams {
   @IsEnum(['7d', '30d', '90d'])
   @IsOptional()
@@ -10,6 +27,25 @@ export class AdminDashboardTrendsQueryParams {
 
 }
 
+export class AdminDashboardTrendsResponse {
+  @IsArray()
+  gmv: any[];
+
+  @IsArray()
+  users: any[];
+
+}
+export class AdminDashboardPendingResponse {
+  @IsArray()
+  products: Types.Product[];
+
+  @IsArray()
+  approvals: any[];
+
+  @IsArray()
+  complaints: any[];
+
+}
 /**
  * 获取仪表盘核心指标
  */

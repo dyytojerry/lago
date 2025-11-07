@@ -16,6 +16,7 @@
     "db:studio": "prisma studio",
     "seed-regions": "tsx scripts/seed-regions.ts",
     "fetch-communities": "tsx scripts/fetch-communities.ts",
+    "enrich-communities": "tsx scripts/enrich-community-details.ts",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit"
   },

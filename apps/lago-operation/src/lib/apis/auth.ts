@@ -9,6 +9,8 @@ export type AuthWechatLoginResponse = Types.LoginResponse;
 
 export type AuthPhoneLoginResponse = Types.LoginResponse;
 
+export type AuthPhoneRegisterResponse = Types.LoginResponse;
+
 export type AuthOperationLoginResponse = Types.OperationLoginResponse;
 
 export type AuthMeResponse = any;
@@ -75,7 +77,7 @@ export async function authPhoneLogin(
 export async function authPhoneRegister(
   data: Types.PhoneRegisterRequest,
   noAuthorize?: boolean
-): Promise<HTTPResponse<any>> {
+): Promise<HTTPResponse<AuthPhoneRegisterResponse>> {
   return await apiRequest("/api/auth/phone/register", {
     method: 'POST',
     body: JSON.stringify(data),

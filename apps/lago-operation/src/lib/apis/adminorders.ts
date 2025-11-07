@@ -34,12 +34,25 @@ export class AdminOrdersQueryParams {
 
 }
 
+export class AdminOrdersResponse {
+  @IsArray()
+  orders: Types.Order[];
+
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
 export class AdminOrderDetailPathParams {
   @IsString()
   id: string;
 
 }
 
+export class AdminOrderDetailResponse {
+  @IsString()
+  order: any;
+
+}
 export class AdminOrdersStatuPathParams {
   @IsString()
   id: string;
