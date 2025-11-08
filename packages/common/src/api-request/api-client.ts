@@ -1,14 +1,16 @@
 import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
 import { buildApiUrl } from './api-utils';
-import { storage } from '../storage';
+import { storage, StorageManager } from '../storage';
 import { HTTPResponse } from './api-utils';
 
 export const defaultRequestOptions: {
   baseURL: string;
   fallback?: (statusCode: number, retry: () => Promise<any>) => Promise<any>;
+  storage: StorageManager;
 } = {
   baseURL: process.env.NEXT_PUBLIC_API_URL || '',
+  storage,
 }
 export interface HTTPRequestInit<T extends Record<string, any> = any> extends RequestInit {
   noAuthorize?: boolean;
@@ -75,7 +77,7 @@ async function makeRequest<T extends Record<string, any>>(
   };
 
   // Add authentication token if not disabled
-  const token = await storage.getItem<string>('authToken');
+  const token = await defaultRequestOptions.storage.getItem<string>('authToken');
   if (token) {
     defaultHeaders['Authorization'] =
       (options.headers as any)?.Authorization || `Bearer ${token}`;

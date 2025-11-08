@@ -59,6 +59,7 @@ export const setRequestOptions = (
       }
     }
   };
+  defaultRequestOptions.storage = storage;
 };
 
 interface AuthResponse<T = any> {
@@ -83,7 +84,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({
   children,
   authApi,
-  prefix
+  prefix,
 }: {
   children: ReactNode;
   authApi: any;

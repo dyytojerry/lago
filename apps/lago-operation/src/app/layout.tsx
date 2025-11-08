@@ -10,13 +10,19 @@ import {
   MiniprogramProvider,
 } from "@lago/ui";
 import { Toaster } from "react-hot-toast";
-import { authOperationLogin, authOperationMe } from "@/lib/apis";
+import {
+  authOperationLogin,
+  authOperationMe,
+  authOperationLogout,
+  authOperationRefresh,
+} from "@/lib/apis";
 
 // 定义 authApi 对象
 const authApi = {
   authMe: authOperationMe,
   authLogin: authOperationLogin,
-  authLogout: () => Promise.resolve(),
+  authLogout: authOperationLogout,
+  authRefresh: authOperationRefresh,
 };
 
 export default function RootLayout({
@@ -38,7 +44,7 @@ export default function RootLayout({
         <LoadingProvider>
           <ApiProvider>
             <MiniprogramProvider>
-              <AuthProvider authApi={authApi}>
+              <AuthProvider authApi={authApi} prefix="operation_">
                 <WebSocketProvider>
                   <div className="relative">{children}</div>
                   {/* <RealTimeNotifications /> */}

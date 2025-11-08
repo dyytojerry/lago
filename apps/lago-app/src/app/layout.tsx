@@ -16,7 +16,7 @@ const authApi = {
   authMe: authMe,
   authLogin: authLogin,
   authLogout: authLogout,
-  authRefresh: authRefreshToken,
+  authRefresh: authRefresh,
 };
 
 export default function RootLayout({
@@ -30,7 +30,7 @@ export default function RootLayout({
         <LoadingProvider>
           <ApiProvider>
             <MiniprogramProvider>
-              <AuthProvider authApi={authApi}>
+              <AuthProvider authApi={authApi} prefix="app_">
                 <WebSocketProvider>
                   {children as any}
                   <Toaster

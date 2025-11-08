@@ -1,8 +1,56 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { generateUserToken, generateOperationToken, hashPassword, comparePassword } from '../lib/auth';
+import {
+  generateUserToken,
+  generateOperationToken,
+  generateUserRefreshToken,
+  generateOperationRefreshToken,
+  verifyRefreshToken,
+  isUserToken,
+  isOperationToken,
+  hashPassword,
+  comparePassword,
+} from '../lib/auth';
 import { createSuccessResponse, createErrorResponse } from '../lib/response';
 import { addTokenToBlacklist } from '../lib/token-blacklist';
+
+function buildUserAuthResponse(user: any) {
+  const accessToken = generateUserToken({ userId: user.id, role: user.role });
+  const refreshToken = generateUserRefreshToken({ userId: user.id, role: user.role });
+
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      nickname: user.nickname,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+      phone: user.phone,
+      email: user.email,
+      isVerified: user.isVerified,
+      creditScore: user.creditScore ?? 0,
+      communityIds: user.communityIds ?? [],
+    },
+  };
+}
+
+function buildOperationAuthResponse(staff: any) {
+  const accessToken = generateOperationToken({ staffId: staff.id, role: staff.role });
+  const refreshToken = generateOperationRefreshToken({ staffId: staff.id, role: staff.role });
+
+  return {
+    accessToken,
+    refreshToken,
+    staff: {
+      id: staff.id,
+      username: staff.username,
+      email: staff.email,
+      role: staff.role,
+      realName: staff.realName,
+    },
+  };
+}
 
 // 通用登录接口（支持手机号/邮箱/微信ID + 密码）
 export async function universalLogin(req: Request, res: Response) {
@@ -100,29 +148,13 @@ export async function universalLogin(req: Request, res: Response) {
     if (!user) {
       return createErrorResponse(res, '登录失败', 400);
     }
-
-    if (!user.isActive) {
-      return createErrorResponse(res, '账号已被禁用', 403);
-    }
-
-    const token = generateUserToken({
-      userId: user.id,
-      role: user.role,
-    });
-
-    return createSuccessResponse(res, {
-      token,
-      user: {
-        id: user.id,
-        nickname: user.nickname,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        phone: user.phone,
-        email: user.email,
-        isVerified: user.isVerified,
-        creditScore: user.creditScore,
-      },
-    });
+ 
+     if (!user.isActive) {
+       return createErrorResponse(res, '账号已被禁用', 403);
+     }
+ 
+    const authPayload = buildUserAuthResponse(user);
+    return createSuccessResponse(res, authPayload);
   } catch (error) {
     console.error('通用登录失败:', error);
     return createErrorResponse(res, '登录失败', 500);
@@ -158,24 +190,9 @@ export async function wechatLogin(req: Request, res: Response) {
     if (!user.isActive) {
       return createErrorResponse(res, '账号已被禁用', 403);
     }
-
-    const token = generateUserToken({
-      userId: user.id,
-      role: user.role,
-    });
-
-    return createSuccessResponse(res, {
-      token,
-      user: {
-        id: user.id,
-        nickname: user.nickname,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        phone: user.phone,
-        isVerified: user.isVerified,
-        creditScore: user.creditScore,
-      },
-    });
+ 
+    const authPayload = buildUserAuthResponse(user);
+    return createSuccessResponse(res, authPayload);
   } catch (error) {
     console.error('微信登录失败:', error);
     return createErrorResponse(res, '登录失败', 500);
@@ -203,24 +220,9 @@ export async function phoneLogin(req: Request, res: Response) {
     if (!isValid) {
       return createErrorResponse(res, '手机号或密码错误', 401);
     }
-
-    const token = generateUserToken({
-      userId: user.id,
-      role: user.role,
-    });
-
-    return createSuccessResponse(res, {
-      token,
-      user: {
-        id: user.id,
-        nickname: user.nickname,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        phone: user.phone,
-        isVerified: user.isVerified,
-        creditScore: user.creditScore,
-      },
-    });
+ 
+    const authPayload = buildUserAuthResponse(user);
+    return createSuccessResponse(res, authPayload);
   } catch (error) {
     console.error('手机号登录失败:', error);
     return createErrorResponse(res, '登录失败', 500);
@@ -252,24 +254,10 @@ export async function phoneRegister(req: Request, res: Response) {
         role: 'user',
       },
     });
+ 
+    const authPayload = buildUserAuthResponse(user);
 
-    const token = generateUserToken({
-      userId: user.id,
-      role: user.role,
-    });
-
-    return createSuccessResponse(res, {
-      token,
-      user: {
-        id: user.id,
-        nickname: user.nickname,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        phone: user.phone,
-        isVerified: user.isVerified,
-        creditScore: user.creditScore,
-      },
-    }, 201);
+    return createSuccessResponse(res, authPayload, 201);
   } catch (error) {
     console.error('注册失败:', error);
     return createErrorResponse(res, '注册失败', 500);
@@ -333,21 +321,8 @@ export async function operationLogin(req: Request, res: Response) {
       },
     });
 
-    const token = generateOperationToken({
-      staffId: staff.id,
-      role: staff.role,
-    });
-
-    return createSuccessResponse(res, {
-      token,
-      staff: {
-        id: staff.id,
-        username: staff.username,
-        email: staff.email,
-        role: staff.role,
-        realName: staff.realName,
-      },
-    });
+    const authPayload = buildOperationAuthResponse(staff);
+    return createSuccessResponse(res, authPayload);
   } catch (error) {
     console.error('运营系统登录失败:', error);
     return createErrorResponse(res, '登录失败', 500);
@@ -417,8 +392,9 @@ export async function getCurrentUser(req: Request, res: Response) {
     if (!user) {
       return createErrorResponse(res, '用户不存在', 404);
     }
-
-    return createSuccessResponse(res, { user });
+ 
+    const authPayload = buildUserAuthResponse(user);
+    return createSuccessResponse(res, authPayload);
   } catch (error) {
     console.error('获取用户信息失败:', error);
     return createErrorResponse(res, '获取用户信息失败', 500);
@@ -448,10 +424,91 @@ export async function getCurrentStaff(req: Request, res: Response) {
     if (!staff) {
       return createErrorResponse(res, '运营人员不存在', 404);
     }
-
-    return createSuccessResponse(res, { staff });
+ 
+    const authPayload = buildOperationAuthResponse(staff);
+    return createSuccessResponse(res, authPayload);
   } catch (error) {
     console.error('获取运营人员信息失败:', error);
     return createErrorResponse(res, '获取运营人员信息失败', 500);
+  }
+}
+
+export async function refreshUserToken(req: Request, res: Response) {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return createErrorResponse(res, 'refreshToken不能为空', 400);
+    }
+
+    const payload = verifyRefreshToken(refreshToken);
+
+    if (!payload || !isUserToken(payload)) {
+      return createErrorResponse(res, 'refreshToken无效或已过期', 422);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        nickname: true,
+        avatarUrl: true,
+        role: true,
+        phone: true,
+        email: true,
+        isVerified: true,
+        creditScore: true,
+        communityIds: true,
+        isActive: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      return createErrorResponse(res, '用户不存在或已被禁用', 422);
+    }
+
+    const authPayload = buildUserAuthResponse(user);
+    return createSuccessResponse(res, authPayload);
+  } catch (error) {
+    console.error('刷新用户token失败:', error);
+    return createErrorResponse(res, '刷新token失败', 500);
+  }
+}
+
+export async function refreshOperationToken(req: Request, res: Response) {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return createErrorResponse(res, 'refreshToken不能为空', 400);
+    }
+
+    const payload = verifyRefreshToken(refreshToken);
+
+    if (!payload || !isOperationToken(payload)) {
+      return createErrorResponse(res, 'refreshToken无效或已过期', 422);
+    }
+
+    const staff = await prisma.operationStaff.findUnique({
+      where: { id: payload.staffId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        realName: true,
+        isActive: true,
+      },
+    });
+
+    if (!staff || !staff.isActive) {
+      return createErrorResponse(res, '运营人员不存在或已被禁用', 422);
+    }
+
+    const authPayload = buildOperationAuthResponse(staff);
+    return createSuccessResponse(res, authPayload);
+  } catch (error) {
+    console.error('刷新运营端token失败:', error);
+    return createErrorResponse(res, '刷新token失败', 500);
   }
 }

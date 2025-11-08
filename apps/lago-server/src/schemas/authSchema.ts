@@ -17,6 +17,24 @@ export const universalLoginSchema = Joi.object({
   }),
 });
 
+export const refreshTokenSchema = Joi.object({
+  body: Joi.object({
+    refreshToken: Joi.string().required().messages({
+      'string.empty': 'refreshToken不能为空',
+      'any.required': 'refreshToken是必需的',
+    }),
+  }),
+});
+
+export const refreshOperationTokenSchema = Joi.object({
+  body: Joi.object({
+    refreshToken: Joi.string().required().messages({
+      'string.empty': 'refreshToken不能为空',
+      'any.required': 'refreshToken是必需的',
+    }),
+  }),
+});
+
 // 小程序端微信登录
 export const wechatLoginSchema = Joi.object({
   body: Joi.object({

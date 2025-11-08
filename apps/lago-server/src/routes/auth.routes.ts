@@ -9,6 +9,8 @@ import {
   operationLogout,
   getCurrentUser,
   getCurrentStaff,
+  refreshUserToken,
+  refreshOperationToken,
 } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validateRequest';
 import { authUser, authOperation } from '../middleware/auth';
@@ -18,6 +20,8 @@ import {
   phoneLoginSchema,
   phoneRegisterSchema,
   operationLoginSchema,
+  refreshTokenSchema,
+  refreshOperationTokenSchema,
 } from '../schemas/authSchema';
 
 const router = Router();
@@ -75,6 +79,72 @@ const router = Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/login', validateRequest(universalLoginSchema), universalLogin);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: 用户退出登录（C端）
+ *     tags: [Auth, App]
+ *     security:
+ *       - bearerAuth: []
+ *     description: 退出登录后，JWT Token将被加入黑名单，无法继续使用
+ *     responses:
+ *       200:
+ *         description: 退出登录成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *       401:
+ *         description: 未认证
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/logout', authUser, userLogout);
+
+/**
+ * @swagger
+ * /api/auth/operation/logout:
+ *   post:
+ *     summary: 运营系统退出登录
+ *     tags: [Auth, Operation]
+ *     security:
+ *       - bearerAuth: []
+ *     description: 退出登录后，JWT Token将被加入黑名单，无法继续使用
+ *     responses:
+ *       200:
+ *         description: 退出登录成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *       401:
+ *         description: 未认证
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/operation/logout', authOperation, operationLogout);
 
 /**
  * @swagger
@@ -244,69 +314,57 @@ router.get('/operation/me', authOperation, getCurrentStaff);
 
 /**
  * @swagger
- * /api/auth/logout:
+ * /api/auth/refresh:
  *   post:
- *     summary: 用户退出登录（C端）
+ *     summary: 使用refreshToken获取新的访问令牌
  *     tags: [Auth, App]
- *     security:
- *       - bearerAuth: []
- *     description: 退出登录后，JWT Token将被加入黑名单，无法继续使用
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
  *     responses:
  *       200:
- *         description: 退出登录成功
+ *         description: 刷新成功
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     message:
- *                       type: string
- *       401:
- *         description: 未认证
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       422:
+ *         description: refreshToken失效
  */
-router.post('/logout', authUser, userLogout);
+router.post('/refresh', validateRequest(refreshTokenSchema), refreshUserToken);
 
 /**
  * @swagger
- * /api/auth/operation/logout:
+ * /api/auth/operation/refresh:
  *   post:
- *     summary: 运营系统退出登录
+ *     summary: 运营端刷新访问令牌
  *     tags: [Auth, Operation]
- *     security:
- *       - bearerAuth: []
- *     description: 退出登录后，JWT Token将被加入黑名单，无法继续使用
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
  *     responses:
  *       200:
- *         description: 退出登录成功
+ *         description: 刷新成功
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     message:
- *                       type: string
- *       401:
- *         description: 未认证
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       422:
+ *         description: refreshToken失效
  */
-router.post('/operation/logout', authOperation, operationLogout);
+router.post('/operation/refresh', validateRequest(refreshOperationTokenSchema), refreshOperationToken);
 
 export default router;
 

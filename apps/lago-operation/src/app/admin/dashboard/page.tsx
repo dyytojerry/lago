@@ -61,6 +61,9 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    loadData();
+  }, []);
 
   if (!isLoggedIn || loading) {
     return (

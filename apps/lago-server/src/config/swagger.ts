@@ -124,15 +124,19 @@ export const swaggerSchemas = {
       data: {
         type: 'object',
         properties: {
-          token: {
+          accessToken: {
             type: 'string',
             description: 'JWT Token',
+          },
+          refreshToken: {
+            type: 'string',
+            description: 'JWT Refresh Token',
           },
           user: {
             $ref: '#/components/schemas/User',
           },
         },
-        required: ['token', 'user'],
+        required: ['accessToken', 'refreshToken', 'user'],
       },
     },
     required: ['success', 'data'],
