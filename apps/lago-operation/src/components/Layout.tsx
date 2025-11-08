@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@lago/ui";
 import Link from "next/link";
@@ -20,78 +20,80 @@ export default function Layout({ children }: LayoutProps) {
     router.push("/login");
   };
 
-  const menuItems = [
-    {
-      title: "仪表盘",
-      path: "/admin/dashboard",
-      icon: "📊",
-      permission: "dashboard:view",
-    },
-    {
-      title: "商品审核",
-      path: "/admin/products",
-      icon: "📦",
-      permission: "products:review",
-    },
-    {
-      title: "小区管理",
-      path: "/admin/communities",
-      icon: "🏘️",
-      permission: "communities:manage",
-    },
-    {
-      title: "用户管理",
-      path: "/admin/users",
-      icon: "👥",
-      permission: "users:manage",
-    },
-    {
-      title: "订单管理",
-      path: "/admin/orders",
-      icon: "🛒",
-      permission: "orders:manage",
-    },
-    {
-      title: "入驻审核",
-      path: "/admin/approvals",
-      icon: "✅",
-      permission: "approvals:review",
-    },
-    {
-      title: "数据看板",
-      path: "/admin/analytics",
-      icon: "📈",
-      permission: "analytics:view",
-    },
-    {
-      title: "财务结算",
-      path: "/admin/finance",
-      icon: "💰",
-      permission: "finance:manage",
-    },
-    {
-      title: "系统设置",
-      path: "/admin/settings",
-      icon: "⚙️",
-      permission: "system:roles",
-    },
-    {
-      title: "角色权限",
-      path: "/admin/system/roles",
-      icon: "🛠️",
-      permission: "system:roles",
-    },
-    {
-      title: "员工角色",
-      path: "/admin/system/staff-roles",
-      icon: "👤",
-      permission: "system:staff_roles",
-    },
-  ].filter((item) => {
-    if (!isLoggedIn) return false;
-    if (user?.isSuperAdmin) return true;
-    return user?.permissions?.includes(item.permission);
-  });
+  const menuItems = useMemo(() => {
+    return [
+      {
+        title: "仪表盘",
+        path: "/admin/dashboard",
+        icon: "📊",
+        permission: "dashboard:view",
+      },
+      {
+        title: "商品审核",
+        path: "/admin/products",
+        icon: "📦",
+        permission: "products:review",
+      },
+      {
+        title: "小区管理",
+        path: "/admin/communities",
+        icon: "🏘️",
+        permission: "communities:manage",
+      },
+      {
+        title: "用户管理",
+        path: "/admin/users",
+        icon: "👥",
+        permission: "users:manage",
+      },
+      {
+        title: "订单管理",
+        path: "/admin/orders",
+        icon: "🛒",
+        permission: "orders:manage",
+      },
+      {
+        title: "入驻审核",
+        path: "/admin/approvals",
+        icon: "✅",
+        permission: "approvals:review",
+      },
+      {
+        title: "数据看板",
+        path: "/admin/analytics",
+        icon: "📈",
+        permission: "analytics:view",
+      },
+      {
+        title: "财务结算",
+        path: "/admin/finance",
+        icon: "💰",
+        permission: "finance:manage",
+      },
+      {
+        title: "系统设置",
+        path: "/admin/settings",
+        icon: "⚙️",
+        permission: "system:roles",
+      },
+      {
+        title: "角色权限",
+        path: "/admin/system/roles",
+        icon: "🛠️",
+        permission: "system:roles",
+      },
+      {
+        title: "员工角色",
+        path: "/admin/system/staff-roles",
+        icon: "👤",
+        permission: "system:staff_roles",
+      },
+    ].filter((item) => {
+      if (!isLoggedIn) return false;
+      if (user?.isSuperAdmin) return true;
+      return user?.permissions?.includes(item.permission);
+    })
+  }, [isLoggedIn, user]);
 
   const displayName = user?.realName || user?.username || user?.email;
   const roleNames = Array.isArray(user?.roles)

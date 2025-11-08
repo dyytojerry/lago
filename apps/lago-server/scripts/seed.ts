@@ -6,7 +6,6 @@ async function main() {
 
   // 创建运营系统默认管理员账号
   const adminPassword = await hashPassword('admin123');
-  
   const admin = await prisma.operationStaff.upsert({
     where: { username: 'admin' },
     update: {},
@@ -14,14 +13,25 @@ async function main() {
       username: 'admin',
       email: 'admin@lago.com',
       password: adminPassword,
-      role: 'super_admin',
+      roles: {
+        create: {
+          role: {
+            connect: {
+              name: 'super_admin',
+              description: '超级管理员',
+              isSystem: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          },
+        },
+      },
       realName: '系统管理员',
       isActive: true,
     },
   });
 
   console.log('✅ 创建运营系统管理员:', admin.username);
-
   // 创建测试运营人员账号
   const testStaffPassword = await hashPassword('staff123');
   
@@ -32,7 +42,19 @@ async function main() {
       username: 'audit',
       email: 'audit@lago.com',
       password: testStaffPassword,
-      role: 'audit_staff',
+      roles: {
+        create: {
+          role: {
+            connect: {
+              name: 'audit_staff',
+              description: '审核专员',
+              isSystem: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          },
+        },
+      },
       realName: '审核专员',
       isActive: true,
     },
@@ -47,7 +69,19 @@ async function main() {
       username: 'service',
       email: 'service@lago.com',
       password: testStaffPassword,
-      role: 'service_staff',
+      roles: {
+        create: {
+          role: {
+            connect: {
+              name: 'service_staff',
+              description: '客服专员',
+              isSystem: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          },
+        },
+      },
       realName: '客服专员',
       isActive: true,
     },
