@@ -25,7 +25,7 @@ interface Community {
   province?: { id: string; name: string };
   city?: { id: string; name: string };
   district?: { id: string; name: string };
-  verificationStatus: "pending" | "approved" | "rejected";
+  verificationStatus: "pending" | "processing" | "approved" | "rejected";
   _count?: {
     members: number;
     products: number;
@@ -40,9 +40,7 @@ export default function CommunitySearchPage() {
   const [cityId, setCityId] = useState<string | undefined>();
   const [districtId, setDistrictId] = useState<string | undefined>();
   const [communityId, setCommunityId] = useState<string | undefined>();
-  const [verificationStatus, setVerificationStatus] = useState<"approved" | "">(
-    ""
-  );
+  const [verificationStatus, setVerificationStatus] = useState<"approved" | "processing" | "">("");
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
   const [manualLocation, setManualLocation] = useState(false);
@@ -215,6 +213,17 @@ export default function CommunitySearchPage() {
                   }`}
                 >
                   全部
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVerificationStatus("processing")}
+                  className={`px-3 py-2 rounded-full text-sm ${
+                    verificationStatus === "processing"
+                      ? "bg-orange-100 text-orange-600 border border-orange-200"
+                      : "bg-gray-100 text-text-primary"
+                  }`}
+                >
+                  审核中
                 </button>
                 <button
                   type="button"

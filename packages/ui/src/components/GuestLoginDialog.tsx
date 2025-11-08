@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Users, LogIn, X } from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "../providers/AuthProvider";
 import LoginMethod from "./LoginMethod";
 import toast from "react-hot-toast";
 
@@ -140,7 +140,7 @@ export default function GuestLoginDialog({
     }
   };
 
-  const [account, setAccount] = useState<any>({ role: "parent" });
+  const [account, setAccount] = useState<any>({});
 
   // 处理已有账号登录
   const handleExistingAccountLogin = async (loginData: any) => {
@@ -155,7 +155,7 @@ export default function GuestLoginDialog({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-background-primary rounded-2xl p-6 w-full max-w-md border border-neutral-200"
+            className="bg-white rounded-2xl p-6 w-full max-w-md border border-neutral-200"
           >
             {!showLoginMethod ? (
               // 选择登录方式

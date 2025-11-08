@@ -7,8 +7,15 @@ import { EmptyState } from '@/components/EmptyState';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useChatRooms } from '@/lib/apis/chat';
 import { MessageCircle } from 'lucide-react';
+import ProtectedRoute from '@lago/ui/src/components/ProtectedRoute';
 
 export default function MessagesPage() {
+  return <ProtectedRoute>
+    <MessagesContent />
+  </ProtectedRoute>
+}
+
+function MessagesContent() {
   const router = useRouter();
   const { data, isLoading, error } = useChatRooms();
   const rooms = data?.data?.rooms || [];

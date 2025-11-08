@@ -53,8 +53,8 @@ export default function Layout({ children }: LayoutProps) {
         permission: "orders:manage",
       },
       {
-        title: "入驻审核",
-        path: "/admin/approvals",
+        title: "入驻管理",
+        path: "/admin/onboarding",
         icon: "✅",
         permission: "approvals:review",
       },

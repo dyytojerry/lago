@@ -13,6 +13,7 @@ export interface AuthForm {
   email?: string;
   wechatOpenid?: string;
   password?: string;
+  identifier?: string;
 }
 interface LoginMethodDialogProps {
   readonly onClose?: () => void;
@@ -88,7 +89,7 @@ export default function LoginMethod({
 
     try {
       setIsSubmitting(true);
-
+      account.identifier = account.phone || account.email;
       onSubmit?.(account);
       onClose?.();
     } catch (error) {
@@ -115,6 +116,7 @@ export default function LoginMethod({
           const loginData = {
             ...account,
             wechatOpenid: userInfo.openid,
+            identifier: userInfo.openid,
             nickname: userInfo.nickname,
           };
 

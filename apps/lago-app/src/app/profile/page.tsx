@@ -13,12 +13,19 @@ import {
   Shield,
   Settings,
   LogOut,
-  CreditCard,
+  Building2,
 } from 'lucide-react';
 import { useAuthLogout } from '@/lib/apis/auth';
 import toast from 'react-hot-toast';
+import ProtectedRoute from '@lago/ui/src/components/ProtectedRoute';
 
 export default function ProfilePage() {
+  return <ProtectedRoute>
+    <ProfileContent />
+  </ProtectedRoute>
+}
+
+function ProfileContent() {
   const router = useRouter();
   const { user, setUser } = useAuth();
   const { data: userData } = useAuthMe();
@@ -60,6 +67,11 @@ export default function ProfilePage() {
       icon: MapPin,
       label: '小区管理',
       onClick: () => router.push('/communities/select'),
+    },
+    {
+      icon: Building2,
+      label: '入驻中心',
+      onClick: () => router.push('/profile/onboarding'),
     },
     {
       icon: Shield,

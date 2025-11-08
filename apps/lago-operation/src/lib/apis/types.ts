@@ -60,6 +60,43 @@ export enum OrderDeliveryType {
   CABINET = 'cabinet',
 }
 
+export enum OnboardingApplicationType {
+  PERSONAL_SELLER = 'personal_seller',
+  SMALL_BUSINESS_SELLER = 'small_business_seller',
+  PERSONAL_SERVICE_PROVIDER = 'personal_service_provider',
+  ENTERPRISE_SERVICE_PROVIDER = 'enterprise_service_provider',
+}
+
+export enum OnboardingApplicationStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
+export enum OnboardingApplicationCreateRequestServiceCategory {
+  RECYCLING = 'recycling',
+  APPLIANCE_REPAIR = 'appliance_repair',
+  APPLIANCE_INSTALL = 'appliance_install',
+  APPLIANCE_CLEANING = 'appliance_cleaning',
+  FURNITURE_REPAIR = 'furniture_repair',
+  CARPENTRY = 'carpentry',
+  MASONRY = 'masonry',
+  TILING = 'tiling',
+  PAINTING = 'painting',
+  PLUMBING = 'plumbing',
+  ELECTRICIAN = 'electrician',
+  HVAC_INSTALL = 'hvac_install',
+  LOCKSMITH = 'locksmith',
+  PEST_CONTROL = 'pest_control',
+  CLEANING = 'cleaning',
+  MOVING_SERVICE = 'moving_service',
+  LANDSCAPING = 'landscaping',
+  DECORATION_DESIGN = 'decoration_design',
+  RENOVATION_GENERAL = 'renovation_general',
+  OTHER = 'other',
+}
+
 export enum ChatMessageType {
   TEXT = 'text',
   IMAGE = 'image',
@@ -372,6 +409,164 @@ export class OrderStatusUpdateRequest {
   @IsString()
   @IsOptional()
   remark?: string;
+
+}
+
+export class OnboardingApplication {
+  @IsString()
+  id: string;
+
+  @IsString()
+  userId: string;
+
+  @IsEnum(OnboardingApplicationType)
+  type: OnboardingApplicationType;
+
+  @IsString()
+  @IsOptional()
+  serviceCategory?: string;
+
+  @IsEnum(OnboardingApplicationStatus)
+  status: OnboardingApplicationStatus;
+
+  @IsString()
+  @IsOptional()
+  fullName?: string;
+
+  @IsString()
+  @IsOptional()
+  idNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  businessName?: string;
+
+  @IsString()
+  @IsOptional()
+  businessLicenseNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  contactPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  contactEmail?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsNumber()
+  @IsOptional()
+  experienceYears?: number;
+
+  @IsObject()
+  @IsOptional()
+  documents?: any;
+
+  @IsObject()
+  @IsOptional()
+  metadata?: any;
+
+  @IsString()
+  submittedAt: string;
+
+  @IsString()
+  @IsOptional()
+  reviewedAt?: string;
+
+  @IsString()
+  @IsOptional()
+  rejectReason?: string;
+
+  @ValidateNested()
+  @IsOptional()
+  user?: User;
+
+  @ValidateNested()
+  @IsOptional()
+  reviewer?: OperationStaff;
+
+}
+
+export class OnboardingApplicationListResponse {
+  @IsArray()
+  applications: OnboardingApplication[];
+
+  @ValidateNested()
+  pagination: Pagination;
+
+}
+
+export class OnboardingApplicationDetailResponse {
+  @ValidateNested()
+  application: OnboardingApplication;
+
+}
+
+export class OnboardingApplicationCreateRequest {
+  @IsEnum(OnboardingApplicationType)
+  type: OnboardingApplicationType;
+
+  @IsEnum(OnboardingApplicationCreateRequestServiceCategory)
+  @IsOptional()
+  serviceCategory?: OnboardingApplicationCreateRequestServiceCategory;
+
+  @IsString()
+  @IsOptional()
+  fullName?: string;
+
+  @IsString()
+  @IsOptional()
+  idNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  businessName?: string;
+
+  @IsString()
+  @IsOptional()
+  businessLicenseNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  contactPhone?: string;
+
+  @IsString()
+  @IsOptional()
+  contactEmail?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsNumber()
+  @IsOptional()
+  experienceYears?: number;
+
+  @IsObject()
+  @IsOptional()
+  documents?: any;
+
+  @IsObject()
+  @IsOptional()
+  metadata?: any;
+
+}
+
+export class OnboardingReviewRequest {
+  @IsString()
+  @IsOptional()
+  reason?: string;
 
 }
 

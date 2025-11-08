@@ -134,15 +134,11 @@ async function buildOperationAuthResponse(staff: any) {
 // 通用登录接口（支持手机号/邮箱/微信ID + 密码）
 export async function universalLogin(req: Request, res: Response) {
   try {
-    const { identifier, password, wechatOpenid } = req.body;
-
-    // 如果没有提供任何标识符
-    if (!identifier && !wechatOpenid) {
-      return createErrorResponse(res, '请提供登录标识（手机号/邮箱/微信ID）', 400);
-    }
+    const { identifier, nickname, password, wechatOpenid } = req.body;
 
     let user = null;
 
+    const hashedPassword = await hashPassword(password);
     // 优先处理微信登录
     if (wechatOpenid) {
       user = await prisma.user.findUnique({
@@ -162,10 +158,10 @@ export async function universalLogin(req: Request, res: Response) {
           },
         });
       }
-    } else if (identifier) {
+    } else if (identifier || nickname) {
       // 通过手机号、邮箱或微信ID查找用户
-      const isEmail = identifier.includes('@');
-      const isPhone = /^1[3-9]\d{9}$/.test(identifier);
+      const isEmail = identifier && identifier.includes('@');
+      const isPhone = identifier && /^1[3-9]\d{9}$/.test(identifier);
 
       if (isEmail) {
         user = await prisma.user.findUnique({
@@ -175,10 +171,10 @@ export async function universalLogin(req: Request, res: Response) {
         user = await prisma.user.findUnique({
           where: { phone: identifier },
         });
-      } else {
-        // 可能是微信ID
-        user = await prisma.user.findUnique({
-          where: { wechatOpenid: identifier },
+      } else if (nickname) {
+        // 昵称登录
+        user = await prisma.user.findFirst({
+          where: { nickname, password: hashedPassword },
         });
       }
 
@@ -187,21 +183,29 @@ export async function universalLogin(req: Request, res: Response) {
         if (isEmail) {
           user = await prisma.user.create({
             data: {
+              nickname,
               email: identifier,
-              password: await hashPassword(password),
+              password: hashedPassword,
               role: 'user',
             },
           });
         } else if (isPhone) {
           user = await prisma.user.create({
             data: {
+              nickname,
               phone: identifier,
-              password: await hashPassword(password),
+              password: hashedPassword,
               role: 'user',
             },
           });
         } else {
-          return createErrorResponse(res, '无效的登录标识', 400);
+          user = await prisma.user.create({
+            data: {
+              nickname,
+              password: hashedPassword,
+              role: 'user',
+            },
+          });
         }
       } else if (!user) {
         return createErrorResponse(res, '账号不存在', 404);
@@ -218,12 +222,12 @@ export async function universalLogin(req: Request, res: Response) {
         user = await prisma.user.update({
           where: { id: user.id },
           data: {
-            password: await hashPassword(password),
+            password: hashedPassword,
           },
         });
       }
     }
-
+    
     if (!user) {
       return createErrorResponse(res, '登录失败', 400);
     }

@@ -71,6 +71,7 @@ interface AuthResponse<T = any> {
 interface AuthContextType<T = any> {
   user?: T;
   updateUser: (user: T) => void;
+  setUser: (user: T) => void;
   login: (loginData: any, onSuccess?: () => void) => Promise<void>;
   logout: (onSuccess?: () => void) => void;
   isLoading: boolean;
@@ -216,6 +217,7 @@ export function AuthProvider({
   const value = {
     user: auth?.user,
     updateUser,
+    setUser: updateUser,
     login,
     logout,
     audio,

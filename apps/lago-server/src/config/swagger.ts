@@ -240,6 +240,10 @@ export const swaggerSchemas = {
         type: 'string',
         description: '登录标识（手机号/邮箱/微信ID）',
       },
+      nickname: {
+        type: 'string',
+        description: '昵称（可选，用于昵称登录）',
+      },
       password: {
         type: 'string',
         description: '密码（可选，微信登录时不需要）',
@@ -497,6 +501,202 @@ export const swaggerSchemas = {
       },
     },
     required: ['status'],
+  },
+
+  // ==================== 上传相关 ====================
+
+  UploadSingleResponse: {
+    type: 'object',
+    properties: {
+      url: { type: 'string' },
+      objectKey: { type: 'string' },
+      name: { type: 'string' },
+      mimeType: { type: 'string' },
+      size: { type: 'integer' },
+      kind: { type: 'string', enum: ['image', 'video', 'file'] },
+    },
+    required: ['url', 'objectKey', 'name', 'mimeType', 'size', 'kind'],
+  },
+
+  MultipartInitResponse: {
+    type: 'object',
+    properties: {
+      uploadId: { type: 'string' },
+      objectKey: { type: 'string' },
+    },
+    required: ['uploadId', 'objectKey'],
+  },
+
+  MultipartPartResponse: {
+    type: 'object',
+    properties: {
+      partNumber: { type: 'integer' },
+      etag: { type: 'string' },
+    },
+    required: ['partNumber', 'etag'],
+  },
+
+  MultipartCompleteRequest: {
+    type: 'object',
+    properties: {
+      uploadId: { type: 'string' },
+      objectKey: { type: 'string' },
+      parts: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            partNumber: { type: 'integer' },
+            etag: { type: 'string' },
+          },
+          required: ['partNumber', 'etag'],
+        },
+      },
+    },
+    required: ['uploadId', 'objectKey', 'parts'],
+  },
+
+  MultipartAbortRequest: {
+    type: 'object',
+    properties: {
+      uploadId: { type: 'string' },
+      objectKey: { type: 'string' },
+    },
+    required: ['uploadId', 'objectKey'],
+  },
+
+  // ==================== 入驻相关 ====================
+
+  OnboardingApplication: {
+    type: 'object',
+    properties: {
+      id: { type: 'string' },
+      userId: { type: 'string' },
+      type: {
+        type: 'string',
+        enum: [
+          'personal_seller',
+          'small_business_seller',
+          'personal_service_provider',
+          'enterprise_service_provider',
+        ],
+      },
+      serviceCategory: {
+        type: 'string',
+        nullable: true,
+        description: '服务商类型',
+      },
+      status: {
+        type: 'string',
+        enum: ['pending', 'processing', 'approved', 'rejected'],
+      },
+      fullName: { type: 'string', nullable: true },
+      idNumber: { type: 'string', nullable: true },
+      businessName: { type: 'string', nullable: true },
+      businessLicenseNumber: { type: 'string', nullable: true },
+      contactPhone: { type: 'string', nullable: true },
+      contactEmail: { type: 'string', nullable: true },
+      address: { type: 'string', nullable: true },
+      description: { type: 'string', nullable: true },
+      experienceYears: { type: 'integer', nullable: true },
+      documents: { type: 'object', nullable: true, additionalProperties: true },
+      metadata: { type: 'object', nullable: true, additionalProperties: true },
+      submittedAt: { type: 'string', format: 'date-time' },
+      reviewedAt: { type: 'string', format: 'date-time', nullable: true },
+      rejectReason: { type: 'string', nullable: true },
+      user: {
+        $ref: '#/components/schemas/User',
+      },
+      reviewer: {
+        $ref: '#/components/schemas/OperationStaff',
+        nullable: true,
+      },
+    },
+    required: ['id', 'userId', 'type', 'status', 'submittedAt'],
+  },
+
+  OnboardingApplicationListResponse: {
+    type: 'object',
+    properties: {
+      applications: {
+        type: 'array',
+        items: { $ref: '#/components/schemas/OnboardingApplication' },
+      },
+      pagination: { $ref: '#/components/schemas/Pagination' },
+    },
+    required: ['applications', 'pagination'],
+  },
+
+  OnboardingApplicationDetailResponse: {
+    type: 'object',
+    properties: {
+      application: { $ref: '#/components/schemas/OnboardingApplication' },
+    },
+    required: ['application'],
+  },
+
+  OnboardingApplicationCreateRequest: {
+    type: 'object',
+    properties: {
+      type: {
+        type: 'string',
+        enum: [
+          'personal_seller',
+          'small_business_seller',
+          'personal_service_provider',
+          'enterprise_service_provider',
+        ],
+      },
+      serviceCategory: {
+        type: 'string',
+        nullable: true,
+        enum: [
+          'recycling',
+          'appliance_repair',
+          'appliance_install',
+          'appliance_cleaning',
+          'furniture_repair',
+          'carpentry',
+          'masonry',
+          'tiling',
+          'painting',
+          'plumbing',
+          'electrician',
+          'hvac_install',
+          'locksmith',
+          'pest_control',
+          'cleaning',
+          'moving_service',
+          'landscaping',
+          'decoration_design',
+          'renovation_general',
+          'other',
+        ],
+      },
+      fullName: { type: 'string', nullable: true },
+      idNumber: { type: 'string', nullable: true },
+      businessName: { type: 'string', nullable: true },
+      businessLicenseNumber: { type: 'string', nullable: true },
+      contactPhone: { type: 'string', nullable: true },
+      contactEmail: { type: 'string', nullable: true },
+      address: { type: 'string', nullable: true },
+      description: { type: 'string', nullable: true },
+      experienceYears: { type: 'integer', nullable: true },
+      documents: { type: 'object', nullable: true, additionalProperties: true },
+      metadata: { type: 'object', nullable: true, additionalProperties: true },
+    },
+    required: ['type'],
+  },
+
+  OnboardingReviewRequest: {
+    type: 'object',
+    properties: {
+      reason: {
+        type: 'string',
+        nullable: true,
+        description: '拒绝原因（可选）',
+      },
+    },
   },
 
   // ==================== 聊天相关 ====================

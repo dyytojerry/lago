@@ -6,13 +6,16 @@ export const universalLoginSchema = Joi.object({
     identifier: Joi.string().optional().messages({
       'string.empty': '登录标识不能为空',
     }),
+    nickname: Joi.string().optional().messages({
+      'string.empty': '昵称不能为空',
+    }),
     password: Joi.string().optional().messages({
       'string.empty': '密码不能为空',
     }),
     wechatOpenid: Joi.string().optional().messages({
       'string.empty': '微信OpenID不能为空',
     }),
-  }).or('identifier', 'wechatOpenid').messages({
+  }).or('identifier', "nickname", 'wechatOpenid').messages({
     'object.missing': '请提供登录标识（identifier或wechatOpenid）',
   }),
 });

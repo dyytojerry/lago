@@ -3,6 +3,7 @@ export * from './types';
 export * from './auth';
 export * from './chat';
 export * from './communities';
+export * from './onboarding';
 export * from './orders';
 export * from './products';
 export * from './share';

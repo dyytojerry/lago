@@ -33,6 +33,9 @@ import usersRoutes from './routes/users.routes';
 import ordersRoutes from './routes/orders.routes';
 import communitiesRoutes from './routes/communities.routes';
 import operationSystemRoutes from './routes/operation.roles.routes';
+import uploadRoutes from './routes/upload.routes';
+import onboardingAppRoutes from './routes/onboarding.app.routes';
+import onboardingAdminRoutes from './routes/onboarding.admin.routes';
 
 
 // Load environment variables
@@ -123,12 +126,15 @@ app.use('/api/orders', ordersAppRoutes);
 app.use('/api/chat', chatAppRoutes);
 app.use('/api/communities', communitiesAppRoutes);
 app.use('/api/users', usersAppRoutes);
+app.use('/api/uploads', uploadRoutes);
+app.use('/api/onboarding', onboardingAppRoutes);
 app.use('/api/admin/dashboard', authOperation, dashboardRoutes);
 app.use('/api/admin/products', authOperation, productsRoutes);
 app.use('/api/admin/users', authOperation, usersRoutes);
 app.use('/api/admin/orders', authOperation, ordersRoutes);
 app.use('/api/admin/communities', authOperation, communitiesRoutes);
 app.use('/api/admin/system', operationSystemRoutes);
+app.use('/api/admin/onboarding', onboardingAdminRoutes);
 
 
 // Initialize WebSocket service

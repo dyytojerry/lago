@@ -61,7 +61,7 @@ interface CommunityResponse {
     province?: { id: string; name: string };
     city?: { id: string; name: string };
     district?: { id: string; name: string };
-    verificationStatus: 'pending' | 'approved' | 'rejected';
+    verificationStatus: 'pending' | 'processing' | 'approved' | 'rejected';
     isJoined: boolean;
     members: CommunityMember[];
     activities: CommunityActivity[];

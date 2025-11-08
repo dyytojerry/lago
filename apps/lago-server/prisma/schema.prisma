@@ -43,6 +43,7 @@ model User {
   notifications  Notification[]
   settlements    Settlement[]
   communities    UserCommunity[] // 加入的小区
+  onboardingApplications OnboardingApplication[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -71,6 +72,7 @@ model OperationStaff {
   operationLogs OperationLog[]
   loginLogs     LoginLog[]
   roles         OperationStaffRole[]
+  onboardingReviews OnboardingApplication[] @relation("OnboardingReviewer")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -133,6 +135,38 @@ model OperationStaffRole {
 
   @@unique([staffId, roleId])
   @@map("operation_staff_roles")
+}
+
+model OnboardingApplication {
+  id                     String           @id @default(cuid())
+  userId                 String
+  user                   User             @relation(fields: [userId], references: [id])
+  type                   OnboardingType
+  serviceCategory        ServiceCategory?
+  status                 OnboardingStatus @default(pending)
+  fullName               String?
+  idNumber               String?
+  businessName           String?
+  businessLicenseNumber  String?
+  contactPhone           String?
+  contactEmail           String?
+  address                String?
+  description            String?
+  experienceYears        Int?
+  documents              Json?
+  metadata               Json?
+  submittedAt            DateTime         @default(now())
+  reviewedAt             DateTime?
+  reviewerId             String?
+  reviewer               OperationStaff?  @relation("OnboardingReviewer", fields: [reviewerId], references: [id])
+  rejectReason           String?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@map("onboarding_applications")
 }
 
 // ==================== 省市区体系 ====================
@@ -200,6 +234,45 @@ enum CommunityVerificationStatus {
   processing // 待审核（已提交，审核中）
   approved  // 已认证
   rejected  // 已拒绝
+}
+
+// ==================== 入驻体系 ====================
+
+enum OnboardingType {
+  personal_seller            // 个人卖家（实名认证）
+  small_business_seller      // 小微卖家（个体户资料）
+  personal_service_provider  // 个人服务商（实名认证）
+  enterprise_service_provider // 企业服务商（工商资料）
+}
+
+enum OnboardingStatus {
+  pending     // 填写中（草稿）
+  processing  // 待审核
+  approved    // 已通过
+  rejected    // 已拒绝
+}
+
+enum ServiceCategory {
+  recycling                // 废品回收
+  appliance_repair         // 家电维修
+  appliance_install        // 家电安装
+  appliance_cleaning       // 家电清洗
+  furniture_repair         // 家具维修
+  carpentry                // 木工
+  masonry                  // 泥工/砌筑
+  tiling                   // 瓦工/贴砖
+  painting                 // 油漆翻新
+  plumbing                 // 管道疏通/水电维修
+  electrician              // 电工服务
+  hvac_install             // 暖通空调安装维护
+  locksmith                // 开锁换锁
+  pest_control             // 除虫除害
+  cleaning                 // 专业保洁
+  moving_service           // 搬家搬运
+  landscaping              // 园艺绿化
+  decoration_design        // 装修设计
+  renovation_general       // 整体改造
+  other                    // 其他
 }
 
 model Community {

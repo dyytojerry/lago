@@ -254,7 +254,7 @@ export async function getHotProducts(req: Request, res: Response) {
     const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 10, 1), 100);
     const skip = (pageNum - 1) * limitNum;
 
-    const sortableFields = ['viewCount', 'likeCount', 'createdAt'] as const;
+    const sortableFields = ['viewCount', 'likeCount', 'createdAt', 'price'] as const;
     const requestedSortBy = sortableFields.includes(sortBy as any)
       ? (sortBy as typeof sortableFields[number])
       : 'viewCount';
@@ -291,6 +291,9 @@ export async function getHotProducts(req: Request, res: Response) {
     }
     if (requestedSortBy !== 'createdAt') {
       orderBy.push({ createdAt: 'desc' });
+    }
+    if (requestedSortBy !== 'price') {
+      orderBy.push({ price: 'desc' });
     }
 
     const [products, total] = await Promise.all([
