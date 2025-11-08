@@ -34,8 +34,8 @@ if (!fs.existsSync(outputDir)) {
 
 // 定义 tag 过滤规则
 const tagMappings = {
-  app: ['Auth', 'Products', 'Orders', 'Chat', 'Communities', 'Users', 'Share'],
-  operation: ['Auth', 'AdminUsers', 'AdminProducts', 'AdminOrders', 'AdminDashboard'],
+  app: ['Auth', 'Products', 'Orders', 'Chat', 'Communities', 'Users', 'Share', 'Onboarding', 'Uploads'],
+  operation: ['Auth', 'AdminUsers', 'AdminProducts', 'AdminOrders', 'AdminDashboard', 'Uploads'],
 };
 
 // 类型映射

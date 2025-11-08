@@ -119,21 +119,21 @@ app.get('/health', (_req, res) => {
 
 // 路由
 app.use('/api', publicRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/share', shareRoutes);
-app.use('/api/products', productsAppRoutes);
-app.use('/api/orders', ordersAppRoutes);
-app.use('/api/chat', chatAppRoutes);
-app.use('/api/communities', communitiesAppRoutes);
-app.use('/api/users', usersAppRoutes);
+app.use('/api/auth', authUser, authRoutes);
+app.use('/api/share', authUser, shareRoutes);
+app.use('/api/products', authUser,productsAppRoutes);
+app.use('/api/orders', authUser, ordersAppRoutes);
+app.use('/api/chat', authUser, chatAppRoutes);
+app.use('/api/communities', authUser, communitiesAppRoutes);
+app.use('/api/users', authUser, usersAppRoutes);
 app.use('/api/uploads', uploadRoutes);
-app.use('/api/onboarding', onboardingAppRoutes);
+app.use('/api/onboarding', authUser, onboardingAppRoutes);
 app.use('/api/admin/dashboard', authOperation, dashboardRoutes);
 app.use('/api/admin/products', authOperation, productsRoutes);
 app.use('/api/admin/users', authOperation, usersRoutes);
 app.use('/api/admin/orders', authOperation, ordersRoutes);
 app.use('/api/admin/communities', authOperation, communitiesRoutes);
-app.use('/api/admin/system', operationSystemRoutes);
+app.use('/api/admin/system',authOperation,  operationSystemRoutes);
 app.use('/api/admin/onboarding', onboardingAdminRoutes);
 
 

@@ -60,6 +60,12 @@ export enum OrderDeliveryType {
   CABINET = 'cabinet',
 }
 
+export enum UploadSingleResponseKind {
+  IMAGE = 'image',
+  VIDEO = 'video',
+  FILE = 'file',
+}
+
 export enum OnboardingApplicationType {
   PERSONAL_SELLER = 'personal_seller',
   SMALL_BUSINESS_SELLER = 'small_business_seller',
@@ -250,6 +256,10 @@ export class UniversalLoginRequest {
 
   @IsString()
   @IsOptional()
+  nickname?: string;
+
+  @IsString()
+  @IsOptional()
   password?: string;
 
   @IsString()
@@ -409,6 +419,66 @@ export class OrderStatusUpdateRequest {
   @IsString()
   @IsOptional()
   remark?: string;
+
+}
+
+export class UploadSingleResponse {
+  @IsString()
+  url: string;
+
+  @IsString()
+  objectKey: string;
+
+  @IsString()
+  name: string;
+
+  @IsString()
+  mimeType: string;
+
+  @IsNumber()
+  size: number;
+
+  @IsEnum(UploadSingleResponseKind)
+  kind: UploadSingleResponseKind;
+
+}
+
+export class MultipartInitResponse {
+  @IsString()
+  uploadId: string;
+
+  @IsString()
+  objectKey: string;
+
+}
+
+export class MultipartPartResponse {
+  @IsNumber()
+  partNumber: number;
+
+  @IsString()
+  etag: string;
+
+}
+
+export class MultipartCompleteRequest {
+  @IsString()
+  uploadId: string;
+
+  @IsString()
+  objectKey: string;
+
+  @IsArray()
+  parts: any[];
+
+}
+
+export class MultipartAbortRequest {
+  @IsString()
+  uploadId: string;
+
+  @IsString()
+  objectKey: string;
 
 }
 

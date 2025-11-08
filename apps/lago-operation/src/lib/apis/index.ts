@@ -6,4 +6,5 @@ export * from './admindashboard';
 export * from './onboarding';
 export * from './adminorders';
 export * from './adminproducts';
+export * from './uploads';
 export * from './adminusers';

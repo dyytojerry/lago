@@ -7,4 +7,5 @@ export * from './onboarding';
 export * from './orders';
 export * from './products';
 export * from './share';
+export * from './uploads';
 export * from './users';

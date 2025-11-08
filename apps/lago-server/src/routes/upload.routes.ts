@@ -24,7 +24,7 @@ const memoryStorage = multer({ storage: multer.memoryStorage() });
  * /api/uploads/single:
  *   post:
  *     summary: 上传单个文件
- *     tags: [Uploads, App]
+ *     tags: [Uploads]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -64,7 +64,7 @@ router.post('/single', authUser, memoryStorage.single('file'), uploadSingleMedia
  * /api/uploads/multipart/init:
  *   post:
  *     summary: 初始化分片上传
- *     tags: [Uploads, App]
+ *     tags: [Uploads]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -103,7 +103,7 @@ router.post('/multipart/init', authUser, initMultipartUpload);
  * /api/uploads/multipart/part:
  *   post:
  *     summary: 上传分片
- *     tags: [Uploads, App]
+ *     tags: [Uploads]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -147,7 +147,7 @@ router.post('/multipart/part', authUser, memoryStorage.single('file'), uploadMul
  * /api/uploads/multipart/complete:
  *   post:
  *     summary: 完成分片上传
- *     tags: [Uploads, App]
+ *     tags: [Uploads]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -169,7 +169,7 @@ router.post('/multipart/complete', authUser, completeMultipartUpload);
  * /api/uploads/multipart/abort:
  *   post:
  *     summary: 取消分片上传
- *     tags: [Uploads, App]
+ *     tags: [Uploads]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
