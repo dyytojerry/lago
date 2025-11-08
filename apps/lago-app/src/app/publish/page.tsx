@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Loading } from '@/components/Loading';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useProducts } from '@/lib/apis/products';
-import { Package, Upload, X, Calendar } from 'lucide-react';
+import { Package, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { MultiMediaUploader, UploadedMedia } from '@lago/ui';
+import { defaultUploadHandler } from '@/lib/upload';
 
 export default function PublishPage() {
   const router = useRouter();
@@ -18,14 +20,12 @@ export default function PublishPage() {
     type: 'rent' as 'rent' | 'sell' | 'both',
     price: '',
     deposit: '',
-    images: [] as string[],
     location: '',
     communityId: '',
   });
-
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [images, setImages] = useState<UploadedMedia[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const uploadHandler = useMemo(() => defaultUploadHandler, []);
 
   const createMutation = useProducts({
     onSuccess: () => {
@@ -37,28 +37,6 @@ export default function PublishPage() {
       setIsSubmitting(false);
     },
   });
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length + imageFiles.length > 9) {
-      toast.error('最多只能上传9张图片');
-      return;
-    }
-
-    const newFiles = [...imageFiles, ...files];
-    setImageFiles(newFiles);
-
-    // 生成预览
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setImagePreviews([...imagePreviews, ...newPreviews]);
-  };
-
-  const handleRemoveImage = (index: number) => {
-    const newFiles = imageFiles.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
-    setImageFiles(newFiles);
-    setImagePreviews(newPreviews);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +51,7 @@ export default function PublishPage() {
       return;
     }
 
-    if (imageFiles.length === 0) {
+    if (images.length === 0) {
       toast.error('请至少上传一张商品图片');
       return;
     }
@@ -81,10 +59,6 @@ export default function PublishPage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: 上传图片到OSS，获取URL
-      // 这里先用占位符
-      const imageUrls = imagePreviews; // 实际应该上传后获取URL
-
       await createMutation.mutateAsync({
         title: formData.title,
         description: formData.description,
@@ -92,7 +66,7 @@ export default function PublishPage() {
         type: formData.type,
         price: parseFloat(formData.price),
         deposit: formData.deposit ? parseFloat(formData.deposit) : undefined,
-        images: imageUrls,
+        images: images.map((img) => img.url),
         location: formData.location || undefined,
         communityId: formData.communityId || undefined,
       });
@@ -112,34 +86,16 @@ export default function PublishPage() {
             <label className="block text-sm font-medium text-text-primary mb-2">
               商品图片 <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-3 gap-3">
-              {imagePreviews.map((preview, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white hover:bg-black/70"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              {imagePreviews.length < 9 && (
-                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
-                  <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                  <span className="text-xs text-text-secondary">上传</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleImageSelect}
-                  />
-                </label>
-              )}
-            </div>
-            <p className="text-xs text-text-secondary mt-2">最多上传9张图片</p>
+            <MultiMediaUploader
+              uploadHandler={uploadHandler}
+              onChange={setImages}
+              accept="image"
+              maxFiles={9}
+              onError={(error) => toast.error(error.message)}
+              multiple
+              className="space-y-2"
+            />
+            <p className="text-xs text-text-secondary mt-2">最多上传9张图片，支持拖拽调整排序</p>
           </div>
 
           {/* 商品标题 */}

@@ -8,6 +8,8 @@ import {
   OnboardingType,
   ServiceCategory,
 } from '@/lib/apis/types';
+import { SingleMediaUploader, MultiMediaUploader, UploadedMedia } from '@lago/ui';
+import { defaultUploadHandler } from '@/lib/upload';
 import toast from 'react-hot-toast';
 
 const TYPE_FIELDS: Record<
@@ -102,11 +104,12 @@ export default function OnboardingFormPage() {
     description: '',
     experienceYears: '',
     serviceCategory: '' as ServiceCategory | '',
-    idCardFront: '',
-    idCardBack: '',
-    licenseUrl: '',
-    attachments: '',
   });
+  const [idCardFront, setIdCardFront] = useState<UploadedMedia | null>(null);
+  const [idCardBack, setIdCardBack] = useState<UploadedMedia | null>(null);
+  const [businessLicense, setBusinessLicense] = useState<UploadedMedia | null>(null);
+  const [extraAttachments, setExtraAttachments] = useState<UploadedMedia[]>([]);
+  const uploadHandler = useMemo(() => defaultUploadHandler, []);
 
   const requiresIdentity = config?.requiresIdentity;
   const requiresBusiness = config?.requiresBusiness;
@@ -114,12 +117,12 @@ export default function OnboardingFormPage() {
 
   const canSubmit = useMemo(() => {
     if (!config) return false;
-    if (requiresIdentity && (!form.fullName || !form.idNumber || !form.idCardFront || !form.idCardBack)) {
+    if (requiresIdentity && (!form.fullName || !form.idNumber || !idCardFront || !idCardBack)) {
       return false;
     }
     if (
       requiresBusiness &&
-      (!form.businessName || !form.businessLicenseNumber || !form.licenseUrl)
+      (!form.businessName || !form.businessLicenseNumber || !businessLicense)
     ) {
       return false;
     }
@@ -134,12 +137,12 @@ export default function OnboardingFormPage() {
     requiresServiceCategory,
     form.fullName,
     form.idNumber,
-    form.idCardFront,
-    form.idCardBack,
     form.businessName,
     form.businessLicenseNumber,
-    form.licenseUrl,
     form.serviceCategory,
+    idCardFront,
+    idCardBack,
+    businessLicense,
   ]);
 
   if (!config) {
@@ -153,6 +156,22 @@ export default function OnboardingFormPage() {
     );
   }
 
+  const serializeMedia = (media: UploadedMedia | null) =>
+    media
+      ? {
+          url: media.url,
+          name: media.name,
+          size: media.size,
+          mimeType: media.mimeType,
+          kind: media.kind,
+          width: media.width,
+          height: media.height,
+          duration: media.duration,
+          poster: media.poster,
+          extra: media.extra,
+        }
+      : undefined;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) {
@@ -161,10 +180,15 @@ export default function OnboardingFormPage() {
     }
 
     const documents: Record<string, any> = {};
-    if (form.idCardFront) documents.idCardFront = form.idCardFront;
-    if (form.idCardBack) documents.idCardBack = form.idCardBack;
-    if (form.licenseUrl) documents.businessLicense = form.licenseUrl;
-    if (form.attachments) documents.attachments = form.attachments.split(',').map((item) => item.trim());
+    const serializedFront = serializeMedia(idCardFront);
+    if (serializedFront) documents.idCardFront = serializedFront;
+    const serializedBack = serializeMedia(idCardBack);
+    if (serializedBack) documents.idCardBack = serializedBack;
+    const serializedLicense = serializeMedia(businessLicense);
+    if (serializedLicense) documents.businessLicense = serializedLicense;
+    if (extraAttachments.length > 0) {
+      documents.attachments = extraAttachments.map((item) => serializeMedia(item));
+    }
 
     const payload = {
       type: parsedType,
@@ -221,19 +245,25 @@ export default function OnboardingFormPage() {
                 value={form.idNumber}
                 onChange={(val) => setForm((prev) => ({ ...prev, idNumber: val }))}
               />
-              <FormField
-                label="身份证正面照片地址"
-                required
-                placeholder="请输入已上传的图片URL"
-                value={form.idCardFront}
-                onChange={(val) => setForm((prev) => ({ ...prev, idCardFront: val }))}
+              <SingleMediaUploader
+                label="身份证正面照 *"
+                description="请上传身份证人像面照片，确保信息清晰可见"
+                value={idCardFront}
+                onChange={(media) => setIdCardFront(media)}
+                accept="image"
+                mandatoryType="image"
+                uploadHandler={uploadHandler}
+                onError={(error) => toast.error(error.message)}
               />
-              <FormField
-                label="身份证反面照片地址"
-                required
-                placeholder="请输入已上传的图片URL"
-                value={form.idCardBack}
-                onChange={(val) => setForm((prev) => ({ ...prev, idCardBack: val }))}
+              <SingleMediaUploader
+                label="身份证反面照 *"
+                description="请上传身份证国徽面照片，确保信息清晰可见"
+                value={idCardBack}
+                onChange={(media) => setIdCardBack(media)}
+                accept="image"
+                mandatoryType="image"
+                uploadHandler={uploadHandler}
+                onError={(error) => toast.error(error.message)}
               />
             </>
           )}
@@ -254,12 +284,15 @@ export default function OnboardingFormPage() {
                   setForm((prev) => ({ ...prev, businessLicenseNumber: val }))
                 }
               />
-              <FormField
-                label="营业执照照片地址"
-                required
-                placeholder="请输入已上传的图片URL"
-                value={form.licenseUrl}
-                onChange={(val) => setForm((prev) => ({ ...prev, licenseUrl: val }))}
+              <SingleMediaUploader
+                label="营业执照照片 *"
+                description="请上传最新的营业执照照片或扫描件"
+                value={businessLicense}
+                onChange={(media) => setBusinessLicense(media)}
+                accept="image"
+                mandatoryType="image"
+                uploadHandler={uploadHandler}
+                onError={(error) => toast.error(error.message)}
               />
             </>
           )}
@@ -318,12 +351,18 @@ export default function OnboardingFormPage() {
             onChange={(val) => setForm((prev) => ({ ...prev, description: val }))}
             textarea
           />
-          <FormField
-            label="补充附件地址（多个用逗号分隔）"
-            value={form.attachments}
-            onChange={(val) => setForm((prev) => ({ ...prev, attachments: val }))}
-            placeholder="可填写图片/文件的访问地址"
-          />
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">补充附件（可选）</label>
+            <MultiMediaUploader
+              uploadHandler={uploadHandler}
+              onChange={setExtraAttachments}
+              accept="any"
+              onError={(error) => toast.error(error.message)}
+            />
+            <p className="text-xs text-text-secondary">
+              可上传经营场所照片、资质证明等补充材料，支持多张图片或短视频
+            </p>
+          </div>
 
           <button
             type="submit"

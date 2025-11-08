@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { MapPin, Eye, Heart } from 'lucide-react';
+import { OptimizedMedia } from '@lago/ui';
 
 export interface ProductCardProps {
   id: string;
@@ -29,6 +30,7 @@ export function ProductCard({
   isVerified = false,
 }: ProductCardProps) {
   const imageUrl = images?.[0] || '/placeholder-product.jpg';
+  const isPlaceholder = imageUrl.startsWith('/');
   const priceDisplay = typeof price === 'string' ? price : `¥${price}`;
   const typeLabel = type === 'rent' ? '租赁' : type === 'sell' ? '出售' : '租售';
 
@@ -37,7 +39,19 @@ export function ProductCard({
       <div className="bg-white rounded-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md">
         {/* 商品图片 */}
         <div className="relative w-full h-48 bg-gray-100">
-          <img src={imageUrl} alt={title} className="w-full h-full object-cover" loading="lazy" />
+          <OptimizedMedia
+            src={imageUrl}
+            originalSrc={imageUrl}
+            type="image"
+            alt={title}
+            width={640}
+            height={360}
+            quality={70}
+            fit="cover"
+            className="absolute inset-0"
+            mediaClassName="rounded-none"
+            disableOptimization={isPlaceholder}
+          />
           {isVerified && (
             <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded">
               认证

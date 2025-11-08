@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { OptimizedMedia } from '@lago/ui';
 
 interface Banner {
   id: string;
@@ -65,12 +66,15 @@ export function BannerSwiper({
             index === currentIndex ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <img
+          <OptimizedMedia
             src={banner.image}
+            originalSrc={banner.image}
+            type="image"
             alt={banner.title || 'Banner'}
-            className="w-full h-full object-cover cursor-pointer"
+            fit="cover"
+            className="w-full h-full"
+            mediaClassName="cursor-pointer"
             onClick={handleBannerClick}
-            loading="lazy"
           />
           {banner.title && (
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">

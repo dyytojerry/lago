@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { Upload, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { communitieVerify, CommunitieVerifyDTO, CommunitieVerifyPathParams } from '@/lib/apis';
+import { SingleMediaUploader, UploadedMedia } from '@lago/ui';
+import { defaultUploadHandler } from '@/lib/upload';
 
 export default function CommunityVerifyPage() {
   const router = useRouter();
@@ -16,23 +18,16 @@ export default function CommunityVerifyPage() {
     companyName: '',
     contactName: '',
     contactPhone: '',
-    licenseUrl: '',
-    proofUrl: '',
   });
   const [submitting, setSubmitting] = useState(false);
-
-  const handleFileUpload = async (file: File, field: 'licenseUrl' | 'proofUrl') => {
-    // TODO: 实现文件上传到OSS
-    // 这里先用占位符
-    const mockUrl = URL.createObjectURL(file);
-    setFormData((prev) => ({ ...prev, [field]: mockUrl }));
-    toast.success('文件上传成功');
-  };
+  const [licenseMedia, setLicenseMedia] = useState<UploadedMedia | null>(null);
+  const [proofMedia, setProofMedia] = useState<UploadedMedia | null>(null);
+  const uploadHandler = useMemo(() => defaultUploadHandler, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.companyName || !formData.contactName || !formData.contactPhone || !formData.licenseUrl) {
+    if (!formData.companyName || !formData.contactName || !formData.contactPhone || !licenseMedia) {
       toast.error('请填写完整的认证信息');
       return;
     }
@@ -41,7 +36,11 @@ export default function CommunityVerifyPage() {
     try {
       const response = await communitieVerify(
         { id: communityId } as CommunitieVerifyPathParams,
-        formData as CommunitieVerifyDTO
+        {
+          ...formData,
+          licenseUrl: licenseMedia.url,
+          proofUrl: proofMedia?.url,
+        } as CommunitieVerifyDTO
       );
       if (response.success) {
         toast.success('认证申请已提交，请等待审核');
@@ -118,87 +117,28 @@ export default function CommunityVerifyPage() {
             />
           </div>
 
-          {/* 营业执照 */}
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              营业执照 <span className="text-red-500">*</span>
-            </label>
-            <div className="space-y-2">
-              {formData.licenseUrl ? (
-                <div className="relative w-full h-32 rounded-lg overflow-hidden bg-gray-100">
-                  <img
-                    src={formData.licenseUrl}
-                    alt="营业执照"
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, licenseUrl: '' })}
-                    className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
-                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                  <span className="text-sm text-text-secondary">点击上传营业执照</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        handleFileUpload(file, 'licenseUrl');
-                      }
-                    }}
-                  />
-                </label>
-              )}
-            </div>
-          </div>
+          <SingleMediaUploader
+            label="营业执照 *"
+            description="请上传物业公司的营业执照照片或扫描件"
+            value={licenseMedia}
+            onChange={setLicenseMedia}
+            uploadHandler={uploadHandler}
+            accept="image"
+            mandatoryType="image"
+            onError={(error) => toast.error(error.message)}
+          />
 
-          {/* 其他证明资料 */}
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              其他证明资料（可选）
-            </label>
-            <div className="space-y-2">
-              {formData.proofUrl ? (
-                <div className="relative w-full h-32 rounded-lg overflow-hidden bg-gray-100">
-                  <img
-                    src={formData.proofUrl}
-                    alt="证明资料"
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, proofUrl: '' })}
-                    className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary transition-colors">
-                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                  <span className="text-sm text-text-secondary">点击上传其他证明资料</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        handleFileUpload(file, 'proofUrl');
-                      }
-                    }}
-                  />
-                </label>
-              )}
-            </div>
-          </div>
+          <SingleMediaUploader
+            label="其他证明资料（可选）"
+            description="可上传合作协议、授权书等补充材料"
+            value={proofMedia}
+            onChange={setProofMedia}
+            uploadHandler={uploadHandler}
+            accept="image"
+            mandatoryType="image"
+            allowRemove
+            onError={(error) => toast.error(error.message)}
+          />
 
           {/* 提交按钮 */}
           <button
