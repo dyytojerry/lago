@@ -5,7 +5,7 @@ import {
   approveProduct,
   batchApproveProducts,
 } from '../controllers/products.controller';
-import { authOperation, requireRole } from '../middleware/auth';
+import { authOperation, requirePermissions } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
 import * as Joi from 'joi';
 
@@ -229,7 +229,7 @@ router.get('/:id', getProduct);
  */
 router.post(
   '/:id/approve',
-  requireRole('super_admin', 'audit_staff'),
+  requirePermissions('products:review'),
   validateRequest(
     Joi.object({
       body: Joi.object({
@@ -289,7 +289,7 @@ router.post(
  */
 router.post(
   '/batch-approve',
-  requireRole('super_admin', 'audit_staff'),
+  requirePermissions('products:review'),
   validateRequest(
     Joi.object({
       body: Joi.object({

@@ -25,68 +25,78 @@ export default function Layout({ children }: LayoutProps) {
       title: "仪表盘",
       path: "/admin/dashboard",
       icon: "📊",
-      roles: [
-        "super_admin",
-        "audit_staff",
-        "service_staff",
-        "operation_staff",
-        "finance_staff",
-      ],
+      permission: "dashboard:view",
     },
     {
       title: "商品审核",
       path: "/admin/products",
       icon: "📦",
-      roles: ["super_admin", "audit_staff"],
+      permission: "products:review",
     },
     {
       title: "小区管理",
       path: "/admin/communities",
       icon: "🏘️",
-      roles: ["super_admin", "audit_staff"],
+      permission: "communities:manage",
     },
     {
       title: "用户管理",
       path: "/admin/users",
       icon: "👥",
-      roles: ["super_admin", "service_staff", "operation_staff"],
+      permission: "users:manage",
     },
     {
       title: "订单管理",
       path: "/admin/orders",
       icon: "🛒",
-      roles: [
-        "super_admin",
-        "service_staff",
-        "operation_staff",
-        "finance_staff",
-      ],
+      permission: "orders:manage",
     },
     {
       title: "入驻审核",
       path: "/admin/approvals",
       icon: "✅",
-      roles: ["super_admin", "audit_staff"],
+      permission: "approvals:review",
     },
     {
       title: "数据看板",
       path: "/admin/analytics",
       icon: "📈",
-      roles: ["super_admin", "operation_staff"],
+      permission: "analytics:view",
     },
     {
       title: "财务结算",
       path: "/admin/finance",
       icon: "💰",
-      roles: ["super_admin", "finance_staff"],
+      permission: "finance:manage",
     },
     {
       title: "系统设置",
       path: "/admin/settings",
       icon: "⚙️",
-      roles: ["super_admin"],
+      permission: "system:roles",
     },
-  ].filter((item) => user?.roles.includes(item.roles));
+    {
+      title: "角色权限",
+      path: "/admin/system/roles",
+      icon: "🛠️",
+      permission: "system:roles",
+    },
+    {
+      title: "员工角色",
+      path: "/admin/system/staff-roles",
+      icon: "👤",
+      permission: "system:staff_roles",
+    },
+  ].filter((item) => {
+    if (!isLoggedIn) return false;
+    if (user?.isSuperAdmin) return true;
+    return user?.permissions?.includes(item.permission);
+  });
+
+  const displayName = user?.realName || user?.username || user?.email;
+  const roleNames = Array.isArray(user?.roles)
+    ? user.roles.map((role: any) => (typeof role === "string" ? role : role?.name)).filter(Boolean)
+    : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -104,9 +114,9 @@ export default function Layout({ children }: LayoutProps) {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-sm text-gray-600">
-              <span className="font-medium">{user?.name || user?.email}</span>
+              <span className="font-medium">{displayName}</span>
               <span className="ml-2 text-gray-400">
-                ({user?.roles.join(",")})
+                ({roleNames.length > 0 ? roleNames.join(", ") : "无角色"})
               </span>
             </div>
             <button

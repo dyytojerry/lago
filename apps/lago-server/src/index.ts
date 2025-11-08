@@ -32,6 +32,7 @@ import usersAppRoutes from './routes/users.app.routes';
 import usersRoutes from './routes/users.routes';
 import ordersRoutes from './routes/orders.routes';
 import communitiesRoutes from './routes/communities.routes';
+import operationSystemRoutes from './routes/operation.roles.routes';
 
 
 // Load environment variables
@@ -127,6 +128,7 @@ app.use('/api/admin/products', authOperation, productsRoutes);
 app.use('/api/admin/users', authOperation, usersRoutes);
 app.use('/api/admin/orders', authOperation, ordersRoutes);
 app.use('/api/admin/communities', authOperation, communitiesRoutes);
+app.use('/api/admin/system', operationSystemRoutes);
 
 
 // Initialize WebSocket service

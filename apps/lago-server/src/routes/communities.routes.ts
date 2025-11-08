@@ -6,7 +6,7 @@ import {
   approveCommunityVerification,
   rejectCommunityVerification,
 } from '../controllers/communities.controller';
-import { authOperation, requireRole } from '../middleware/auth';
+import { authOperation, requirePermissions } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
 import * as Joi from 'joi';
 
@@ -140,7 +140,7 @@ router.get(
  */
 router.get(
   '/verifications',
-  requireRole('super_admin', 'audit_staff'),
+  requirePermissions('communities:review'),
   validateRequest(
     Joi.object({
       query: Joi.object({
@@ -224,7 +224,7 @@ router.get('/:id', getCommunity);
  */
 router.post(
   '/:id/approve',
-  requireRole('super_admin', 'audit_staff'),
+  requirePermissions('communities:review'),
   approveCommunityVerification
 );
 
@@ -274,7 +274,7 @@ router.post(
  */
 router.post(
   '/:id/reject',
-  requireRole('super_admin', 'audit_staff'),
+  requirePermissions('communities:review'),
   validateRequest(
     Joi.object({
       body: Joi.object({

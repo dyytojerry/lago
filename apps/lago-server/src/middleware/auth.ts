@@ -4,6 +4,8 @@ import { verifyToken, isUserToken, isOperationToken } from '../lib/auth';
 import { createErrorResponse } from '../lib/response';
 import { isTokenBlacklisted } from '../lib/token-blacklist';
 
+const prismaAny = prisma as any;
+
 // 扩展Express Request类型
 declare global {
   namespace Express {
@@ -15,8 +17,9 @@ declare global {
       };
       operationStaff?: {
         id: string;
-        role: string;
-        type: 'operation';
+        isSuperAdmin: boolean;
+        roleIds: string[];
+        permissions: string[];
       };
     }
   }
@@ -94,17 +97,48 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
     // 验证运营人员是否存在且激活
     const staff = await prisma.operationStaff.findUnique({
       where: { id: payload.staffId },
-      select: { id: true, role: true, isActive: true },
-    });
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    } as any);
  
     if (!staff || !staff.isActive) {
       return createErrorResponse(res, '运营人员不存在或已被禁用', 422);
     }
- 
+
+    const permissionsSet = new Set<string>();
+    const roleIds = (staff.roles ?? []).map((assignment) => {
+      assignment.role.rolePermissions?.forEach((rp) => {
+        if (rp.permission?.code) {
+          permissionsSet.add(rp.permission.code);
+        }
+      });
+      return assignment.role.id;
+    });
+
+    if (staff.isSuperAdmin) {
+      const allPermissions = await prismaAny.operationPermission.findMany({ select: { code: true } });
+      allPermissions.forEach(({ code }: { code: string }) => permissionsSet.add(code));
+    }
+
     req.operationStaff = {
       id: staff.id,
-      role: staff.role,
       type: 'operation',
+      isSuperAdmin: staff.isSuperAdmin ?? false,
+      roleIds,
+      permissions: Array.from(permissionsSet).sort(),
     };
  
     next();
@@ -117,14 +151,32 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
 /**
  * 角色权限检查中间件
  */
-export function requireRole(...allowedRoles: string[]) {
+export function requirePermissions(...requiredPermissions: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const role = req.user?.role || req.operationStaff?.role;
-    
-    if (!role || !allowedRoles.includes(role)) {
+    const context = req.operationStaff;
+
+    if (!context) {
+      return createErrorResponse(res, '未认证', 401);
+    }
+
+    if (context.isSuperAdmin) {
+      return next();
+    }
+
+    const permissionSet = new Set(context.permissions ?? []);
+    const hasAll = requiredPermissions.every((permission) => permissionSet.has(permission));
+
+    if (!hasAll) {
       return createErrorResponse(res, '权限不足', 403);
     }
-    
+
     next();
   };
+}
+
+export function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.operationStaff?.isSuperAdmin) {
+    return createErrorResponse(res, '需要超级管理员权限', 403);
+  }
+  next();
 }

@@ -44,7 +44,7 @@ export default function RootLayout({
         <LoadingProvider>
           <ApiProvider>
             <MiniprogramProvider>
-              <AuthProvider authApi={authApi} prefix="operation_">
+              <AuthProvider authApi={authApi} prefix="operation_" name="staff">
                 <WebSocketProvider>
                   <div className="relative">{children}</div>
                   {/* <RealTimeNotifications /> */}

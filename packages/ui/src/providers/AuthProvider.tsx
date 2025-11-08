@@ -85,13 +85,15 @@ export function AuthProvider({
   children,
   authApi,
   prefix,
+  name = "user",
 }: {
   children: ReactNode;
   authApi: any;
   prefix: string;
+  name?: string;
 }) {
   const { authMe, authLogin, authLogout, authRefresh } = authApi;
-  const [auth, setAuth] = useState<(AuthResponse & { pet?: any }) | null>(null);
+  const [auth, setAuth] = useState<AuthResponse | null>(null);
   const audio = useAudio();
   const [isLoading, setIsLoading] = useState(true);
   const storage = useMemo(() => {
@@ -107,8 +109,7 @@ export function AuthProvider({
       if (auth) {
         await storage.setItem("authToken", auth.accessToken);
         await storage.setItem("refreshToken", auth.refreshToken);
-        setAuth(auth);
-        setFamilyId(auth.user.familyId);
+        setAuth({ ...auth, user: auth[name as keyof AuthResponse] } as any);
         if (location.pathname.endsWith("/login")) {
           toast.success("登录成功！");
         }

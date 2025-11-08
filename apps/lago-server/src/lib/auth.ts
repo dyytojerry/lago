@@ -25,9 +25,11 @@ export interface UserJWTPayload {
 // 运营端 Token Payload
 export interface OperationJWTPayload {
   staffId: string;
-  role: string;
   type: 'operation';
   tokenKind?: 'access' | 'refresh';
+  roles?: string[];
+  permissions?: string[];
+  isSuperAdmin?: boolean;
   iat?: number;
   exp?: number;
 }
@@ -54,7 +56,7 @@ export function generateUserToken(payload: { userId: string; role: string }): st
 /**
  * 生成运营端 Token
  */
-export function generateOperationToken(payload: { staffId: string; role: string }): string {
+export function generateOperationToken(payload: { staffId: string; roles?: string[]; permissions?: string[]; isSuperAdmin?: boolean }): string {
   const secret = JWT_SECRET || 'dev-secret-key';
   return jwt.sign(
     {
@@ -86,7 +88,7 @@ export function generateUserRefreshToken(payload: { userId: string; role: string
 /**
  * 生成运营端 Refresh Token
  */
-export function generateOperationRefreshToken(payload: { staffId: string; role: string }): string {
+export function generateOperationRefreshToken(payload: { staffId: string; roles?: string[]; permissions?: string[]; isSuperAdmin?: boolean }): string {
   const secret = JWT_REFRESH_SECRET || 'dev-refresh-secret';
   return jwt.sign(
     {

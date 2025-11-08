@@ -35,9 +35,84 @@ function buildUserAuthResponse(user: any) {
   };
 }
 
-function buildOperationAuthResponse(staff: any) {
-  const accessToken = generateOperationToken({ staffId: staff.id, role: staff.role });
-  const refreshToken = generateOperationRefreshToken({ staffId: staff.id, role: staff.role });
+const operationStaffAuthInclude = {
+  roles: {
+    include: {
+      role: {
+        include: {
+          rolePermissions: {
+            include: {
+              permission: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+const prismaAny = prisma as any;
+
+async function loadOperationStaffAuthContext(staffId: string) {
+  return prisma.operationStaff.findUnique({
+    where: { id: staffId },
+    include: operationStaffAuthInclude as any,
+  });
+}
+
+async function buildOperationAuthResponse(staff: any) {
+  if (!staff) {
+    throw new Error('Operation staff not found');
+  }
+
+  const roles: {
+    id: string;
+    name: string;
+    description: string | null;
+    isSystem: boolean;
+    permissions: string[];
+  }[] = [];
+  const permissionsSet = new Set<string>();
+
+  for (const assignment of staff.roles ?? []) {
+    const rolePermissions = assignment.role.rolePermissions ?? [];
+    const permissions: string[] = [];
+
+    for (const rp of rolePermissions) {
+      if (rp.permission?.code) {
+        permissions.push(rp.permission.code);
+        permissionsSet.add(rp.permission.code);
+      }
+    }
+
+    roles.push({
+      id: assignment.role.id,
+      name: assignment.role.name,
+      description: assignment.role.description,
+      isSystem: assignment.role.isSystem,
+      permissions,
+    });
+  }
+
+  if (staff.isSuperAdmin) {
+    const allPermissions = await prismaAny.operationPermission.findMany({ select: { code: true } });
+    for (const { code } of allPermissions) {
+      permissionsSet.add(code);
+    }
+  }
+
+  const permissions = Array.from(permissionsSet).sort((a, b) => a.localeCompare(b));
+  const roleIds = roles.map((role) => role.id);
+
+  const tokenPayload = {
+    staffId: staff.id,
+    roles: roleIds,
+    permissions,
+    isSuperAdmin: staff.isSuperAdmin ?? false,
+  };
+
+  const accessToken = generateOperationToken(tokenPayload);
+  const refreshToken = generateOperationRefreshToken(tokenPayload);
 
   return {
     accessToken,
@@ -46,8 +121,12 @@ function buildOperationAuthResponse(staff: any) {
       id: staff.id,
       username: staff.username,
       email: staff.email,
-      role: staff.role,
       realName: staff.realName,
+      phone: staff.phone,
+      isActive: staff.isActive,
+      isSuperAdmin: staff.isSuperAdmin ?? false,
+      roles,
+      permissions,
     },
   };
 }
@@ -320,8 +399,13 @@ export async function operationLogin(req: Request, res: Response) {
         userAgent: req.get('user-agent'),
       },
     });
+ 
+    const staffWithRelations = await loadOperationStaffAuthContext(staff.id);
+    if (!staffWithRelations) {
+      return createErrorResponse(res, '账号状态异常，请联系管理员', 422);
+    }
 
-    const authPayload = buildOperationAuthResponse(staff);
+    const authPayload = await buildOperationAuthResponse(staffWithRelations);
     return createSuccessResponse(res, authPayload);
   } catch (error) {
     console.error('运营系统登录失败:', error);
@@ -408,24 +492,13 @@ export async function getCurrentStaff(req: Request, res: Response) {
       return createErrorResponse(res, '未认证', 401);
     }
 
-    const staff = await prisma.operationStaff.findUnique({
-      where: { id: req.operationStaff.id },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        role: true,
-        realName: true,
-        phone: true,
-        lastLoginAt: true,
-      },
-    });
+    const staff = await loadOperationStaffAuthContext(req.operationStaff.id);
 
-    if (!staff) {
+    if (!staff || !staff.isActive) {
       return createErrorResponse(res, '运营人员不存在', 404);
     }
- 
-    const authPayload = buildOperationAuthResponse(staff);
+
+    const authPayload = await buildOperationAuthResponse(staff);
     return createSuccessResponse(res, authPayload);
   } catch (error) {
     console.error('获取运营人员信息失败:', error);
@@ -489,23 +562,13 @@ export async function refreshOperationToken(req: Request, res: Response) {
       return createErrorResponse(res, 'refreshToken无效或已过期', 422);
     }
 
-    const staff = await prisma.operationStaff.findUnique({
-      where: { id: payload.staffId },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        role: true,
-        realName: true,
-        isActive: true,
-      },
-    });
+    const staff = await loadOperationStaffAuthContext(payload.staffId);
 
     if (!staff || !staff.isActive) {
       return createErrorResponse(res, '运营人员不存在或已被禁用', 422);
     }
 
-    const authPayload = buildOperationAuthResponse(staff);
+    const authPayload = await buildOperationAuthResponse(staff);
     return createSuccessResponse(res, authPayload);
   } catch (error) {
     console.error('刷新运营端token失败:', error);
