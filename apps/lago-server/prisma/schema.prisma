@@ -196,7 +196,8 @@ model District {
 // ==================== 社区体系 ====================
 
 enum CommunityVerificationStatus {
-  pending   // 待审核
+  pending   // 待认证（尚未提交材料）
+  processing // 待审核（已提交，审核中）
   approved  // 已认证
   rejected  // 已拒绝
 }

@@ -19,7 +19,7 @@ interface Community {
   province?: { name: string };
   city?: { name: string };
   district?: { name: string };
-  verificationStatus: 'pending' | 'approved' | 'rejected';
+  verificationStatus: 'pending' | 'processing' | 'approved' | 'rejected';
   verifiedAt?: string;
   verification?: {
     id: string;
@@ -37,6 +37,20 @@ interface Community {
     products: number;
     activities: number;
   };
+}
+
+function getStatusMeta(status: Community['verificationStatus']) {
+  switch (status) {
+    case 'approved':
+      return { text: '已认证', className: 'bg-green-100 text-green-800' };
+    case 'rejected':
+      return { text: '已拒绝', className: 'bg-red-100 text-red-800' };
+    case 'processing':
+      return { text: '待审核', className: 'bg-yellow-100 text-yellow-800' };
+    case 'pending':
+    default:
+      return { text: '待认证', className: 'bg-gray-100 text-gray-700' };
+  }
 }
 
 export default function CommunityDetailPage() {
@@ -150,21 +164,14 @@ export default function CommunityDetailPage() {
               </div>
             </div>
             <div className="text-right">
-              <span
-                className={`px-3 py-1 text-sm rounded-full ${
-                  community.verificationStatus === 'approved'
-                    ? 'bg-green-100 text-green-800'
-                    : community.verificationStatus === 'rejected'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}
-              >
-                {community.verificationStatus === 'approved'
-                  ? '已认证'
-                  : community.verificationStatus === 'rejected'
-                  ? '已拒绝'
-                  : '待审核'}
-              </span>
+              {(() => {
+                const meta = getStatusMeta(community.verificationStatus);
+                return (
+                  <span className={`px-3 py-1 text-sm rounded-full ${meta.className}`}>
+                    {meta.text}
+                  </span>
+                );
+              })()}
             </div>
           </div>
 
@@ -262,7 +269,7 @@ export default function CommunityDetailPage() {
             )}
 
             {/* 操作按钮 */}
-            {community.verificationStatus === 'pending' && (
+            {community.verificationStatus === 'processing' && (
               <div className="mt-6 flex gap-3">
                 <button
                   onClick={handleApprove}

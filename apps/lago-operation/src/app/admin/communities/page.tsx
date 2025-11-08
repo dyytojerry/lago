@@ -15,7 +15,7 @@ interface Community {
   name: string;
   address?: string;
   images: string[];
-  verificationStatus: 'pending' | 'approved' | 'rejected';
+  verificationStatus: 'pending' | 'processing' | 'approved' | 'rejected';
   province?: { name: string };
   city?: { name: string };
   district?: { name: string };
@@ -31,12 +31,43 @@ interface Community {
   };
 }
 
+function StatusBadge({ status }: { status: Community['verificationStatus'] }) {
+  let text = '';
+  let className = '';
+
+  switch (status) {
+    case 'approved':
+      text = '已认证';
+      className = 'bg-green-100 text-green-800';
+      break;
+    case 'rejected':
+      text = '已拒绝';
+      className = 'bg-red-100 text-red-800';
+      break;
+    case 'processing':
+      text = '待审核';
+      className = 'bg-yellow-100 text-yellow-800';
+      break;
+    case 'pending':
+    default:
+      text = '待认证';
+      className = 'bg-gray-100 text-gray-700';
+      break;
+  }
+
+  return (
+    <span className={`px-2 py-1 text-xs rounded-full ${className}`}>
+      {text}
+    </span>
+  );
+}
+
 export default function CommunitiesPage() {
   const router = useRouter();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | ''>('');
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'processing' | 'approved' | 'rejected' | ''>('');
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -130,7 +161,8 @@ export default function CommunitiesPage() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">全部状态</option>
-            <option value="pending">待审核</option>
+            <option value="pending">待认证</option>
+            <option value="processing">待审核</option>
             <option value="approved">已认证</option>
             <option value="rejected">已拒绝</option>
           </select>
@@ -203,21 +235,7 @@ export default function CommunitiesPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          community.verificationStatus === 'approved'
-                            ? 'bg-green-100 text-green-800'
-                            : community.verificationStatus === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {community.verificationStatus === 'approved'
-                          ? '已认证'
-                          : community.verificationStatus === 'rejected'
-                          ? '已拒绝'
-                          : '待审核'}
-                      </span>
+                      <StatusBadge status={community.verificationStatus} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {community._count && (
@@ -235,7 +253,7 @@ export default function CommunitiesPage() {
                         >
                           查看
                         </button>
-                        {community.verificationStatus === 'pending' && (
+                        {community.verificationStatus === 'processing' && (
                           <>
                             <button
                               onClick={() => handleApprove(community.id)}
