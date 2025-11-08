@@ -74,7 +74,6 @@ export enum ChatRoomType {
 
 export enum CommunityVerificationStatus {
   PENDING = 'pending',
-  PROCESSING = 'processing',
   APPROVED = 'approved',
   REJECTED = 'rejected',
 }

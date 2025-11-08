@@ -240,40 +240,97 @@ export async function getRecommendedProducts(req: Request, res: Response) {
  */
 export async function getHotProducts(req: Request, res: Response) {
   try {
-    const { limit = '10' } = req.query;
-    const limitNum = parseInt(limit as string);
+    const {
+      page = '1',
+      limit = '10',
+      sortBy = 'viewCount',
+      sortOrder = 'desc',
+      cityId,
+      category,
+      search,
+    } = req.query;
 
-    const products = await prisma.product.findMany({
-      where: {
-        status: 'active',
-      },
-      take: limitNum,
-      orderBy: [
-        { viewCount: 'desc' },
-        { likeCount: 'desc' },
-        { createdAt: 'desc' },
-      ],
-      include: {
-        owner: {
-          select: {
-            id: true,
-            nickname: true,
-            avatarUrl: true,
-            creditScore: true,
-            isVerified: true,
+    const pageNum = Math.max(parseInt(page as string, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 10, 1), 100);
+    const skip = (pageNum - 1) * limitNum;
+
+    const sortableFields = ['viewCount', 'likeCount', 'createdAt'] as const;
+    const requestedSortBy = sortableFields.includes(sortBy as any)
+      ? (sortBy as typeof sortableFields[number])
+      : 'viewCount';
+    const requestedSortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+
+    const where: any = {
+      status: 'active',
+    };
+
+    if (category) {
+      where.category = category;
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { description: { contains: search as string, mode: 'insensitive' } },
+      ];
+    }
+
+    if (cityId) {
+      where.community = {
+        cityId: cityId as string,
+      };
+    }
+
+    const orderBy: any[] = [{ [requestedSortBy]: requestedSortOrder }];
+
+    if (requestedSortBy !== 'viewCount') {
+      orderBy.push({ viewCount: 'desc' });
+    }
+    if (requestedSortBy !== 'likeCount') {
+      orderBy.push({ likeCount: 'desc' });
+    }
+    if (requestedSortBy !== 'createdAt') {
+      orderBy.push({ createdAt: 'desc' });
+    }
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy,
+        include: {
+          owner: {
+            select: {
+              id: true,
+              nickname: true,
+              avatarUrl: true,
+              creditScore: true,
+              isVerified: true,
+            },
+          },
+          community: {
+            select: {
+              id: true,
+              name: true,
+              location: true,
+              cityId: true,
+            },
           },
         },
-        community: {
-          select: {
-            id: true,
-            name: true,
-            location: true,
-          },
-        },
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    return createSuccessResponse(res, {
+      products,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
       },
     });
-
-    return createSuccessResponse(res, { products });
   } catch (error) {
     console.error('获取热门商品失败:', error);
     return createErrorResponse(res, '获取热门商品失败', 500);

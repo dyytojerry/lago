@@ -435,11 +435,47 @@ router.get(
  *     tags: [Products, Public]
  *     parameters:
  *       - in: query
+ *         name: page
+ *         schema:
+ *           type: string
+ *           default: "1"
+ *         description: 页码
+ *       - in: query
  *         name: limit
  *         schema:
  *           type: string
  *           default: "10"
  *         description: 返回数量
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [viewCount, likeCount, createdAt, price]
+ *           default: "createdAt"
+ *         description: 排序字段
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: "desc"
+ *         description: 排序方向
+ *       - in: query
+ *         name: cityId
+ *         schema:
+ *           type: string
+ *         description: 城市ID
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [toys, gaming]
+ *         description: 商品分类
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: 搜索关键词
  *     responses:
  *       200:
  *         description: 获取成功
@@ -458,14 +494,22 @@ router.get(
  *                           type: array
  *                           items:
  *                             $ref: '#/components/schemas/Product'
- *                       required: ['products']
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['products', 'pagination']
  */
 router.get(
   '/products/hot',
   validateRequest(
     Joi.object({
       query: Joi.object({
+        page: Joi.string().optional(),
         limit: Joi.string().optional(),
+        sortBy: Joi.string().valid('viewCount', 'likeCount', 'createdAt').optional(),
+        sortOrder: Joi.string().valid('asc', 'desc').optional(),
+        cityId: Joi.string().optional(),
+        category: Joi.string().valid('toys', 'gaming').optional(),
+        search: Joi.string().optional(),
       }),
     })
   ),

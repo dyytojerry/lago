@@ -189,13 +189,40 @@ export class ProductUnlikeResponse {
 export class ProductHotQueryParams {
   @IsString()
   @IsOptional()
+  page?: string;
+
+  @IsString()
+  @IsOptional()
   limit?: string;
+
+  @IsEnum(['viewCount', 'likeCount', 'createdAt', 'price'])
+  @IsOptional()
+  sortBy?: 'viewCount' | 'likeCount' | 'createdAt' | 'price';
+
+  @IsEnum(['asc', 'desc'])
+  @IsOptional()
+  sortOrder?: 'asc' | 'desc';
+
+  @IsString()
+  @IsOptional()
+  cityId?: string;
+
+  @IsEnum(Types.ProductCategory)
+  @IsOptional()
+  category?: Types.ProductCategory;
+
+  @IsString()
+  @IsOptional()
+  search?: string;
 
 }
 
 export class ProductHotResponse {
   @IsArray()
   products: Types.Product[];
+
+  @ValidateNested()
+  pagination: Types.Pagination;
 
 }
 /**
@@ -485,7 +512,7 @@ export function useProductHot(
   options?: UseQueryOptions<HTTPResponse<ProductHotResponse>, Error>
 ) {
   return useQuery({
-    queryKey: ['products', '获取热门商品', queryParams?.limit],
+    queryKey: ['products', '获取热门商品', queryParams?.page, queryParams?.limit, queryParams?.sortBy, queryParams?.sortOrder, queryParams?.cityId, queryParams?.category, queryParams?.search],
     queryFn: () => productHot(queryParams),
     ...options,
   });

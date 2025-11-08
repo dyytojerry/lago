@@ -7,7 +7,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { communitieNearby, productsPublic, ProductPublicQueryParams } from '@/lib/apis';
+import { communitieNearby, productHot, ProductHotQueryParams } from '@/lib/apis';
 import {
   Search,
   MapPin,
@@ -80,9 +80,11 @@ const CATEGORY_FILTERS = [
 
 const SORT_FILTERS = [
   { id: 'createdAt', label: '最新发布', sortBy: 'createdAt', sortOrder: 'desc' },
+  { id: 'viewCount', label: '浏览优先', sortBy: 'viewCount', sortOrder: 'desc' },
   { id: 'priceLow', label: '价格从低到高', sortBy: 'price', sortOrder: 'asc' },
   { id: 'priceHigh', label: '价格从高到低', sortBy: 'price', sortOrder: 'desc' },
   { id: 'popular', label: '人气优先', sortBy: 'viewCount', sortOrder: 'desc' },
+  { id: 'liked', label: '点赞优先', sortBy: 'likeCount', sortOrder: 'desc' },
 ] as const;
 
 export default function CityPage() {
@@ -93,7 +95,7 @@ export default function CityPage() {
   const [cityId, setCityId] = useState<string | undefined>();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [category, setCategory] = useState('');
-  const [sortBy, setSortBy] = useState<'createdAt' | 'price' | 'viewCount' | 'likeCount'>('createdAt');
+  const [sortBy, setSortBy] = useState<typeof SORT_FILTERS[number]['sortBy']>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -154,7 +156,7 @@ export default function CityPage() {
       if (loading) return;
       setLoading(true);
       try {
-        const queryParams: ProductPublicQueryParams = {
+        const queryParams: ProductHotQueryParams = {
           page: String(page),
           limit: String(pagination.limit),
           sortBy,
@@ -165,13 +167,13 @@ export default function CityPage() {
           queryParams.cityId = cityId;
         }
         if (category) {
-          queryParams.category = category as ProductPublicQueryParams['category'];
+          queryParams.category = category as ProductHotQueryParams['category'];
         }
         if (searchKeyword.trim()) {
           queryParams.search = searchKeyword.trim();
         }
 
-        const response = await productsPublic(queryParams, true);
+        const response = await productHot(queryParams, true);
 
         if (response.success && response.data) {
           setPagination(response.data.pagination);
