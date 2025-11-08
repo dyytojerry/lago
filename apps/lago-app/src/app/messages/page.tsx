@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
@@ -51,12 +50,11 @@ export default function MessagesPage() {
                     {/* 头像 */}
                     <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
                       {otherUser?.avatarUrl ? (
-                        <Image
+                        <img
                           src={otherUser.avatarUrl}
                           alt={otherUser.nickname || '用户'}
-                          width={48}
-                          height={48}
-                          className="object-cover"
+                          className="w-full h-full object-cover"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">

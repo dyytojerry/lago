@@ -111,6 +111,29 @@ export class CommunitieSearchResponse {
   pagination: Types.Pagination;
 
 }
+export class CommunitieActivitiesFeedQueryParams {
+  @IsString()
+  @IsOptional()
+  page?: string;
+
+  @IsString()
+  @IsOptional()
+  limit?: string;
+
+  @IsString()
+  @IsOptional()
+  communityId?: string;
+
+}
+
+export class CommunitieActivitiesFeedResponse {
+  @IsArray()
+  activities: any[];
+
+  @ValidateNested()
+  pagination: Types.Pagination;
+
+}
 export class CommunitiesPathParams {
   @IsString()
   id: string;
@@ -197,6 +220,20 @@ export async function communitieSearch(
   noAuthorize?: boolean
 ): Promise<HTTPResponse<any>> {
   return await apiRequest("/api/communities/search", {
+    method: 'GET',
+    noAuthorize: noAuthorize,
+    params: queryParams,
+  });
+}
+
+/**
+ * 获取跳蚤市场地摊活动
+ */
+export async function communitieActivitiesFeed(
+  queryParams?: CommunitieActivitiesFeedQueryParams,
+  noAuthorize?: boolean
+): Promise<HTTPResponse<any>> {
+  return await apiRequest("/api/communities/activities/feed", {
     method: 'GET',
     noAuthorize: noAuthorize,
     params: queryParams,
@@ -322,6 +359,20 @@ export function useCommunitieSearch(
   return useQuery({
     queryKey: ['communities', '搜索小区', queryParams?.search, queryParams?.provinceId, queryParams?.cityId, queryParams?.districtId, queryParams?.verificationStatus, queryParams?.page, queryParams?.limit],
     queryFn: () => communitieSearch(queryParams),
+    ...options,
+  });
+}
+
+/**
+ * 获取跳蚤市场地摊活动 Hook
+ */
+export function useCommunitieActivitiesFeed(
+  queryParams?: CommunitieActivitiesFeedQueryParams,
+  options?: UseQueryOptions<HTTPResponse<CommunitieActivitiesFeedResponse>, Error>
+) {
+  return useQuery({
+    queryKey: ['communities', '获取跳蚤市场地摊活动', queryParams?.page, queryParams?.limit, queryParams?.communityId],
+    queryFn: () => communitieActivitiesFeed(queryParams),
     ...options,
   });
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useAuth } from '@lago/ui';
@@ -84,12 +83,11 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden">
               {currentUser?.avatarUrl ? (
-                <Image
+                <img
                   src={currentUser.avatarUrl}
                   alt={currentUser.nickname || '用户'}
-                  width={64}
-                  height={64}
-                  className="object-cover"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
@@ -102,12 +101,11 @@ export default function ProductDetailPage() {
         <div className="relative w-full h-80 bg-gray-100">
           {images.length > 0 ? (
             <>
-              <Image
+              <img
                 src={images[currentImageIndex]}
                 alt={product.title}
-                fill
-                className="object-cover"
-                sizes="100vw"
+                className="w-full h-full object-cover"
+                loading="lazy"
               />
               {images.length > 1 && (
                 <>
@@ -224,12 +222,11 @@ export default function ProductDetailPage() {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
                 {product.owner.avatarUrl ? (
-                  <Image
+                  <img
                     src={product.owner.avatarUrl}
                     alt={product.owner.nickname || '卖家'}
-                    width={48}
-                    height={48}
-                    className="object-cover"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">

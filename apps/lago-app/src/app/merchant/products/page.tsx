@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
@@ -107,12 +106,11 @@ export default function MerchantProductsPage() {
                 <div className="flex gap-3 mb-3">
                   {product.images?.[0] && (
                     <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                      <Image
+                      <img
                         src={product.images[0]}
                         alt={product.title}
-                        width={80}
-                        height={80}
-                        className="object-cover"
+                        className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                     </div>
                   )}

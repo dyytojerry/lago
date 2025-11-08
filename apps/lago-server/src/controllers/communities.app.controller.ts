@@ -379,6 +379,101 @@ export async function joinCommunity(req: Request, res: Response) {
 }
 
 /**
+ * 获取地摊活动（跳蚤市场）Feed
+ */
+export async function getMarketActivitiesFeed(req: Request, res: Response) {
+  try {
+    const {
+      page = '1',
+      limit = '10',
+      communityId,
+    } = req.query;
+
+    const pageNum = Math.max(parseInt(page as string, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 10, 1), 50);
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {
+      type: 'market',
+      status: {
+        in: ['published', 'ended'],
+      },
+    };
+
+    if (communityId) {
+      where.communityId = communityId as string;
+    }
+
+    const [activities, total] = await Promise.all([
+      prisma.communityActivity.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: [
+          { startTime: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        include: {
+          community: {
+            select: {
+              id: true,
+              name: true,
+              images: true,
+              address: true,
+              verificationStatus: true,
+            },
+          },
+        },
+      }),
+      prisma.communityActivity.count({ where }),
+    ]);
+
+    const now = new Date();
+
+    const feed = activities.map((activity) => {
+      const start = activity.startTime ? new Date(activity.startTime) : null;
+      const end = activity.endTime ? new Date(activity.endTime) : null;
+      const isLive = !!start && start <= now && (!end || end > now) && activity.status === 'published';
+      const isUpcoming = !!start && start > now;
+
+      return {
+        id: activity.id,
+        title: activity.title,
+        description: activity.description,
+        startTime: activity.startTime,
+        endTime: activity.endTime,
+        location: activity.location,
+        status: activity.status,
+        images: activity.images || [],
+        isLive,
+        isUpcoming,
+        coverImage: activity.images?.[0] || activity.community?.images?.[0] || null,
+        community: {
+          id: activity.community?.id,
+          name: activity.community?.name,
+          coverImage: activity.community?.images?.[0] || null,
+          address: activity.community?.address,
+          verificationStatus: activity.community?.verificationStatus,
+        },
+      };
+    });
+
+    return createSuccessResponse(res, {
+      activities: feed,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error('获取跳蚤市场活动失败:', error);
+    return createErrorResponse(res, '获取跳蚤市场活动失败', 500);
+  }
+}
+
+/**
  * 退出小区
  */
 export async function leaveCommunity(req: Request, res: Response) {

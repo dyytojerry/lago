@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
@@ -101,12 +100,11 @@ export default function ChatPage() {
               >
                 {msg.type === 'text' && <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
                 {msg.type === 'image' && msg.fileUrl && (
-                  <Image
+                  <img
                     src={msg.fileUrl}
                     alt="消息图片"
-                    width={200}
-                    height={200}
-                    className="rounded"
+                    className="max-w-[200px] rounded"
+                    loading="lazy"
                   />
                 )}
                 {msg.type === 'product_card' && msg.productId && (

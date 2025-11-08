@@ -14,6 +14,9 @@ export async function getProductsForApp(req: Request, res: Response) {
       type,
       search,
       communityId,
+      cityId,
+      districtId,
+      provinceId,
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = req.query;
@@ -36,6 +39,21 @@ export async function getProductsForApp(req: Request, res: Response) {
 
     if (communityId) {
       where.communityId = communityId;
+    }
+
+    const communityWhere: any = {};
+    if (provinceId) {
+      communityWhere.provinceId = provinceId;
+    }
+    if (cityId) {
+      communityWhere.cityId = cityId;
+    }
+    if (districtId) {
+      communityWhere.districtId = districtId;
+    }
+
+    if (Object.keys(communityWhere).length > 0) {
+      where.community = communityWhere;
     }
 
     if (search) {

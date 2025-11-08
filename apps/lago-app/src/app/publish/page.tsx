@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Loading } from '@/components/Loading';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -116,13 +115,7 @@ export default function PublishPage() {
             <div className="grid grid-cols-3 gap-3">
               {imagePreviews.map((preview, index) => (
                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <Image
-                    src={preview}
-                    alt={`Preview ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 33vw, 200px"
-                  />
+                  <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(index)}

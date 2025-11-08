@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Image from 'next/image';
 import { apiRequest } from '@lago/common';
 import { MapPin, Shield, CheckCircle, XCircle, Users, Package, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -128,12 +127,11 @@ export default function CommunityDetailPage() {
             <div className="flex items-center gap-4">
               {community.images?.[0] ? (
                 <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-                  <Image
+                  <img
                     src={community.images[0]}
                     alt={community.name}
-                    fill
-                    className="object-cover"
-                    sizes="96px"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
               ) : (
@@ -236,12 +234,11 @@ export default function CommunityDetailPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">营业执照</label>
               {community.verification.licenseUrl && (
                 <div className="relative w-full max-w-md h-48 rounded-lg overflow-hidden border border-gray-200">
-                  <Image
+                  <img
                     src={community.verification.licenseUrl}
                     alt="营业执照"
-                    fill
-                    className="object-contain"
-                    sizes="400px"
+                    className="w-full h-full object-contain"
+                    loading="lazy"
                   />
                 </div>
               )}
@@ -252,12 +249,11 @@ export default function CommunityDetailPage() {
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">其他证明资料</label>
                 <div className="relative w-full max-w-md h-48 rounded-lg overflow-hidden border border-gray-200">
-                  <Image
+                  <img
                     src={community.verification.proofUrl}
                     alt="证明资料"
-                    fill
-                    className="object-contain"
-                    sizes="400px"
+                    className="w-full h-full object-contain"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -303,12 +299,11 @@ export default function CommunityDetailPage() {
                   key={index}
                   className="relative aspect-square rounded-lg overflow-hidden border border-gray-200"
                 >
-                  <Image
+                  <img
                     src={image}
                     alt={`${community.name} ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 25vw, 200px"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
               ))}
