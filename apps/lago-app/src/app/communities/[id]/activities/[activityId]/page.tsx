@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { apiRequest } from '@lago/common';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
 import {
@@ -13,6 +12,7 @@ import {
   Share2,
   Users,
 } from 'lucide-react';
+import { communities, CommunitiesPathParams } from '@/lib/apis';
 
 interface CommunityActivity {
   id: string;
@@ -69,13 +69,11 @@ export default function ActivityDetailPage() {
     async function loadActivity() {
       try {
         setLoading(true);
-        const response = await apiRequest<CommunityResponse>(`/api/communities/${communityId}`, {
-          method: 'GET',
-          noAuthorize: true,
-        });
-        if (response.success && response.data?.community) {
-          setCommunity(response.data.community);
-          const found = response.data.community.activities.find((item) => item.id === activityId);
+        const response = await communities({ id: communityId } as CommunitiesPathParams, true);
+        const data = response.data as CommunityResponse | undefined;
+        if (response.success && data?.community) {
+          setCommunity(data.community);
+          const found = data.community.activities.find((item) => item.id === activityId);
           setActivity(found || null);
         } else {
           setCommunity(null);

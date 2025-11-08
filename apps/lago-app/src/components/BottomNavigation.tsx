@@ -77,10 +77,10 @@ export function BottomNavigation() {
           aria-label="跳蚤市场"
         >
           <span
-            className={`flex flex-col items-center justify-center w-16 h-16 rounded-full border-2 shadow-md transition-all ${
+            className={`flex flex-col items-center justify-center w-16 h-16 rounded-full shadow-md transition-all ${
               fleaActive
-                ? 'border-primary bg-gradient-to-br from-primary to-primary/80 text-white'
-                : 'border-transparent bg-gradient-to-br from-amber-400 to-orange-500 text-white'
+                ? 'bg-gradient-to-br from-primary to-primary/80 text-white'
+                : 'bg-gradient-to-br from-amber-400 to-orange-500 text-white'
             }`}
           >
             <span className="text-base font-semibold leading-none">跳蚤</span>

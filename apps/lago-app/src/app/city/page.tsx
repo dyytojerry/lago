@@ -6,9 +6,8 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { ProductCard } from '@/components/ProductCard';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
-import { apiRequest } from '@lago/common';
-import { communitieNearby } from '@/lib/apis/communities';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { communitieNearby, productsPublic, ProductPublicQueryParams } from '@/lib/apis';
 import {
   Search,
   MapPin,
@@ -77,14 +76,14 @@ const CATEGORY_FILTERS = [
   { id: 'all', label: '全部', value: '' },
   { id: 'toys', label: '玩具', value: 'toys' },
   { id: 'gaming', label: '电玩', value: 'gaming' },
-];
+] as const;
 
 const SORT_FILTERS = [
   { id: 'createdAt', label: '最新发布', sortBy: 'createdAt', sortOrder: 'desc' },
   { id: 'priceLow', label: '价格从低到高', sortBy: 'price', sortOrder: 'asc' },
   { id: 'priceHigh', label: '价格从高到低', sortBy: 'price', sortOrder: 'desc' },
   { id: 'popular', label: '人气优先', sortBy: 'viewCount', sortOrder: 'desc' },
-];
+] as const;
 
 export default function CityPage() {
   const router = useRouter();
@@ -155,7 +154,7 @@ export default function CityPage() {
       if (loading) return;
       setLoading(true);
       try {
-        const params: Record<string, string> = {
+        const queryParams: ProductPublicQueryParams = {
           page: String(page),
           limit: String(pagination.limit),
           sortBy,
@@ -163,22 +162,16 @@ export default function CityPage() {
         };
 
         if (cityId) {
-          params.cityId = cityId;
+          queryParams.cityId = cityId;
         }
         if (category) {
-          params.category = category;
+          queryParams.category = category as ProductPublicQueryParams['category'];
         }
         if (searchKeyword.trim()) {
-          params.search = searchKeyword.trim();
+          queryParams.search = searchKeyword.trim();
         }
 
-        const response = await apiRequest<{ products: Product[]; pagination: Pagination }>(
-          '/api/public/products',
-          {
-            method: 'GET',
-            params,
-          }
-        );
+        const response = await productsPublic(queryParams, true);
 
         if (response.success && response.data) {
           setPagination(response.data.pagination);

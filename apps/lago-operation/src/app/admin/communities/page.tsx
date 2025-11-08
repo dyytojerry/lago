@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiRequest } from '@lago/common';
 import { MapPin, Shield, CheckCircle, XCircle, Clock, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import {
+  adminCommunities,
+  adminCommunitiesApprove,
+  adminCommunitiesReject,
+} from '@/lib/apis';
 
 interface Community {
   id: string;
@@ -60,13 +64,7 @@ export default function CommunitiesPage() {
         params.verificationStatus = statusFilter;
       }
 
-      const response = await apiRequest<{
-        communities: Community[];
-        pagination: { page: number; limit: number; total: number; totalPages: number };
-      }>('/api/admin/communities', {
-        method: 'GET',
-        params,
-      });
+      const response = await adminCommunities(params);
 
       if (response.success && response.data) {
         setCommunities(response.data.communities || []);
@@ -84,9 +82,7 @@ export default function CommunitiesPage() {
     if (!confirm('确定要通过该小区的认证申请吗？')) return;
 
     try {
-      const response = await apiRequest(`/api/admin/communities/${communityId}/approve`, {
-        method: 'POST',
-      });
+      const response = await adminCommunitiesApprove({ id: communityId });
       if (response.success) {
         toast.success('认证审批通过');
         loadCommunities();
@@ -101,10 +97,7 @@ export default function CommunitiesPage() {
     if (!reason) return;
 
     try {
-      const response = await apiRequest(`/api/admin/communities/${communityId}/reject`, {
-        method: 'POST',
-        body: JSON.stringify({ reason }),
-      });
+      const response = await adminCommunitiesReject({ id: communityId }, { reason });
       if (response.success) {
         toast.success('认证审批已拒绝');
         loadCommunities();

@@ -6,7 +6,6 @@ import { Loading } from "@/components/Loading";
 import { EmptyState } from "@/components/EmptyState";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { LocationSelector } from "@/components/LocationSelector";
-import { apiRequest } from "@lago/common";
 import {
   MapPin,
   Users,
@@ -97,22 +96,26 @@ export default function CommunitySearchPage() {
       if (districtId) params.districtId = districtId;
       if (communityId) params.communityId = communityId;
       if (verificationStatus) params.verificationStatus = verificationStatus;
-      let response = null;
       if (!searchQuery && latitude !== undefined && longitude !== undefined) {
-        params.latitude = String(latitude);
-        params.longitude = String(longitude);
-        params.radius = "5000";
-        response = await communitieNearby(params, true);
-        if (response.success && response.data?.communities) {
-          setCommunities(response.data.communities);
-          setPagination({
-            ...pagination,
-            total: response.data.total,
-            totalPages: response.data.totalPages,
-          });
+        const nearbyResponse = await communitieNearby(
+          {
+            latitude,
+            longitude,
+            radius: 5000,
+          },
+          true
+        );
+        if (nearbyResponse.success && nearbyResponse.data?.communities) {
+          setCommunities(nearbyResponse.data.communities);
+          setPagination((prev) => ({
+            ...prev,
+            total: nearbyResponse.data.communities.length,
+            totalPages: 1,
+            page: 1,
+          }));
         }
       } else {
-        response = await communitieSearch(params, true);
+        const response = await communitieSearch(params, true);
         if (response.success && response.data?.communities) {
           setCommunities(response.data.communities);
           setPagination(response.data.pagination);

@@ -7,10 +7,14 @@ import { ProductCard } from "@/components/ProductCard";
 import { BannerSwiper } from "@/components/BannerSwiper";
 import { Loading } from "@/components/Loading";
 import { EmptyState } from "@/components/EmptyState";
-import { apiRequest } from "@lago/common";
 import { useAuth } from "@lago/ui";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { communitieMy, communitieNearby, productDetail } from "@/lib/apis";
+import {
+  communitieMy,
+  communitieNearby,
+  productDetail,
+  communitieActivities,
+} from "@/lib/apis";
 import {
   Bell,
   MapPin,
@@ -58,28 +62,14 @@ interface CommunityActivityItem {
   description?: string;
   images: string[];
   startTime?: string;
+  endTime?: string;
   location?: string;
+  status: string;
+  isLive?: boolean;
+  isUpcoming?: boolean;
   communityId: string;
   communityName: string;
-  communityCover?: string;
-}
-
-interface CommunityDetailResponse {
-  community: {
-    id: string;
-    name: string;
-    description?: string;
-    images: string[];
-    activities: Array<{
-      id: string;
-      title: string;
-      description?: string;
-      images: string[];
-      startTime?: string;
-      location?: string;
-      status: string;
-    }>;
-  };
+  communityCover?: string | null;
 }
 
 const DEFAULT_BANNERS = [
@@ -117,11 +107,11 @@ export default function HomePage() {
   const [productsLoading, setProductsLoading] = useState(false);
 
   const [activityFeed, setActivityFeed] = useState<CommunityActivityItem[]>([]);
-  const [activityCursor, setActivityCursor] = useState(0);
+  const [activityPage, setActivityPage] = useState(1);
   const [activityLoading, setActivityLoading] = useState(false);
   const [hasMoreActivities, setHasMoreActivities] = useState(true);
-  const loadedCommunityIdsRef = useRef<Set<string>>(new Set());
   const activityObserverRef = useRef<HTMLDivElement | null>(null);
+  const ACTIVITY_PAGE_SIZE = 10;
 
   useEffect(() => {
     if (!geoLoading && latitude && longitude) {
@@ -180,6 +170,12 @@ export default function HomePage() {
     return communitySequence[0]?.id;
   }, [communitySequence]);
 
+  const communityIds = useMemo(
+    () => communitySequence.map((community) => community.id),
+    [communitySequence]
+  );
+  const communityIdsKey = communityIds.join(",");
+
   useEffect(() => {
     if (!primaryCommunityId) {
       setCommunityProducts([]);
@@ -214,90 +210,95 @@ export default function HomePage() {
   }, [primaryCommunityId]);
 
   const loadMoreActivities = useCallback(async () => {
-    if (activityLoading || !hasMoreActivities) return;
+    if (activityLoading || !hasMoreActivities || communityIds.length === 0) {
+      return;
+    }
+
+    const currentPage = activityPage;
 
     try {
       setActivityLoading(true);
 
-      let nextIndex = activityCursor;
-      const newFeed: CommunityActivityItem[] = [];
+      const response = await communitieActivities(
+        {
+          communityIds,
+          page: currentPage,
+          limit: ACTIVITY_PAGE_SIZE,
+        },
+        true
+      );
 
-      while (nextIndex < communitySequence.length) {
-        const community = communitySequence[nextIndex];
-        nextIndex += 1;
-
-        if (!community || loadedCommunityIdsRef.current.has(community.id)) {
-          continue;
-        }
-
-        loadedCommunityIdsRef.current.add(community.id);
-
-        try {
-          const detailResponse = await apiRequest<CommunityDetailResponse>(
-            `/api/communities/${community.id}`,
-            {
-              method: "GET",
-              noAuthorize: true,
-            }
-          );
-
-          const activities = detailResponse.data?.community?.activities || [];
-          if (activities.length > 0) {
-            for (const activity of activities) {
-              newFeed.push({
-                id: activity.id,
-                title: activity.title,
-                description: activity.description,
-                images: activity.images || [],
-                startTime: activity.startTime,
-                location: activity.location,
-                communityId: community.id,
-                communityName:
-                  detailResponse.data?.community?.name || community.name,
-                communityCover:
-                  activity.images?.[0] ||
-                  detailResponse.data?.community?.images?.[0] ||
-                  community.images?.[0],
-              });
-            }
-            break;
+      const activities = ((response.data?.activities as any[] | undefined) || [])
+        .map((activity) => {
+          if (!activity.communityId || !activity.communityName) {
+            return null;
           }
-        } catch (error) {
-          console.error("加载小区活动失败:", error);
-        }
+          return {
+            id: activity.id,
+            title: activity.title,
+            description: activity.description,
+            images: activity.images || [],
+            startTime: activity.startTime,
+            endTime: activity.endTime,
+            location: activity.location,
+            status: activity.status,
+            isLive: activity.isLive,
+            isUpcoming: activity.isUpcoming,
+            communityId: String(activity.communityId),
+            communityName: String(activity.communityName),
+            communityCover:
+              activity.communityCover ||
+              activity.images?.[0] ||
+              null,
+          } as CommunityActivityItem;
+        })
+        .filter(Boolean) as CommunityActivityItem[];
+
+      if (activities.length > 0) {
+        setActivityFeed((prev) => [...prev, ...activities]);
       }
 
-      setActivityCursor(nextIndex);
-
-      if (newFeed.length > 0) {
-        setActivityFeed((prev) => [...prev, ...newFeed]);
-      }
-
-      if (nextIndex >= communitySequence.length) {
+      const pagination = response.data?.pagination;
+      if (pagination) {
+        setHasMoreActivities(pagination.page < pagination.totalPages);
+        setActivityPage(pagination.page + 1);
+      } else {
         setHasMoreActivities(false);
       }
+
+      if (activities.length === 0) {
+        setHasMoreActivities(false);
+      }
+    } catch (error) {
+      console.error("加载小区活动失败:", error);
     } finally {
       setActivityLoading(false);
     }
-  }, [activityCursor, activityLoading, communitySequence, hasMoreActivities]);
+  }, [
+    ACTIVITY_PAGE_SIZE,
+    activityLoading,
+    hasMoreActivities,
+    communityIds,
+    activityPage,
+  ]);
 
   useEffect(() => {
     setActivityFeed([]);
-    setActivityCursor(0);
-    setHasMoreActivities(true);
-    loadedCommunityIdsRef.current.clear();
-  }, [communitySequence]);
+    setActivityPage(1);
+    setHasMoreActivities(communityIds.length > 0);
+  }, [communityIdsKey, communityIds.length]);
 
   useEffect(() => {
     if (
-      communitySequence.length === 0 ||
+      communityIds.length === 0 ||
       activityFeed.length > 0 ||
       activityLoading
     )
       return;
     loadMoreActivities();
   }, [
-    communitySequence,
+    communityIdsKey,
+    communityIds.length,
     activityFeed.length,
     activityLoading,
     loadMoreActivities,
@@ -533,9 +534,21 @@ export default function HomePage() {
                     <span className="bg-black/50 text-white text-xs px-3 py-1 rounded-full">
                       {activity.communityName}
                     </span>
-                    <span className="bg-white/80 text-primary text-xs px-3 py-1 rounded-full flex items-center gap-1">
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full flex items-center gap-1 ${
+                        activity.isLive
+                          ? "bg-red-500 text-white"
+                          : activity.isUpcoming
+                          ? "bg-amber-500/90 text-white"
+                          : "bg-white/80 text-primary"
+                      }`}
+                    >
                       <Play className="w-3 h-3" />
-                      走进活动
+                      {activity.isLive
+                        ? "直播中"
+                        : activity.isUpcoming
+                        ? "即将开始"
+                        : "查看活动"}
                     </span>
                   </div>
                 </div>

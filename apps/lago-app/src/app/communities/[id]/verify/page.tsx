@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { Loading } from '@/components/Loading';
-import { apiRequest } from '@lago/common';
 import { Upload, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { communitieVerify, CommunitieVerifyDTO, CommunitieVerifyPathParams } from '@/lib/apis';
 
 export default function CommunityVerifyPage() {
   const router = useRouter();
@@ -40,13 +39,15 @@ export default function CommunityVerifyPage() {
 
     setSubmitting(true);
     try {
-      const response = await apiRequest(`/api/communities/${communityId}/verify`, {
-        method: 'POST',
-        body: JSON.stringify(formData),
-      });
+      const response = await communitieVerify(
+        { id: communityId } as CommunitieVerifyPathParams,
+        formData as CommunitieVerifyDTO
+      );
       if (response.success) {
         toast.success('认证申请已提交，请等待审核');
         router.back();
+      } else {
+        toast.error(response.message || '提交失败');
       }
     } catch (error: any) {
       toast.error(error.message || '提交失败');

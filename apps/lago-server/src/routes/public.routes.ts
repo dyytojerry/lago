@@ -6,6 +6,7 @@ import {
   searchCommunities,
   getCommunity,
   getMarketActivitiesFeed,
+  getActivitiesByCommunityIds,
 } from '../controllers/communities.app.controller';
 import {
   getProductsForApp,
@@ -167,6 +168,71 @@ router.get(
     })
   ),
   searchCommunities
+);
+
+/**
+ * @swagger
+ * /api/communities/activities:
+ *   get:
+ *     summary: 根据小区ID批量获取活动
+ *     tags: [Communities, Public]
+ *     parameters:
+ *       - in: query
+ *         name: communityIds
+ *         schema:
+ *           type: string
+ *         description: 小区ID列表，多个以逗号分隔
+ *         required: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: string
+ *         description: 页码
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: string
+ *         description: 每页数量
+ *     responses:
+ *       200:
+ *         description: 获取成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   required: ['data']
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         activities:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             description: 小区活动信息
+ *                             additionalProperties: true
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *                       required: ['activities', 'pagination']
+ *       400:
+ *         description: 请求参数错误
+ *       500:
+ *         description: 服务器内部错误
+ */
+router.get(
+  '/communities/activities',
+  validateRequest(
+    Joi.object({
+      query: Joi.object({
+        communityIds: Joi.string().required(),
+        page: Joi.string().optional(),
+        limit: Joi.string().optional(),
+      }),
+    })
+  ),
+  getActivitiesByCommunityIds
 );
 
 /**

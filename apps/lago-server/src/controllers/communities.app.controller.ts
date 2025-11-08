@@ -474,6 +474,104 @@ export async function getMarketActivitiesFeed(req: Request, res: Response) {
 }
 
 /**
+ * 根据小区ID批量获取活动
+ */
+export async function getActivitiesByCommunityIds(req: Request, res: Response) {
+  try {
+    const { communityIds, page = '1', limit = '10' } = req.query;
+
+    if (!communityIds) {
+      return createErrorResponse(res, '缺少 communityIds 参数', 400);
+    }
+
+    const ids = Array.isArray(communityIds)
+      ? (communityIds as string[]).map((id) => id.trim()).filter(Boolean)
+      : (communityIds as string)
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean);
+
+    if (ids.length === 0) {
+      return createErrorResponse(res, '缺少有效的小区ID', 400);
+    }
+
+    const pageNum = Math.max(parseInt(page as string, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 10, 1), 50);
+    const skip = (pageNum - 1) * limitNum;
+
+    const where = {
+      communityId: { in: ids },
+      status: { in: ['published', 'scheduled', 'ended'] as const },
+    };
+
+    const [activities, total] = await Promise.all([
+      prisma.communityActivity.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: [
+          { startTime: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        include: {
+          community: {
+            select: {
+              id: true,
+              name: true,
+              images: true,
+              address: true,
+              verificationStatus: true,
+            },
+          },
+        },
+      }),
+      prisma.communityActivity.count({ where }),
+    ]);
+
+    const now = new Date();
+
+    const items = activities.map((activity) => {
+      const start = activity.startTime ? new Date(activity.startTime) : null;
+      const end = activity.endTime ? new Date(activity.endTime) : null;
+      const isLive =
+        !!start && start <= now && (!end || end > now) && activity.status === 'published';
+      const isUpcoming = !!start && start > now;
+
+      return {
+        id: activity.id,
+        title: activity.title,
+        description: activity.description,
+        startTime: activity.startTime,
+        endTime: activity.endTime,
+        location: activity.location,
+        status: activity.status,
+        images: activity.images || [],
+        isLive,
+        isUpcoming,
+        communityId: activity.community?.id,
+        communityName: activity.community?.name,
+        communityCover: activity.community?.images?.[0] || null,
+        communityAddress: activity.community?.address,
+        communityVerificationStatus: activity.community?.verificationStatus,
+      };
+    });
+
+    return createSuccessResponse(res, {
+      activities: items,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error('批量获取小区活动失败:', error);
+    return createErrorResponse(res, '获取小区活动失败', 500);
+  }
+}
+
+/**
  * 退出小区
  */
 export async function leaveCommunity(req: Request, res: Response) {

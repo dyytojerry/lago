@@ -6,7 +6,6 @@ import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
 import { BannerSwiper } from '@/components/BannerSwiper';
 import { ProductCard } from '@/components/ProductCard';
-import { apiRequest } from '@lago/common';
 import { useAuth } from '@lago/ui';
 import {
   ArrowLeft,
@@ -22,7 +21,12 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import MediaPreview from '@lago/ui/src/components/MediaPreview';
-import { productDetail } from '@/lib/apis';
+import {
+  productDetail,
+  communities,
+  communitieJoin,
+  communitieLeave,
+} from '@/lib/apis';
 
 interface CommunityMember {
   id: string;
@@ -113,12 +117,10 @@ export default function CommunityDetailPage() {
     async function loadCommunity() {
       try {
         setLoading(true);
-        const response = await apiRequest<CommunityResponse>(`/api/communities/${communityId}`, {
-          method: 'GET',
-          noAuthorize: true,
-        });
-        if (response.success && response.data?.community) {
-          setCommunity(response.data.community);
+        const response = await communities({ id: communityId }, true);
+        const data = response.data as CommunityResponse | undefined;
+        if (response.success && data?.community) {
+          setCommunity(data.community);
         } else {
           setCommunity(null);
         }
@@ -175,18 +177,16 @@ export default function CommunityDetailPage() {
     }
 
     try {
-      const response = await apiRequest(`/api/communities/${communityId}/join`, {
-        method: 'POST',
-      });
+      const response = await communitieJoin({ id: communityId });
       if (response.success) {
         toast.success('加入小区成功');
-        const refresh = await apiRequest<CommunityResponse>(`/api/communities/${communityId}`, {
-          method: 'GET',
-          noAuthorize: true,
-        });
-        if (refresh.success && refresh.data?.community) {
-          setCommunity(refresh.data.community);
+        const refresh = await communities({ id: communityId }, true);
+        const refreshData = refresh.data as CommunityResponse | undefined;
+        if (refresh.success && refreshData?.community) {
+          setCommunity(refreshData.community);
         }
+      } else {
+        toast.error(response.message || '加入小区失败');
       }
     } catch (error: any) {
       toast.error(error.message || '加入失败');
@@ -195,18 +195,16 @@ export default function CommunityDetailPage() {
 
   const handleLeave = async () => {
     try {
-      const response = await apiRequest(`/api/communities/${communityId}/leave`, {
-        method: 'POST',
-      });
+      const response = await communitieLeave({ id: communityId });
       if (response.success) {
         toast.success('已退出小区');
-        const refresh = await apiRequest<CommunityResponse>(`/api/communities/${communityId}`, {
-          method: 'GET',
-          noAuthorize: true,
-        });
-        if (refresh.success && refresh.data?.community) {
-          setCommunity(refresh.data.community);
+        const refresh = await communities({ id: communityId }, true);
+        const refreshData = refresh.data as CommunityResponse | undefined;
+        if (refresh.success && refreshData?.community) {
+          setCommunity(refreshData.community);
         }
+      } else {
+        toast.error(response.message || '退出小区失败');
       }
     } catch (error: any) {
       toast.error(error.message || '退出失败');

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { apiRequest } from '@lago/common';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
+import { communities, CommunitiesPathParams } from '@/lib/apis';
 import { ArrowLeft, Calendar, Users, MapPin, Video } from 'lucide-react';
 
 interface CommunityActivity {
@@ -50,10 +50,10 @@ export default function FleaMarketLivePage() {
 
       try {
         setLoading(true);
-        const response = await apiRequest<CommunityResponse>(`/api/communities/${communityId}`, {
-          method: 'GET',
-          noAuthorize: true,
-        });
+        const response = await communities(
+          { id: communityId } as CommunitiesPathParams,
+          true
+        );
 
         if (response.success && response.data?.community) {
           const community = response.data.community;
