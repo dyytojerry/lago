@@ -7,11 +7,17 @@ if (!JWT_SECRET && process.env.NODE_ENV !== 'development') {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
+if (!JWT_REFRESH_SECRET && process.env.NODE_ENV !== 'development') {
+  throw new Error('JWT_REFRESH_SECRET environment variable is required');
+}
+
 // 应用端 Token Payload
 export interface UserJWTPayload {
   userId: string;
   role: string;
   type: 'user';
+  tokenKind?: 'access' | 'refresh';
   iat?: number;
   exp?: number;
 }
@@ -21,6 +27,7 @@ export interface OperationJWTPayload {
   staffId: string;
   role: string;
   type: 'operation';
+  tokenKind?: 'access' | 'refresh';
   iat?: number;
   exp?: number;
 }
@@ -37,6 +44,7 @@ export function generateUserToken(payload: { userId: string; role: string }): st
     {
       ...payload,
       type: 'user',
+      tokenKind: 'access',
     },
     secret,
     { expiresIn: '7d' }
@@ -52,9 +60,42 @@ export function generateOperationToken(payload: { staffId: string; role: string 
     {
       ...payload,
       type: 'operation',
+      tokenKind: 'access',
     },
     secret,
     { expiresIn: '1d' }
+  );
+}
+
+/**
+ * 生成应用端用户 Refresh Token
+ */
+export function generateUserRefreshToken(payload: { userId: string; role: string }): string {
+  const secret = JWT_REFRESH_SECRET || 'dev-refresh-secret';
+  return jwt.sign(
+    {
+      ...payload,
+      type: 'user',
+      tokenKind: 'refresh',
+    },
+    secret,
+    { expiresIn: '30d' }
+  );
+}
+
+/**
+ * 生成运营端 Refresh Token
+ */
+export function generateOperationRefreshToken(payload: { staffId: string; role: string }): string {
+  const secret = JWT_REFRESH_SECRET || 'dev-refresh-secret';
+  return jwt.sign(
+    {
+      ...payload,
+      type: 'operation',
+      tokenKind: 'refresh',
+    },
+    secret,
+    { expiresIn: '14d' }
   );
 }
 
@@ -68,6 +109,23 @@ export function verifyToken(token: string): JWTPayload | null {
     return decoded;
   } catch (error) {
     console.error('Token verification error:', error);
+    return null;
+  }
+}
+
+/**
+ * 验证 Refresh Token
+ */
+export function verifyRefreshToken(token: string): JWTPayload | null {
+  try {
+    const secret = JWT_REFRESH_SECRET || 'dev-refresh-secret';
+    const decoded = jwt.verify(token, secret) as JWTPayload;
+    if (decoded.tokenKind !== 'refresh') {
+      return null;
+    }
+    return decoded;
+  } catch (error) {
+    console.error('Refresh token verification error:', error);
     return null;
   }
 }

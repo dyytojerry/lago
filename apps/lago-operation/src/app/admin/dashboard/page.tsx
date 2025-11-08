@@ -45,14 +45,6 @@ export default function DashboardPage() {
   const [trends, setTrends] = useState<TrendData | null>(null);
   const [loading, setLoading] = useState(true);
   const { isLoggedIn } = useAuth();
-  useEffect(() => {
-    if (!isLoggedIn) {
-      router.push("/login");
-      return;
-    }
-
-    loadData();
-  }, [router]);
 
   const loadData = async () => {
     try {

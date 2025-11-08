@@ -8,10 +8,11 @@ import React, {
   ReactNode,
   useCallback,
   useRef,
+  useMemo,
 } from "react";
 import toast from "react-hot-toast";
 import {
-  storage,
+  StorageManager,
   defaultRequestOptions,
   HTTPResponse,
   redirectToLogin,
@@ -23,7 +24,8 @@ export const setRequestOptions = (
   authRefresh: (
     data: { refreshToken: string },
     noAuthorize?: boolean
-  ) => Promise<HTTPResponse<any>>
+  ) => Promise<HTTPResponse<any>>,
+  storage: StorageManager
 ) => {
   defaultRequestOptions.fallback = async (
     statusCode: number,
@@ -81,14 +83,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({
   children,
   authApi,
+  prefix
 }: {
   children: ReactNode;
   authApi: any;
+  prefix: string;
 }) {
-  const { authMe, authLogin, authLogout } = authApi;
+  const { authMe, authLogin, authLogout, authRefresh } = authApi;
   const [auth, setAuth] = useState<(AuthResponse & { pet?: any }) | null>(null);
   const audio = useAudio();
   const [isLoading, setIsLoading] = useState(true);
+  const storage = useMemo(() => {
+    const storage = new StorageManager("lago_" + prefix);
+    setRequestOptions(authRefresh, storage);
+    return storage;
+  }, []);
 
   const onceRef = useRef<boolean>();
 

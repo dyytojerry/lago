@@ -9,13 +9,14 @@ import {
   MiniprogramProvider,
 } from "@lago/ui";
 import { Toaster } from "react-hot-toast";
-import { authLogin, authLogout, authMe } from "@/lib/apis";
+import { authLogin, authLogout, authMe, authRefresh } from "@/lib/apis";
 
 // 定义 authApi 对象（小程序端）
 const authApi = {
   authMe: authMe,
   authLogin: authLogin,
   authLogout: authLogout,
+  authRefresh: authRefreshToken,
 };
 
 export default function RootLayout({

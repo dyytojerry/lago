@@ -28,7 +28,7 @@ localforage.defineDriver({
     return Array.from(memoryStorage.keys());
   },
   iterate: async (iterator: (value: any, key: string, iterationNumber: number) => any) => {
-    let result = null;
+    let result: any = null;
     memoryStorage.forEach(async (value, key) => {
       result = await iterator(value, key, memoryStorage.size);
     });
@@ -39,14 +39,14 @@ localforage.defineDriver({
 // 配置 localforage
 localforage.config({
   driver: typeof window === 'undefined' ?  'memoryDriver': localforage.INDEXEDDB, // 优先使用 IndexedDB
-  name: 'PiggyBank',
+  name: 'Lago',
   version: 1.0,
-  storeName: 'piggybank_storage',
-  description: 'PiggyBank application storage'
+  storeName: 'lago_storage',
+  description: 'lago application storage'
 });
 
 // 存储前缀
-const STORAGE_PREFIX = 'piggybank_';
+const STORAGE_PREFIX = 'lago_';
 
 /**
  * 带前缀的存储工具类
