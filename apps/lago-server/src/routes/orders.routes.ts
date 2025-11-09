@@ -32,14 +32,16 @@ router.use(authOperation);
  *       - in: query
  *         name: page
  *         schema:
- *           type: string
- *           default: "1"
+ *           type: number
+ *           minimum: 1
+ *           default: 1
  *         description: 页码
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
- *           default: "20"
+ *           type: number
+ *           minimum: 1
+ *           default: 20
  *         description: 每页数量
  *       - in: query
  *         name: status
@@ -107,8 +109,8 @@ router.get(
   validateRequest(
     Joi.object({
       query: Joi.object({
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).optional(),
         status: Joi.string().valid('pending', 'paid', 'confirmed', 'completed', 'cancelled', 'refunded').optional(),
         type: Joi.string().valid('rent', 'sell').optional(),
         buyerId: Joi.string().optional(),

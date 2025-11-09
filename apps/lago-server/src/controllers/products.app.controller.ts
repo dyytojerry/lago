@@ -8,8 +8,8 @@ import { createSuccessResponse, createErrorResponse } from '../lib/response';
 export async function getProductsForApp(req: Request, res: Response) {
   try {
     const {
-      page = '1',
-      limit = '20',
+      page = 1,
+      limit = 20,
       category,
       type,
       search,
@@ -19,10 +19,22 @@ export async function getProductsForApp(req: Request, res: Response) {
       provinceId,
       sortBy = 'createdAt',
       sortOrder = 'desc',
-    } = req.query;
+    } = req.query as {
+      page?: number;
+      limit?: number;
+      category?: string;
+      type?: string;
+      search?: string;
+      communityId?: string;
+      cityId?: string;
+      districtId?: string;
+      provinceId?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    };
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {
@@ -179,8 +191,8 @@ export async function getProductForApp(req: Request, res: Response) {
  */
 export async function getRecommendedProducts(req: Request, res: Response) {
   try {
-    const { limit = '10' } = req.query;
-    const limitNum = parseInt(limit as string);
+    const { limit = 10 } = req.query as { limit?: number };
+    const limitNum = limit ?? 10;
     const userId = req.user?.id;
 
     // 获取用户所在的小区
@@ -241,17 +253,25 @@ export async function getRecommendedProducts(req: Request, res: Response) {
 export async function getHotProducts(req: Request, res: Response) {
   try {
     const {
-      page = '1',
-      limit = '10',
+      page = 1,
+      limit = 10,
       sortBy = 'viewCount',
       sortOrder = 'desc',
       cityId,
       category,
       search,
-    } = req.query;
+    } = req.query as {
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+      cityId?: string;
+      category?: string;
+      search?: string;
+    };
 
-    const pageNum = Math.max(parseInt(page as string, 10) || 1, 1);
-    const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 10, 1), 100);
+    const pageNum = Math.max(page ?? 1, 1);
+    const limitNum = Math.min(Math.max(limit ?? 10, 1), 100);
     const skip = (pageNum - 1) * limitNum;
 
     const sortableFields = ['viewCount', 'likeCount', 'createdAt', 'price'] as const;

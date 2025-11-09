@@ -119,7 +119,7 @@ app.get('/health', (_req, res) => {
 
 // 路由
 app.use('/api', publicRoutes);
-app.use('/api/auth', authUser, authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/share', authUser, shareRoutes);
 app.use('/api/products', authUser,productsAppRoutes);
 app.use('/api/orders', authUser, ordersAppRoutes);

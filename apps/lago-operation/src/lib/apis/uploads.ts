@@ -131,7 +131,6 @@ export function useUploadSingle(
     onSuccess: () => {
       // 清除相关缓存
       queryClient.invalidateQueries({ queryKey: ['uploads'] });
-      queryClient.invalidateQueries({ queryKey: ['app'] });
     },
     onError: (error: any) => {
       console.error('Mutation failed:', error);
@@ -153,7 +152,6 @@ export function useUploadMultipartInit(
     onSuccess: () => {
       // 清除相关缓存
       queryClient.invalidateQueries({ queryKey: ['uploads'] });
-      queryClient.invalidateQueries({ queryKey: ['app'] });
     },
     onError: (error: any) => {
       console.error('Mutation failed:', error);
@@ -175,7 +173,6 @@ export function useUploadMultipartPart(
     onSuccess: () => {
       // 清除相关缓存
       queryClient.invalidateQueries({ queryKey: ['uploads'] });
-      queryClient.invalidateQueries({ queryKey: ['app'] });
     },
     onError: (error: any) => {
       console.error('Mutation failed:', error);
@@ -197,7 +194,6 @@ export function useUploadMultipartComplete(
     onSuccess: () => {
       // 清除相关缓存
       queryClient.invalidateQueries({ queryKey: ['uploads'] });
-      queryClient.invalidateQueries({ queryKey: ['app'] });
     },
     onError: (error: any) => {
       console.error('Mutation failed:', error);
@@ -219,7 +215,6 @@ export function useUploadMultipartAbort(
     onSuccess: () => {
       // 清除相关缓存
       queryClient.invalidateQueries({ queryKey: ['uploads'] });
-      queryClient.invalidateQueries({ queryKey: ['app'] });
     },
     onError: (error: any) => {
       console.error('Mutation failed:', error);

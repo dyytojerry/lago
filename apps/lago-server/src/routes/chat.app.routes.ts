@@ -157,14 +157,16 @@ router.post(
  *       - in: query
  *         name: page
  *         schema:
- *           type: string
- *           default: "1"
+ *           type: number
+ *           minimum: 1
+ *           default: 1
  *         description: 页码
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
- *           default: "50"
+ *           type: number
+ *           minimum: 1
+ *           default: 50
  *         description: 每页数量
  *     responses:
  *       200:
@@ -193,8 +195,8 @@ router.get(
   validateRequest(
     Joi.object({
       query: Joi.object({
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).optional(),
       }),
     })
   ),

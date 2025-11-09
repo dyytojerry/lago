@@ -41,13 +41,13 @@ export class ChatRoomsMessagesPathParams {
 }
 
 export class ChatRoomsMessagesQueryParams {
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  page?: string;
+  page?: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
 }
 

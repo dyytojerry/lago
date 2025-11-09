@@ -7,18 +7,18 @@ import { createSuccessResponse, createErrorResponse } from '../lib/response';
  */
 export async function getOrders(req: Request, res: Response) {
   try {
-    const {
-      page = '1',
-      limit = '20',
-      status,
-      type,
-      buyerId,
-      sellerId,
-      search,
-    } = req.query;
+    const { page = 1, limit = 20, status, type, buyerId, sellerId, search } = req.query as {
+      page?: number;
+      limit?: number;
+      status?: string;
+      type?: string;
+      buyerId?: string;
+      sellerId?: string;
+      search?: string;
+    };
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};

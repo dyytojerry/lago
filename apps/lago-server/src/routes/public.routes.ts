@@ -123,12 +123,14 @@ router.get(
  *       - in: query
  *         name: page
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 页码
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 每页数量
  *     responses:
  *       200:
@@ -162,8 +164,8 @@ router.get(
         cityId: Joi.string().optional(),
         districtId: Joi.string().optional(),
         verificationStatus: Joi.string().valid('pending', 'approved', 'rejected').optional(),
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).optional(),
       }),
     })
   ),
@@ -186,12 +188,14 @@ router.get(
  *       - in: query
  *         name: page
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 页码
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 每页数量
  *     responses:
  *       200:
@@ -227,8 +231,8 @@ router.get(
     Joi.object({
       query: Joi.object({
         communityIds: Joi.string().required(),
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).optional(),
       }),
     })
   ),
@@ -245,12 +249,14 @@ router.get(
  *       - in: query
  *         name: page
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 页码
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 每页数量
  *       - in: query
  *         name: communityId
@@ -286,8 +292,8 @@ router.get(
   validateRequest(
     Joi.object({
       query: Joi.object({
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).optional(),
         communityId: Joi.string().optional(),
       }),
     })
@@ -338,14 +344,16 @@ router.get('/communities/:id', getCommunity);
  *       - in: query
  *         name: page
  *         schema:
- *           type: string
- *           default: "1"
+ *           type: number
+ *           minimum: 1
+ *           default: 1
  *         description: 页码
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
- *           default: "20"
+ *           type: number
+ *           minimum: 1
+ *           default: 20
  *         description: 每页数量
  *       - in: query
  *         name: category
@@ -410,8 +418,8 @@ router.get(
   validateRequest(
     Joi.object({
       query: Joi.object({
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).optional(),
         category: Joi.string().valid('toys', 'gaming').optional(),
         type: Joi.string().valid('rent', 'sell', 'both').optional(),
         search: Joi.string().optional(),
@@ -437,14 +445,16 @@ router.get(
  *       - in: query
  *         name: page
  *         schema:
- *           type: string
- *           default: "1"
+ *           type: number
+ *           minimum: 1
+ *           default: 1
  *         description: 页码
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
- *           default: "10"
+ *           type: number
+ *           minimum: 1
+ *           default: 10
  *         description: 返回数量
  *       - in: query
  *         name: sortBy
@@ -503,8 +513,8 @@ router.get(
   validateRequest(
     Joi.object({
       query: Joi.object({
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).optional(),
         sortBy: Joi.string().valid('viewCount', 'likeCount', 'createdAt').optional(),
         sortOrder: Joi.string().valid('asc', 'desc').optional(),
         cityId: Joi.string().optional(),

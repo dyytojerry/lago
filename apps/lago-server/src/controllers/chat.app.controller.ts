@@ -243,10 +243,7 @@ export async function createChatRoom(req: Request, res: Response) {
 export async function getMessages(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const {
-      page = '1',
-      limit = '50',
-    } = req.query;
+    const { page = 1, limit = 50 } = req.query as { page?: number; limit?: number };
 
     const userId = req.user?.id;
     if (!userId) {
@@ -267,8 +264,8 @@ export async function getMessages(req: Request, res: Response) {
       return createErrorResponse(res, '无权限访问此聊天室', 403);
     }
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
     const skip = (pageNum - 1) * limitNum;
 
     const [messages, total] = await Promise.all([

@@ -7,21 +7,21 @@ import { createSuccessResponse, createErrorResponse } from '../lib/response';
  */
 export async function getOrdersForApp(req: Request, res: Response) {
   try {
-    const {
-      page = '1',
-      limit = '20',
-      status,
-      type,
-      role = 'buyer',
-    } = req.query;
+    const { page = 1, limit = 20, status, type, role = 'buyer' } = req.query as {
+      page?: number;
+      limit?: number;
+      status?: string;
+      type?: string;
+      role?: 'buyer' | 'seller';
+    };
 
     const userId = req.user?.id;
     if (!userId) {
       return createErrorResponse(res, '未认证', 401);
     }
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};

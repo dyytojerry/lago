@@ -37,13 +37,8 @@ export default function UsersPage() {
   });
   const { isLoggedIn } = useAuth();
   useEffect(() => {
-    if (!isLoggedIn) {
-      router.push("/login");
-      return;
-    }
-
     loadUsers();
-  }, [router, page, filters]);
+  }, [page, filters]);
 
   const loadUsers = async () => {
     try {

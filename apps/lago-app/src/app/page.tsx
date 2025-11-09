@@ -188,8 +188,8 @@ export default function HomePage() {
         const response = await productDetail(
           {
             communityId: primaryCommunityId,
-            limit: "6",
-            page: "1",
+            limit: 6,
+            page: 1,
           },
           true
         );
@@ -218,17 +218,18 @@ export default function HomePage() {
 
     try {
       setActivityLoading(true);
-
       const response = await communitieActivities(
         {
-          communityIds,
+          communityIds: communityIds.join(","),
           page: currentPage,
           limit: ACTIVITY_PAGE_SIZE,
         },
         true
       );
 
-      const activities = ((response.data?.activities as any[] | undefined) || [])
+      const activities = (
+        (response.data?.activities as any[] | undefined) || []
+      )
         .map((activity) => {
           if (!activity.communityId || !activity.communityName) {
             return null;
@@ -247,9 +248,7 @@ export default function HomePage() {
             communityId: String(activity.communityId),
             communityName: String(activity.communityName),
             communityCover:
-              activity.communityCover ||
-              activity.images?.[0] ||
-              null,
+              activity.communityCover || activity.images?.[0] || null,
           } as CommunityActivityItem;
         })
         .filter(Boolean) as CommunityActivityItem[];
@@ -274,13 +273,7 @@ export default function HomePage() {
     } finally {
       setActivityLoading(false);
     }
-  }, [
-    ACTIVITY_PAGE_SIZE,
-    activityLoading,
-    hasMoreActivities,
-    communityIds,
-    activityPage,
-  ]);
+  }, [ACTIVITY_PAGE_SIZE, hasMoreActivities, communityIds, activityPage]);
 
   useEffect(() => {
     setActivityFeed([]);
@@ -289,11 +282,7 @@ export default function HomePage() {
   }, [communityIdsKey, communityIds.length]);
 
   useEffect(() => {
-    if (
-      communityIds.length === 0 ||
-      activityFeed.length > 0 ||
-      activityLoading
-    )
+    if (communityIds.length === 0 || activityFeed.length > 0 || activityLoading)
       return;
     loadMoreActivities();
   }, [

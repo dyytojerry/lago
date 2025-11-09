@@ -4,13 +4,13 @@ import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
 export class AdminOnboardingQueryParams {
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  page?: string;
+  page?: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
   @IsEnum(Types.OnboardingApplicationType)
   @IsOptional()

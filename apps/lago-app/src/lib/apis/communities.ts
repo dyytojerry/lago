@@ -93,13 +93,13 @@ export class CommunitieSearchQueryParams {
   @IsOptional()
   verificationStatus?: Types.CommunityVerificationStatus;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  page?: string;
+  page?: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
 }
 
@@ -115,13 +115,13 @@ export class CommunitieActivitiesQueryParams {
   @IsString()
   communityIds: string;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  page?: string;
+  page?: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
 }
 
@@ -134,13 +134,13 @@ export class CommunitieActivitiesResponse {
 
 }
 export class CommunitieActivitiesFeedQueryParams {
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  page?: string;
+  page?: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
   @IsString()
   @IsOptional()

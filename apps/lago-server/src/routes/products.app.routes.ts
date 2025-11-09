@@ -32,8 +32,9 @@ const router = Router();
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
- *           default: "10"
+ *           type: number
+ *           minimum: 1
+ *           default: 10
  *         description: 返回数量
  *     responses:
  *       200:
@@ -67,7 +68,7 @@ router.get(
   validateRequest(
     Joi.object({
       query: Joi.object({
-        limit: Joi.string().optional(),
+        limit: Joi.number().integer().min(1).optional(),
       }),
     })
   ),

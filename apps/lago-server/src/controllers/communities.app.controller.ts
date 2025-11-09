@@ -1,6 +1,9 @@
+import type { Prisma, CommunityActivityStatus } from '@prisma/client';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { createSuccessResponse, createErrorResponse } from '../lib/response';
+
+type ScalarQueryParam = string | number | string[];
 
 /**
  * 计算两点之间的距离（米）
@@ -28,15 +31,24 @@ export async function getNearbyCommunities(req: Request, res: Response) {
       latitude,
       longitude,
       radius = 1000, // 默认1公里
-    } = req.query;
+    } = req.query as {
+      latitude?: ScalarQueryParam;
+      longitude?: ScalarQueryParam;
+      radius?: ScalarQueryParam;
+    };
 
     if (!latitude || !longitude) {
       return createErrorResponse(res, '请提供经纬度', 400);
     }
 
-    const lat = parseFloat(latitude as string);
-    const lng = parseFloat(longitude as string);
-    const radiusMeters = parseFloat(radius as string);
+    const latSource = Array.isArray(latitude) ? latitude[0] : latitude;
+    const lngSource = Array.isArray(longitude) ? longitude[0] : longitude;
+    const radiusSource = Array.isArray(radius) ? radius[0] : radius;
+
+    const lat = typeof latSource === 'number' ? latSource : Number.parseFloat(latSource || '0');
+    const lng = typeof lngSource === 'number' ? lngSource : Number.parseFloat(lngSource || '0');
+    const radiusMeters =
+      typeof radiusSource === 'number' ? radiusSource : Number.parseFloat(radiusSource || '0');
 
     // 获取所有激活的小区
     const allCommunities = await prisma.community.findMany({
@@ -93,13 +105,20 @@ export async function searchCommunities(req: Request, res: Response) {
       cityId,
       districtId,
       verificationStatus,
-      page = '1',
-      limit = '20',
-    } = req.query;
-    console.log(req.query)
+      page = 1,
+      limit = 20,
+    } = req.query as {
+      search?: string;
+      provinceId?: string;
+      cityId?: string;
+      districtId?: string;
+      verificationStatus?: string;
+      page?: number;
+      limit?: number;
+    };
 
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {
@@ -108,21 +127,21 @@ export async function searchCommunities(req: Request, res: Response) {
 
     if (search) {
       where.OR = [
-        { name: { contains: search as string } },
-        { address: { contains: search as string } },
+        { name: { contains: search } },
+        { address: { contains: search } },
       ];
     }
 
     if (provinceId) {
-      where.provinceId = provinceId as string;
+      where.provinceId = provinceId;
     }
 
     if (cityId) {
-      where.cityId = cityId as string;
+      where.cityId = cityId;
     }
 
     if (districtId) {
-      where.districtId = districtId as string;
+      where.districtId = districtId;
     }
 
     if (verificationStatus) {
@@ -383,25 +402,26 @@ export async function joinCommunity(req: Request, res: Response) {
  */
 export async function getMarketActivitiesFeed(req: Request, res: Response) {
   try {
-    const {
-      page = '1',
-      limit = '10',
-      communityId,
-    } = req.query;
+    const { page = 1, limit = 10, communityId } = req.query as {
+      page?: number;
+      limit?: number;
+      communityId?: string;
+    };
 
-    const pageNum = Math.max(parseInt(page as string, 10) || 1, 1);
-    const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 10, 1), 50);
+    const pageNum = Math.max(page ?? 1, 1);
+    const limitNum = Math.min(Math.max(limit ?? 10, 1), 50);
     const skip = (pageNum - 1) * limitNum;
 
-    const where: any = {
+    const statusFilter: CommunityActivityStatus[] = ['published', 'ended'];
+    const where: Prisma.CommunityActivityWhereInput = {
       type: 'market',
       status: {
-        in: ['published', 'ended'],
+        in: statusFilter,
       },
     };
 
     if (communityId) {
-      where.communityId = communityId as string;
+      where.communityId = communityId;
     }
 
     const [activities, total] = await Promise.all([
@@ -478,30 +498,38 @@ export async function getMarketActivitiesFeed(req: Request, res: Response) {
  */
 export async function getActivitiesByCommunityIds(req: Request, res: Response) {
   try {
-    const { communityIds, page = '1', limit = '10' } = req.query;
+    const { communityIds, page = 1, limit = 10 } = req.query as {
+      communityIds?: string | string[];
+      page?: number;
+      limit?: number;
+    };
 
     if (!communityIds) {
       return createErrorResponse(res, '缺少 communityIds 参数', 400);
     }
 
-    const ids = Array.isArray(communityIds)
-      ? (communityIds as string[]).map((id) => id.trim()).filter(Boolean)
-      : (communityIds as string)
-          .split(',')
-          .map((id) => id.trim())
-          .filter(Boolean);
+    const rawIds = Array.isArray(communityIds)
+      ? communityIds
+      : communityIds.split(',');
+
+    const ids = rawIds.map((id) => id.trim()).filter(Boolean);
 
     if (ids.length === 0) {
       return createErrorResponse(res, '缺少有效的小区ID', 400);
     }
 
-    const pageNum = Math.max(parseInt(page as string, 10) || 1, 1);
-    const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 10, 1), 50);
+    const pageNum = Math.max(page ?? 1, 1);
+    const limitNum = Math.min(Math.max(limit ?? 10, 1), 50);
     const skip = (pageNum - 1) * limitNum;
 
-    const where = {
+    const communityStatusFilter: CommunityActivityStatus[] = [
+      'published',
+      'ended',
+      'cancelled',
+    ];
+    const where: Prisma.CommunityActivityWhereInput = {
       communityId: { in: ids },
-      status: { in: ['published', 'scheduled', 'ended'] as const },
+      status: { in: communityStatusFilter },
     };
 
     const [activities, total] = await Promise.all([
@@ -592,7 +620,7 @@ export async function leaveCommunity(req: Request, res: Response) {
       },
     });
 
-    if (!userCommunity || !userCommunity.isActive) {
+    if (!userCommunity?.isActive) {
       return createErrorResponse(res, '您未加入该小区', 400);
     }
 

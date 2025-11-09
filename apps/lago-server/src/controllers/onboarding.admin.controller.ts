@@ -13,16 +13,16 @@ const ONBOARDING_STATUS = ['pending', 'processing', 'approved', 'rejected'] as c
 
 export async function getOnboardingApplications(req: Request, res: Response) {
   try {
-    const {
-      page = '1',
-      limit = '20',
-      type,
-      status,
-      search,
-    } = req.query;
+    const { page = 1, limit = 20, type, status, search } = req.query as {
+      page?: number;
+      limit?: number;
+      type?: string;
+      status?: string;
+      search?: string;
+    };
 
-    const pageNum = Math.max(parseInt(page as string, 10) || 1, 1);
-    const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 20, 1), 100);
+    const pageNum = Math.max(page ?? 1, 1);
+    const limitNum = Math.min(Math.max(limit ?? 20, 1), 100);
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};

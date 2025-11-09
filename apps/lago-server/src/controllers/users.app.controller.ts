@@ -104,13 +104,17 @@ export async function getUserProducts(req: Request, res: Response) {
     }
 
     const {
-      page = '1',
-      limit = '20',
+      page = 1,
+      limit = 20,
       status,
-    } = req.query;
+    } = req.query as {
+      page?: number;
+      limit?: number;
+      status?: string;
+    };
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {
@@ -173,13 +177,17 @@ export async function getUserOrders(req: Request, res: Response) {
     }
 
     const {
-      page = '1',
-      limit = '20',
+      page = 1,
+      limit = 20,
       role = 'buyer',
-    } = req.query;
+    } = req.query as {
+      page?: number;
+      limit?: number;
+      role?: 'buyer' | 'seller';
+    };
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};

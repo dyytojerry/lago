@@ -4,9 +4,9 @@ import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
 export class ProductRecommendedQueryParams {
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
 }
 
@@ -55,13 +55,13 @@ export class ProductsResponse {
 
 }
 export class ProductDetailQueryParams {
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  page?: string;
+  page?: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
   @IsEnum(Types.ProductCategory)
   @IsOptional()
@@ -187,13 +187,13 @@ export class ProductUnlikeResponse {
 
 }
 export class ProductHotQueryParams {
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  page?: string;
+  page?: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
   @IsEnum(['viewCount', 'likeCount', 'createdAt', 'price'])
   @IsOptional()

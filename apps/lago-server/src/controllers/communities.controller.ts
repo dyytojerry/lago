@@ -7,15 +7,15 @@ import { createSuccessResponse, createErrorResponse } from '../lib/response';
  */
 export async function getCommunities(req: Request, res: Response) {
   try {
-    const {
-      page = '1',
-      limit = '20',
-      search,
-      verificationStatus,
-    } = req.query;
+    const { page = 1, limit = 20, search, verificationStatus } = req.query as {
+      page?: number;
+      limit?: number;
+      search?: string;
+      verificationStatus?: string;
+    };
 
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};
@@ -117,14 +117,14 @@ export async function getCommunity(req: Request, res: Response) {
  */
 export async function getCommunityVerifications(req: Request, res: Response) {
   try {
-    const {
-      page = '1',
-      limit = '20',
-      status,
-    } = req.query;
+    const { page = 1, limit = 20, status } = req.query as {
+      page?: number;
+      limit?: number;
+      status?: string;
+    };
 
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};

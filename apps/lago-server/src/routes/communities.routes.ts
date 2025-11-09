@@ -34,12 +34,14 @@ router.use(authOperation);
  *       - in: query
  *         name: page
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 页码
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 每页数量
  *       - in: query
  *         name: search
@@ -79,8 +81,8 @@ router.get(
   validateRequest(
     Joi.object({
       query: Joi.object({
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).optional(),
         search: Joi.string().optional(),
         verificationStatus: Joi.string().valid('pending', 'approved', 'rejected').optional(),
       }),
@@ -101,12 +103,14 @@ router.get(
  *       - in: query
  *         name: page
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 页码
  *       - in: query
  *         name: limit
  *         schema:
- *           type: string
+ *           type: number
+ *           minimum: 1
  *         description: 每页数量
  *       - in: query
  *         name: status
@@ -144,8 +148,8 @@ router.get(
   validateRequest(
     Joi.object({
       query: Joi.object({
-        page: Joi.string().optional(),
-        limit: Joi.string().optional(),
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).optional(),
         status: Joi.string().valid('pending', 'approved', 'rejected').optional(),
       }),
     })

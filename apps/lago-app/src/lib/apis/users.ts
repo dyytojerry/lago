@@ -22,13 +22,13 @@ export class UserProfileUpdateDTO {
 export type UserProfileUpdateResponse = any;
 
 export class UserProductsQueryParams {
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  page?: string;
+  page?: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
   @IsEnum(Types.ProductStatus)
   @IsOptional()
@@ -39,13 +39,13 @@ export class UserProductsQueryParams {
 export type UserProductsResponse = any;
 
 export class UserOrdersQueryParams {
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  page?: string;
+  page?: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  limit?: string;
+  limit?: number;
 
   @IsEnum(['buyer', 'seller'])
   @IsOptional()

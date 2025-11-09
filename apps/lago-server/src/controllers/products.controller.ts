@@ -7,17 +7,17 @@ import { createSuccessResponse, createErrorResponse } from '../lib/response';
  */
 export async function getProducts(req: Request, res: Response) {
   try {
-    const {
-      page = '1',
-      limit = '20',
-      status,
-      category,
-      search,
-      ownerId,
-    } = req.query;
+    const { page = 1, limit = 20, status, category, search, ownerId } = req.query as {
+      page?: number;
+      limit?: number;
+      status?: string;
+      category?: string;
+      search?: string;
+      ownerId?: string;
+    };
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};

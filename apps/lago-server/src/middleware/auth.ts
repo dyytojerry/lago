@@ -35,7 +35,6 @@ export async function authUser(req: Request, res: Response, next: NextFunction) 
     if (!token) {
       return createErrorResponse(res, '未提供认证令牌', 401);
     }
- 
     // 检查token是否在黑名单中
     const isBlacklisted = await isTokenBlacklisted(token);
     if (isBlacklisted) {
@@ -112,7 +111,7 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
           },
         },
       },
-    } as any);
+    });
  
     if (!staff || !staff.isActive) {
       return createErrorResponse(res, '运营人员不存在或已被禁用', 422);
@@ -135,7 +134,6 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
 
     req.operationStaff = {
       id: staff.id,
-      type: 'operation',
       isSuperAdmin: staff.isSuperAdmin ?? false,
       roleIds,
       permissions: Array.from(permissionsSet).sort(),
