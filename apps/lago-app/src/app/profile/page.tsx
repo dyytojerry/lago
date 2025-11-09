@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { Header } from '@/components/Header';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { useAuth } from '@lago/ui';
-import { useAuthMe } from '@/lib/apis/auth';
+import { useRouter } from "next/navigation";
+import { Header } from "@/components/Header";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { useAuth } from "@lago/ui";
+import { useAuthMe } from "@/lib/apis/auth";
 import {
   ShoppingBag,
   Heart,
@@ -14,15 +14,17 @@ import {
   Settings,
   LogOut,
   Building2,
-} from 'lucide-react';
-import { useAuthLogout } from '@/lib/apis/auth';
-import toast from 'react-hot-toast';
-import ProtectedRoute from '@lago/ui/src/components/ProtectedRoute';
+} from "lucide-react";
+import { useAuthLogout } from "@/lib/apis/auth";
+import toast from "react-hot-toast";
+import { ProtectedRoute } from "@lago/ui";
 
 export default function ProfilePage() {
-  return <ProtectedRoute>
-    <ProfileContent />
-  </ProtectedRoute>
+  return (
+    <ProtectedRoute>
+      <ProfileContent />
+    </ProtectedRoute>
+  );
 }
 
 function ProfileContent() {
@@ -37,51 +39,51 @@ function ProfileContent() {
     try {
       await logoutMutation.mutateAsync(null);
       setUser(null);
-      router.push('/login');
-      toast.success('已退出登录');
+      router.push("/login");
+      toast.success("已退出登录");
     } catch (error: any) {
-      toast.error(error.message || '退出登录失败');
+      toast.error(error.message || "退出登录失败");
     }
   };
 
   const menuItems = [
     {
       icon: ShoppingBag,
-      label: '我的订单',
-      onClick: () => router.push('/profile/orders'),
+      label: "我的订单",
+      onClick: () => router.push("/profile/orders"),
       count: 0,
     },
     {
       icon: Heart,
-      label: '我的收藏',
-      onClick: () => router.push('/profile/favorites'),
+      label: "我的收藏",
+      onClick: () => router.push("/profile/favorites"),
       count: 0,
     },
     {
       icon: Package,
-      label: '我的发布',
-      onClick: () => router.push('/profile/products'),
+      label: "我的发布",
+      onClick: () => router.push("/profile/products"),
       count: 0,
     },
     {
       icon: MapPin,
-      label: '小区管理',
-      onClick: () => router.push('/communities/select'),
+      label: "小区管理",
+      onClick: () => router.push("/communities/select"),
     },
     {
       icon: Building2,
-      label: '入驻中心',
-      onClick: () => router.push('/profile/onboarding'),
+      label: "入驻中心",
+      onClick: () => router.push("/profile/onboarding"),
     },
     {
       icon: Shield,
-      label: '信用积分',
-      onClick: () => router.push('/profile/credit'),
+      label: "信用积分",
+      onClick: () => router.push("/profile/credit"),
     },
     {
       icon: Settings,
-      label: '设置',
-      onClick: () => router.push('/profile/settings'),
+      label: "设置",
+      onClick: () => router.push("/profile/settings"),
     },
   ];
 
@@ -97,21 +99,21 @@ function ProfileContent() {
               {currentUser?.avatarUrl ? (
                 <img
                   src={currentUser.avatarUrl}
-                  alt={currentUser.nickname || '用户'}
+                  alt={currentUser.nickname || "用户"}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">
                   <span className="text-2xl">
-                    {currentUser?.nickname?.[0] || '用'}
+                    {currentUser?.nickname?.[0] || "用"}
                   </span>
                 </div>
               )}
             </div>
             <div className="flex-1">
               <h2 className="text-lg font-semibold text-text-primary mb-1">
-                {currentUser?.nickname || '未设置昵称'}
+                {currentUser?.nickname || "未设置昵称"}
               </h2>
               <div className="flex items-center gap-4 text-sm text-text-secondary">
                 <div className="flex items-center gap-1">
@@ -124,7 +126,7 @@ function ProfileContent() {
               </div>
             </div>
             <button
-              onClick={() => router.push('/profile/edit')}
+              onClick={() => router.push("/profile/edit")}
               className="text-sm text-primary"
             >
               编辑
@@ -148,7 +150,9 @@ function ProfileContent() {
                 </div>
                 <div className="flex items-center gap-2">
                   {item.count !== undefined && item.count > 0 && (
-                    <span className="text-xs text-text-secondary">{item.count}</span>
+                    <span className="text-xs text-text-secondary">
+                      {item.count}
+                    </span>
                   )}
                   <span className="text-text-secondary">›</span>
                 </div>
@@ -171,4 +175,3 @@ function ProfileContent() {
     </div>
   );
 }
-

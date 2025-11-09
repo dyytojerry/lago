@@ -406,7 +406,7 @@ export async function operationLogin(req: Request, res: Response) {
  
     const staffWithRelations = await loadOperationStaffAuthContext(staff.id);
     if (!staffWithRelations) {
-      return createErrorResponse(res, '账号状态异常，请联系管理员', 422);
+      return createErrorResponse(res, '账号状态异常，请联系管理员', 401);
     }
 
     const authPayload = await buildOperationAuthResponse(staffWithRelations);
@@ -521,7 +521,7 @@ export async function refreshUserToken(req: Request, res: Response) {
     const payload = verifyRefreshToken(refreshToken);
 
     if (!payload || !isUserToken(payload)) {
-      return createErrorResponse(res, 'refreshToken无效或已过期', 422);
+      return createErrorResponse(res, 'refreshToken无效或已过期', 401);
     }
 
     const user = await prisma.user.findUnique({
@@ -541,7 +541,7 @@ export async function refreshUserToken(req: Request, res: Response) {
     });
 
     if (!user || !user.isActive) {
-      return createErrorResponse(res, '用户不存在或已被禁用', 422);
+      return createErrorResponse(res, '用户不存在或已被禁用', 401);
     }
 
     const authPayload = buildUserAuthResponse(user);
@@ -563,13 +563,13 @@ export async function refreshOperationToken(req: Request, res: Response) {
     const payload = verifyRefreshToken(refreshToken);
 
     if (!payload || !isOperationToken(payload)) {
-      return createErrorResponse(res, 'refreshToken无效或已过期', 422);
+      return createErrorResponse(res, 'refreshToken无效或已过期', 401);
     }
 
     const staff = await loadOperationStaffAuthContext(payload.staffId);
 
     if (!staff || !staff.isActive) {
-      return createErrorResponse(res, '运营人员不存在或已被禁用', 422);
+      return createErrorResponse(res, '运营人员不存在或已被禁用', 401);
     }
 
     const authPayload = await buildOperationAuthResponse(staff);

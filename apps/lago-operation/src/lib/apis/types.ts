@@ -19,6 +19,7 @@ export enum OperationStaffRole {
 export enum ProductCategory {
   TOYS = 'toys',
   GAMING = 'gaming',
+  OVERALL = 'overall',
 }
 
 export enum ProductType {
@@ -143,6 +144,10 @@ export class User {
   @IsString()
   @IsOptional()
   nickname?: string;
+
+  @IsString()
+  @IsOptional()
+  email?: string;
 
   @IsString()
   @IsOptional()

@@ -81,7 +81,10 @@ export function SingleMediaUploader({
 }: SingleMediaUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const [state, setState] = useState<UploadState>({ uploading: false, progress: 0 });
+  const [state, setState] = useState<UploadState>({
+    uploading: false,
+    progress: 0,
+  });
 
   const previewContent = useMemo(() => {
     if (!value || !showPreview) return null;
@@ -125,15 +128,21 @@ export function SingleMediaUploader({
   const validateFile = useCallback(
     (file: File) => {
       if (maxSize && file.size > maxSize) {
-        throw new Error(`文件大小超过限制（最大 ${Math.round(maxSize / 1024 / 1024)}MB）`);
+        throw new Error(
+          `文件大小超过限制（最大 ${Math.round(maxSize / 1024 / 1024)}MB）`
+        );
       }
       if (validation?.maxSize && file.size > validation.maxSize) {
         throw new Error(
-          `文件大小超过限制（最大 ${Math.round(validation.maxSize / 1024 / 1024)}MB）`
+          `文件大小超过限制（最大 ${Math.round(
+            validation.maxSize / 1024 / 1024
+          )}MB）`
         );
       }
       if (validation?.allowedMimeTypes?.length) {
-        const matched = validation.allowedMimeTypes.some((mime) => file.type === mime);
+        const matched = validation.allowedMimeTypes.some(
+          (mime) => file.type === mime
+        );
         if (!matched) {
           throw new Error("文件类型不支持");
         }
@@ -141,7 +150,9 @@ export function SingleMediaUploader({
 
       const kind = resolveMediaKind(file);
       if (mandatoryType && kind !== mandatoryType) {
-        throw new Error(`仅支持上传 ${mandatoryType === "image" ? "图片" : "视频"}`);
+        throw new Error(
+          `仅支持上传 ${mandatoryType === "image" ? "图片" : "视频"}`
+        );
       }
       if (accept === "image" && kind !== "image") {
         throw new Error("请选择图片文件");
@@ -156,7 +167,10 @@ export function SingleMediaUploader({
   const finalizeResult = useCallback(
     async (file: File, uploaded: UploadedMedia): Promise<UploadedMedia> => {
       const kind = resolveMediaKind(file);
-      if (kind === "image" && (uploaded.width == null || uploaded.height == null)) {
+      if (
+        kind === "image" &&
+        (uploaded.width == null || uploaded.height == null)
+      ) {
         const metadata = await extractImageMetadata(file);
         uploaded.width = metadata.width;
         uploaded.height = metadata.height;
@@ -176,15 +190,12 @@ export function SingleMediaUploader({
     []
   );
 
-  const getUploadHandler = useCallback(
-    (): UploadHandler => {
-      if (!uploadHandler) {
-        throw new Error("SingleMediaUploader 需要提供 uploadHandler 属性");
-      }
-      return uploadHandler;
-    },
-    [uploadHandler]
-  );
+  const getUploadHandler = useCallback((): UploadHandler => {
+    if (!uploadHandler) {
+      throw new Error("SingleMediaUploader 需要提供 uploadHandler 属性");
+    }
+    return uploadHandler;
+  }, [uploadHandler]);
 
   const handleFileChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -302,9 +313,7 @@ export function SingleMediaUploader({
           <>
             <Upload className="h-10 w-10 text-primary" />
             <div>
-              <p className="text-sm font-medium text-gray-900">
-                {buttonText}
-              </p>
+              <p className="text-sm font-medium text-gray-900">{buttonText}</p>
               <p className="text-xs text-gray-500">
                 {placeholder ||
                   (accept === "image"
@@ -323,6 +332,7 @@ export function SingleMediaUploader({
           accept={getAcceptAttribute(accept)}
           capture={capture as any}
           className="hidden"
+          style={{ display: "none" }}
           disabled={disabled || state.uploading}
           onChange={handleFileChange}
         />
@@ -336,4 +346,3 @@ export function SingleMediaUploader({
     </div>
   );
 }
-

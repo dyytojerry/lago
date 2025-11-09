@@ -9,7 +9,13 @@ import {
   UploadedMedia,
 } from "./uploadTypes";
 import { extractImageMetadata, extractVideoMetadata } from "./mediaMetadata";
-import { Upload, Loader2, Trash2, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  Upload,
+  Loader2,
+  Trash2,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
 
 export interface MultiMediaUploaderItem extends UploadedMedia {
   id: string;
@@ -90,7 +96,10 @@ export function MultiMediaUploader({
   const [items, setItems] = useState<InternalItem[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentValue = useMemo(() => value ?? items.filter((i) => i.uploaded).map((i) => i.uploaded!), [value, items]);
+  const currentValue = useMemo(
+    () => value ?? items.filter((i) => i.uploaded).map((i) => i.uploaded!),
+    [value, items]
+  );
 
   const handleResetInput = () => {
     if (inputRef.current) {
@@ -116,25 +125,31 @@ export function MultiMediaUploader({
     return uploadHandler;
   }, [uploadHandler]);
 
-  const finalizeMeta = useCallback(async (file: File, uploaded: UploadedMedia) => {
-    const kind = resolveMediaKind(file);
-    if (kind === "image" && (uploaded.width == null || uploaded.height == null)) {
-      const metadata = await extractImageMetadata(file);
-      uploaded.width = metadata.width;
-      uploaded.height = metadata.height;
-    } else if (kind === "video" && uploaded.duration == null) {
-      const metadata = await extractVideoMetadata(file);
-      uploaded.width = metadata.width;
-      uploaded.height = metadata.height;
-      uploaded.duration = metadata.duration;
-      uploaded.poster = uploaded.poster ?? metadata.poster;
-    }
-    uploaded.kind = kind;
-    uploaded.mimeType = uploaded.mimeType || file.type;
-    uploaded.name = uploaded.name || file.name;
-    uploaded.size = uploaded.size || file.size;
-    return uploaded;
-  }, []);
+  const finalizeMeta = useCallback(
+    async (file: File, uploaded: UploadedMedia) => {
+      const kind = resolveMediaKind(file);
+      if (
+        kind === "image" &&
+        (uploaded.width == null || uploaded.height == null)
+      ) {
+        const metadata = await extractImageMetadata(file);
+        uploaded.width = metadata.width;
+        uploaded.height = metadata.height;
+      } else if (kind === "video" && uploaded.duration == null) {
+        const metadata = await extractVideoMetadata(file);
+        uploaded.width = metadata.width;
+        uploaded.height = metadata.height;
+        uploaded.duration = metadata.duration;
+        uploaded.poster = uploaded.poster ?? metadata.poster;
+      }
+      uploaded.kind = kind;
+      uploaded.mimeType = uploaded.mimeType || file.type;
+      uploaded.name = uploaded.name || file.name;
+      uploaded.size = uploaded.size || file.size;
+      return uploaded;
+    },
+    []
+  );
 
   const enqueueFiles = useCallback(
     (files: FileList | null) => {
@@ -180,7 +195,16 @@ export function MultiMediaUploader({
       onUploadStart?.(internalItems.length);
       uploadQueue([...items, ...internalItems]);
     },
-    [accept, currentValue.length, dispatchChange, items, maxFiles, maxSize, onError, onUploadStart]
+    [
+      accept,
+      currentValue.length,
+      dispatchChange,
+      items,
+      maxFiles,
+      maxSize,
+      onError,
+      onUploadStart,
+    ]
   );
 
   const uploadQueue = useCallback(
@@ -222,7 +246,8 @@ export function MultiMediaUploader({
               item.uploaded = result;
             })
             .catch((error) => {
-              const err = error instanceof Error ? error : new Error("上传失败");
+              const err =
+                error instanceof Error ? error : new Error("上传失败");
               item.status = "error";
               item.error = err.message;
               item.progress = 0;
@@ -239,7 +264,14 @@ export function MultiMediaUploader({
 
       next();
     },
-    [concurrency, dispatchChange, finalizeMeta, getUploadHandler, onError, onUploadComplete]
+    [
+      concurrency,
+      dispatchChange,
+      finalizeMeta,
+      getUploadHandler,
+      onError,
+      onUploadComplete,
+    ]
   );
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -295,6 +327,7 @@ export function MultiMediaUploader({
           accept={getAcceptAttribute(accept)}
           capture={capture as any}
           className="hidden"
+          style={{ display: "none" }}
           onChange={handleFileChange}
         />
       </div>
@@ -305,21 +338,25 @@ export function MultiMediaUploader({
             key={item.id}
             className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
           >
-            {allowPreview && item.previewUrl && item.file.type.startsWith("image") && (
-              <img
-                src={item.previewUrl}
-                alt={item.file.name}
-                className="h-40 w-full object-cover"
-              />
-            )}
-            {allowPreview && item.previewUrl && item.file.type.startsWith("video") && (
-              <video
-                src={item.previewUrl}
-                className="h-40 w-full object-cover"
-                muted
-                playsInline
-              />
-            )}
+            {allowPreview &&
+              item.previewUrl &&
+              item.file.type.startsWith("image") && (
+                <img
+                  src={item.previewUrl}
+                  alt={item.file.name}
+                  className="h-40 w-full object-cover"
+                />
+              )}
+            {allowPreview &&
+              item.previewUrl &&
+              item.file.type.startsWith("video") && (
+                <video
+                  src={item.previewUrl}
+                  className="h-40 w-full object-cover"
+                  muted
+                  playsInline
+                />
+              )}
 
             <div className="p-4 space-y-2">
               <div className="flex items-center justify-between gap-2">
@@ -348,7 +385,9 @@ export function MultiMediaUploader({
                       style={{ width: `${item.progress}%` }}
                     />
                   </div>
-                  <span className="text-xs text-gray-500">{item.progress}%</span>
+                  <span className="text-xs text-gray-500">
+                    {item.progress}%
+                  </span>
                 </div>
               )}
 
@@ -375,4 +414,3 @@ export function MultiMediaUploader({
     </div>
   );
 }
-

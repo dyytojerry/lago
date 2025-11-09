@@ -1,65 +1,76 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { Header } from '@/components/Header';
+import { useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Header } from "@/components/Header";
 import {
   useAdminOnboardingDetail,
   useAdminOnboardingApprove,
   useAdminOnboardingReject,
-} from '@/lib/apis/adminonboarding';
+} from "@/lib/apis/adminonboarding";
 import {
-  OnboardingStatus,
-  OnboardingType,
-  ServiceCategory,
-} from '@/lib/apis/types';
-import { Loading } from '@/components/Loading';
-import toast from 'react-hot-toast';
+  OnboardingApplicationStatus,
+  OnboardingApplicationType,
+  OnboardingApplicationCreateRequestServiceCategory,
+} from "@/lib/apis/types";
+import { Loading } from "@/components/Loading";
+import toast from "react-hot-toast";
+import { ProtectedRoute } from "@lago/ui";
 
-const TYPE_TEXT: Record<OnboardingType, string> = {
-  personal_seller: '个人卖家',
-  small_business_seller: '小微商家',
-  personal_service_provider: '个人服务商',
-  enterprise_service_provider: '企业服务商',
+const TYPE_TEXT: Record<OnboardingApplicationType, string> = {
+  personal_seller: "个人卖家",
+  small_business_seller: "小微商家",
+  personal_service_provider: "个人服务商",
+  enterprise_service_provider: "企业服务商",
 };
 
-const SERVICE_CATEGORY_TEXT: Record<ServiceCategory, string> = {
-  recycling: '废品回收',
-  appliance_repair: '家电维修',
-  appliance_install: '家电安装',
-  appliance_cleaning: '家电清洗',
-  furniture_repair: '家具维修',
-  carpentry: '木工',
-  masonry: '泥工砌筑',
-  tiling: '瓦工贴砖',
-  painting: '油漆翻新',
-  plumbing: '水管/管道服务',
-  electrician: '电工服务',
-  hvac_install: '暖通空调',
-  locksmith: '开锁换锁',
-  pest_control: '除虫除害',
-  cleaning: '专业保洁',
-  moving_service: '搬家搬运',
-  landscaping: '园艺绿化',
-  decoration_design: '装修设计',
-  renovation_general: '整体装修',
-  other: '其他',
+const SERVICE_CATEGORY_TEXT: Record<
+  OnboardingApplicationCreateRequestServiceCategory,
+  string
+> = {
+  recycling: "废品回收",
+  appliance_repair: "家电维修",
+  appliance_install: "家电安装",
+  appliance_cleaning: "家电清洗",
+  furniture_repair: "家具维修",
+  carpentry: "木工",
+  masonry: "泥工砌筑",
+  tiling: "瓦工贴砖",
+  painting: "油漆翻新",
+  plumbing: "水管/管道服务",
+  electrician: "电工服务",
+  hvac_install: "暖通空调",
+  locksmith: "开锁换锁",
+  pest_control: "除虫除害",
+  cleaning: "专业保洁",
+  moving_service: "搬家搬运",
+  landscaping: "园艺绿化",
+  decoration_design: "装修设计",
+  renovation_general: "整体装修",
+  other: "其他",
 };
 
 const STATUS_META: Record<
-  OnboardingStatus,
+  OnboardingApplicationStatus,
   { text: string; className: string }
 > = {
-  pending: { text: '草稿', className: 'bg-gray-100 text-gray-600' },
-  processing: { text: '待审核', className: 'bg-yellow-100 text-yellow-700' },
-  approved: { text: '已通过', className: 'bg-emerald-100 text-emerald-600' },
-  rejected: { text: '已拒绝', className: 'bg-red-100 text-red-600' },
+  pending: { text: "草稿", className: "bg-gray-100 text-gray-600" },
+  processing: { text: "待审核", className: "bg-yellow-100 text-yellow-700" },
+  approved: { text: "已通过", className: "bg-emerald-100 text-emerald-600" },
+  rejected: { text: "已拒绝", className: "bg-red-100 text-red-600" },
 };
 
 export default function OnboardingDetailPage() {
+  return (
+    <ProtectedRoute>
+      <OnboardingDetailContent />
+    </ProtectedRoute>
+  );
+}
+function OnboardingDetailContent() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const [rejectReason, setRejectReason] = useState('');
+  const [rejectReason, setRejectReason] = useState("");
 
   const { data, isLoading } = useAdminOnboardingDetail({ id: params.id });
   const application = data?.data?.application;
@@ -68,11 +79,11 @@ export default function OnboardingDetailPage() {
     { id: params.id },
     {
       onSuccess: () => {
-        toast.success('已通过该入驻申请');
+        toast.success("已通过该入驻申请");
         router.refresh();
       },
       onError: (error: any) => {
-        toast.error(error?.message || '操作失败');
+        toast.error(error?.message || "操作失败");
       },
     }
   );
@@ -81,11 +92,11 @@ export default function OnboardingDetailPage() {
     { id: params.id },
     {
       onSuccess: () => {
-        toast.success('已拒绝该入驻申请');
+        toast.success("已拒绝该入驻申请");
         router.refresh();
       },
       onError: (error: any) => {
-        toast.error(error?.message || '操作失败');
+        toast.error(error?.message || "操作失败");
       },
     }
   );
@@ -96,7 +107,7 @@ export default function OnboardingDetailPage() {
 
   const handleReject = () => {
     if (!rejectReason) {
-      toast.error('请输入拒绝原因');
+      toast.error("请输入拒绝原因");
       return;
     }
     rejectMutation.mutate({ reason: rejectReason });
@@ -122,7 +133,8 @@ export default function OnboardingDetailPage() {
     );
   }
 
-  const statusMeta = STATUS_META[application.status as OnboardingStatus];
+  const statusMeta =
+    STATUS_META[application.status as OnboardingApplicationStatus];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
@@ -132,23 +144,32 @@ export default function OnboardingDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                {TYPE_TEXT[application.type as OnboardingType]}
+                {TYPE_TEXT[application.type as OnboardingApplicationType]}
               </h2>
               <p className="text-xs text-gray-500">
                 申请编号：{application.id}
               </p>
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs ${statusMeta.className}`}>
+            <span
+              className={`px-3 py-1 rounded-full text-xs ${statusMeta.className}`}
+            >
               {statusMeta.text}
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
             <InfoRow label="申请人">
-              {application.fullName || application.businessName || application.user?.nickname || '—'}
+              {application.fullName ||
+                application.businessName ||
+                application.user?.nickname ||
+                "—"}
             </InfoRow>
-            <InfoRow label="手机号">{application.contactPhone || application.user?.phone || '—'}</InfoRow>
-            <InfoRow label="邮箱">{application.contactEmail || application.user?.email || '—'}</InfoRow>
+            <InfoRow label="手机号">
+              {application.contactPhone || application.user?.phone || "—"}
+            </InfoRow>
+            <InfoRow label="邮箱">
+              {application.contactEmail || application.user?.email || "—"}
+            </InfoRow>
             <InfoRow label="提交时间">
               {new Date(application.submittedAt).toLocaleString()}
             </InfoRow>
@@ -159,7 +180,12 @@ export default function OnboardingDetailPage() {
             )}
             {application.serviceCategory && (
               <InfoRow label="服务类别">
-                {SERVICE_CATEGORY_TEXT[application.serviceCategory as ServiceCategory]}
+                {
+                  SERVICE_CATEGORY_TEXT[
+                    application.metadata
+                      ?.serviceCategory as OnboardingApplicationCreateRequestServiceCategory
+                  ]
+                }
               </InfoRow>
             )}
           </div>
@@ -178,20 +204,27 @@ export default function OnboardingDetailPage() {
               <InfoRow label="企业名称">{application.businessName}</InfoRow>
             )}
             {application.businessLicenseNumber && (
-              <InfoRow label="营业执照号">{application.businessLicenseNumber}</InfoRow>
+              <InfoRow label="营业执照号">
+                {application.businessLicenseNumber}
+              </InfoRow>
             )}
             {application.address && (
               <InfoRow label="所在地区">{application.address}</InfoRow>
             )}
-            {application.experienceYears !== null && application.experienceYears !== undefined && (
-              <InfoRow label="从业年限">{application.experienceYears} 年</InfoRow>
-            )}
+            {application.experienceYears !== null &&
+              application.experienceYears !== undefined && (
+                <InfoRow label="从业年限">
+                  {application.experienceYears} 年
+                </InfoRow>
+              )}
           </div>
 
           {application.description && (
             <div className="text-sm text-gray-700 bg-gray-50 rounded-xl px-4 py-3">
               <span className="font-medium text-gray-900">补充说明：</span>
-              <p className="mt-1 leading-6 text-gray-600">{application.description}</p>
+              <p className="mt-1 leading-6 text-gray-600">
+                {application.description}
+              </p>
             </div>
           )}
         </section>
@@ -210,7 +243,7 @@ export default function OnboardingDetailPage() {
           </section>
         )}
 
-        {application.status === 'processing' && (
+        {application.status === "processing" && (
           <section className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
             <h3 className="text-sm font-semibold text-gray-900">审核操作</h3>
             <div className="flex flex-col md:flex-row gap-3">
@@ -219,7 +252,7 @@ export default function OnboardingDetailPage() {
                 disabled={approveMutation.isPending}
                 className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition disabled:opacity-60"
               >
-                {approveMutation.isPending ? '处理中...' : '通过申请'}
+                {approveMutation.isPending ? "处理中..." : "通过申请"}
               </button>
               <div className="flex-1 flex items-center gap-2">
                 <input
@@ -233,7 +266,7 @@ export default function OnboardingDetailPage() {
                   disabled={rejectMutation.isPending}
                   className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 transition disabled:opacity-60"
                 >
-                  {rejectMutation.isPending ? '处理中...' : '拒绝申请'}
+                  {rejectMutation.isPending ? "处理中..." : "拒绝申请"}
                 </button>
               </div>
             </div>
@@ -244,7 +277,13 @@ export default function OnboardingDetailPage() {
   );
 }
 
-function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
+function InfoRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <div className="text-xs text-gray-500 mb-1">{label}</div>
@@ -265,14 +304,24 @@ function DocumentList({ documents }: { documents: Record<string, any> }) {
             <ul className="list-disc list-inside space-y-1">
               {value.map((item) => (
                 <li key={item}>
-                  <a href={item} className="text-blue-600 hover:underline" target="_blank" rel="noreferrer">
+                  <a
+                    href={item}
+                    className="text-blue-600 hover:underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {item}
                   </a>
                 </li>
               ))}
             </ul>
-          ) : typeof value === 'string' ? (
-            <a href={value} className="text-blue-600 hover:underline" target="_blank" rel="noreferrer">
+          ) : typeof value === "string" ? (
+            <a
+              href={value}
+              className="text-blue-600 hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
               {value}
             </a>
           ) : (
@@ -285,4 +334,3 @@ function DocumentList({ documents }: { documents: Record<string, any> }) {
     </div>
   );
 }
-

@@ -1,27 +1,27 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Header } from '@/components/Header';
-import { Loading } from '@/components/Loading';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { useProducts } from '@/lib/apis/products';
-import { Package, Calendar } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { MultiMediaUploader, UploadedMedia } from '@lago/ui';
-import { defaultUploadHandler } from '@/lib/upload';
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Header } from "@/components/Header";
+import { Loading } from "@/components/Loading";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { useProducts } from "@/lib/apis/products";
+import { Package, Calendar } from "lucide-react";
+import toast from "react-hot-toast";
+import { MultiMediaUploader, UploadedMedia } from "@lago/ui";
+import { defaultUploadHandler } from "@/lib/upload";
 
 export default function PublishPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: 'toys' as 'toys' | 'gaming',
-    type: 'rent' as 'rent' | 'sell' | 'both',
-    price: '',
-    deposit: '',
-    location: '',
-    communityId: '',
+    title: "",
+    description: "",
+    category: "toys" as "toys" | "gaming" | "overall",
+    type: "rent" as "rent" | "sell" | "both",
+    price: "",
+    deposit: "",
+    location: "",
+    communityId: "",
   });
   const [images, setImages] = useState<UploadedMedia[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,11 +29,11 @@ export default function PublishPage() {
 
   const createMutation = useProducts({
     onSuccess: () => {
-      toast.success('发布成功，等待审核');
-      router.push('/profile/products');
+      toast.success("发布成功，等待审核");
+      router.push("/profile/products");
     },
     onError: (error: any) => {
-      toast.error(error.message || '发布失败');
+      toast.error(error.message || "发布失败");
       setIsSubmitting(false);
     },
   });
@@ -42,17 +42,17 @@ export default function PublishPage() {
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error('请输入商品标题');
+      toast.error("请输入商品标题");
       return;
     }
 
     if (!formData.price || parseFloat(formData.price) <= 0) {
-      toast.error('请输入有效的价格');
+      toast.error("请输入有效的价格");
       return;
     }
 
     if (images.length === 0) {
-      toast.error('请至少上传一张商品图片');
+      toast.error("请至少上传一张商品图片");
       return;
     }
 
@@ -95,7 +95,9 @@ export default function PublishPage() {
               multiple
               className="space-y-2"
             />
-            <p className="text-xs text-text-secondary mt-2">最多上传9张图片，支持拖拽调整排序</p>
+            <p className="text-xs text-text-secondary mt-2">
+              最多上传9张图片，支持拖拽调整排序
+            </p>
           </div>
 
           {/* 商品标题 */}
@@ -106,7 +108,9 @@ export default function PublishPage() {
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
               placeholder="请输入商品标题"
               className="w-full px-4 py-2 bg-container rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
               maxLength={50}
@@ -120,7 +124,9 @@ export default function PublishPage() {
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               placeholder="请输入商品描述..."
               rows={4}
               className="w-full px-4 py-2 bg-container rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
@@ -139,22 +145,22 @@ export default function PublishPage() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, category: 'toys' })}
+                onClick={() => setFormData({ ...formData, category: "toys" })}
                 className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${
-                  formData.category === 'toys'
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-text-primary'
+                  formData.category === "toys"
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-text-primary"
                 }`}
               >
                 玩具
               </button>
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, category: 'gaming' })}
+                onClick={() => setFormData({ ...formData, category: "gaming" })}
                 className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${
-                  formData.category === 'gaming'
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-text-primary'
+                  formData.category === "gaming"
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-text-primary"
                 }`}
               >
                 游戏机
@@ -170,33 +176,33 @@ export default function PublishPage() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, type: 'rent' })}
+                onClick={() => setFormData({ ...formData, type: "rent" })}
                 className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${
-                  formData.type === 'rent'
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-text-primary'
+                  formData.type === "rent"
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-text-primary"
                 }`}
               >
                 租赁
               </button>
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, type: 'sell' })}
+                onClick={() => setFormData({ ...formData, type: "sell" })}
                 className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${
-                  formData.type === 'sell'
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-text-primary'
+                  formData.type === "sell"
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-text-primary"
                 }`}
               >
                 出售
               </button>
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, type: 'both' })}
+                onClick={() => setFormData({ ...formData, type: "both" })}
                 className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${
-                  formData.type === 'both'
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-text-primary'
+                  formData.type === "both"
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-text-primary"
                 }`}
               >
                 租售
@@ -214,20 +220,22 @@ export default function PublishPage() {
               <input
                 type="number"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, price: e.target.value })
+                }
                 placeholder="0.00"
                 step="0.01"
                 min="0"
                 className="flex-1 px-4 py-2 bg-container rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              {formData.type === 'rent' && (
+              {formData.type === "rent" && (
                 <span className="text-sm text-text-secondary">/天</span>
               )}
             </div>
           </div>
 
           {/* 押金（仅租赁） */}
-          {formData.type === 'rent' || formData.type === 'both' ? (
+          {formData.type === "rent" || formData.type === "both" ? (
             <div>
               <label className="block text-sm font-medium text-text-primary mb-2">
                 押金（可选）
@@ -237,7 +245,9 @@ export default function PublishPage() {
                 <input
                   type="number"
                   value={formData.deposit}
-                  onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, deposit: e.target.value })
+                  }
                   placeholder="0.00"
                   step="0.01"
                   min="0"
@@ -255,7 +265,9 @@ export default function PublishPage() {
             <input
               type="text"
               value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, location: e.target.value })
+              }
               placeholder="请输入位置信息（可选）"
               className="w-full px-4 py-2 bg-container rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
             />
@@ -268,7 +280,7 @@ export default function PublishPage() {
               disabled={isSubmitting}
               className="w-full px-4 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? '发布中...' : '发布商品'}
+              {isSubmitting ? "发布中..." : "发布商品"}
             </button>
             <p className="text-xs text-text-secondary text-center mt-2">
               发布后需要等待平台审核
@@ -281,4 +293,3 @@ export default function PublishPage() {
     </div>
   );
 }
-

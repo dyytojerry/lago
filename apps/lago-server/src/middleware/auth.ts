@@ -38,13 +38,13 @@ export async function authUser(req: Request, res: Response, next: NextFunction) 
     // 检查token是否在黑名单中
     const isBlacklisted = await isTokenBlacklisted(token);
     if (isBlacklisted) {
-      return createErrorResponse(res, '认证令牌已失效', 422);
+      return createErrorResponse(res, '认证令牌已失效', 401);
     }
  
     const payload = verifyToken(token);
     
     if (!payload || !isUserToken(payload)) {
-      return createErrorResponse(res, '认证令牌无效或已过期', 422);
+      return createErrorResponse(res, '认证令牌无效或已过期', 401);
     }
  
     // 验证用户是否存在且激活
@@ -54,7 +54,7 @@ export async function authUser(req: Request, res: Response, next: NextFunction) 
     });
  
     if (!user || !user.isActive) {
-      return createErrorResponse(res, '用户不存在或已被禁用', 422);
+      return createErrorResponse(res, '用户不存在或已被禁用', 401);
     }
  
     req.user = {
@@ -84,13 +84,13 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
     // 检查token是否在黑名单中
     const isBlacklisted = await isTokenBlacklisted(token);
     if (isBlacklisted) {
-      return createErrorResponse(res, '认证令牌已失效', 422);
+      return createErrorResponse(res, '认证令牌已失效', 401);
     }
  
     const payload = verifyToken(token);
     
     if (!payload || !isOperationToken(payload)) {
-      return createErrorResponse(res, '认证令牌无效或已过期', 422);
+      return createErrorResponse(res, '认证令牌无效或已过期', 401);
     }
  
     // 验证运营人员是否存在且激活
@@ -114,7 +114,7 @@ export async function authOperation(req: Request, res: Response, next: NextFunct
     });
  
     if (!staff || !staff.isActive) {
-      return createErrorResponse(res, '运营人员不存在或已被禁用', 422);
+      return createErrorResponse(res, '运营人员不存在或已被禁用', 401);
     }
 
     const permissionsSet = new Set<string>();

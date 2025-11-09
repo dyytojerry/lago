@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
   requiredRole?: "parent" | "child";
 }
 
-export default function ProtectedRoute({
+export function ProtectedRoute({
   children,
   requiredRole,
 }: ProtectedRouteProps) {

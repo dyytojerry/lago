@@ -16,9 +16,9 @@ export class AdminProductsQueryParams {
   @IsOptional()
   status?: Types.ProductStatus;
 
-  @IsEnum(Types.ProductCategory)
+  @IsEnum(['toys', 'gaming'])
   @IsOptional()
-  category?: Types.ProductCategory;
+  category?: 'toys' | 'gaming';
 
   @IsString()
   @IsOptional()

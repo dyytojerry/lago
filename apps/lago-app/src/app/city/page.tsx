@@ -1,13 +1,17 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { ProductCard } from '@/components/ProductCard';
-import { Loading } from '@/components/Loading';
-import { EmptyState } from '@/components/EmptyState';
-import { useGeolocation } from '@/hooks/useGeolocation';
-import { communitieNearby, productHot, ProductHotQueryParams } from '@/lib/apis';
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { ProductCard } from "@/components/ProductCard";
+import { Loading } from "@/components/Loading";
+import { EmptyState } from "@/components/EmptyState";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import {
+  communitieNearby,
+  productHot,
+  ProductHotQueryParams,
+} from "@/lib/apis";
 import {
   Search,
   MapPin,
@@ -16,7 +20,8 @@ import {
   Sparkles,
   Store,
   Calendar,
-} from 'lucide-react';
+} from "lucide-react";
+import { CATEGORY_FILTERS, SERVICE_NAV, SORT_FILTERS } from "@/lib/options";
 
 interface Product {
   id: string;
@@ -30,7 +35,7 @@ interface Product {
   };
   viewCount: number;
   likeCount: number;
-  type: 'rent' | 'sell' | 'both';
+  type: "rent" | "sell" | "both";
   isVerified: boolean;
 }
 
@@ -41,65 +46,25 @@ interface Pagination {
   totalPages: number;
 }
 
-const SERVICE_NAV = [
-  {
-    id: 'publish',
-    title: '发布闲置',
-    description: '快速上架同城好物',
-    icon: ShoppingBag,
-    action: (router: ReturnType<typeof useRouter>) => router.push('/publish'),
-  },
-  {
-    id: 'flea',
-    title: '跳蚤市场',
-    description: '逛本地地摊集市',
-    icon: Sparkles,
-    action: (router: ReturnType<typeof useRouter>) => router.push('/flea-market'),
-  },
-  {
-    id: 'activities',
-    title: '社区活动',
-    description: '发现附近好玩事',
-    icon: Calendar,
-    action: (router: ReturnType<typeof useRouter>) => router.push('/communities/search'),
-  },
-  {
-    id: 'services',
-    title: '物业服务',
-    description: '便民服务到家',
-    icon: Store,
-    action: (router: ReturnType<typeof useRouter>) => router.push('/property/dashboard'),
-  },
-];
-
-const CATEGORY_FILTERS = [
-  { id: 'all', label: '全部', value: '' },
-  { id: 'toys', label: '玩具', value: 'toys' },
-  { id: 'gaming', label: '电玩', value: 'gaming' },
-] as const;
-
-const SORT_FILTERS = [
-  { id: 'createdAt', label: '最新发布', sortBy: 'createdAt', sortOrder: 'desc' },
-  { id: 'viewCount', label: '浏览优先', sortBy: 'viewCount', sortOrder: 'desc' },
-  { id: 'priceLow', label: '价格从低到高', sortBy: 'price', sortOrder: 'asc' },
-  { id: 'priceHigh', label: '价格从高到低', sortBy: 'price', sortOrder: 'desc' },
-  { id: 'popular', label: '人气优先', sortBy: 'viewCount', sortOrder: 'desc' },
-  { id: 'liked', label: '点赞优先', sortBy: 'likeCount', sortOrder: 'desc' },
-] as const;
-
 export default function CityPage() {
   const router = useRouter();
   const { latitude, longitude } = useGeolocation();
 
-  const [cityName, setCityName] = useState('同城');
+  const [cityName, setCityName] = useState("同城");
   const [cityId, setCityId] = useState<string | undefined>();
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [category, setCategory] = useState('');
-  const [sortBy, setSortBy] = useState<typeof SORT_FILTERS[number]['sortBy']>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [category, setCategory] = useState("");
+  const [sortBy, setSortBy] =
+    useState<(typeof SORT_FILTERS)[number]["sortBy"]>("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 12, total: 0, totalPages: 0 });
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -108,22 +73,22 @@ export default function CityPage() {
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const resolveCityFromStorage = useCallback(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     try {
-      const saved = window.localStorage.getItem('selectedLocation');
+      const saved = window.localStorage.getItem("selectedLocation");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed?.city?.id) {
           setCityId(parsed.city.id);
         }
         if (parsed?.city?.name) {
-          setCityName(parsed.city.name.replace(/市$/u, ''));
+          setCityName(parsed.city.name.replace(/市$/u, ""));
         } else if (parsed?.province?.name) {
-          setCityName(parsed.province.name.replace(/省$/u, ''));
+          setCityName(parsed.province.name.replace(/省$/u, ""));
         }
       }
     } catch (error) {
-      console.warn('Failed to parse saved location:', error);
+      console.warn("Failed to parse saved location:", error);
     }
   }, []);
 
@@ -135,15 +100,18 @@ export default function CityPage() {
     async function fetchNearbyCommunity() {
       if (cityId || !latitude || !longitude) return;
       try {
-        const resp = await communitieNearby({ latitude, longitude, radius: 5000 }, true);
+        const resp = await communitieNearby(
+          { latitude, longitude, radius: 5000 },
+          true
+        );
         const communities = resp.data?.communities || [];
         const first = communities[0];
         if (first?.city?.id) {
           setCityId(first.city.id);
-          setCityName(first.city.name?.replace(/市$/u, '') || cityName);
+          setCityName(first.city.name?.replace(/市$/u, "") || cityName);
         }
       } catch (error) {
-        console.warn('Failed to resolve city from geolocation:', error);
+        console.warn("Failed to resolve city from geolocation:", error);
       }
     }
 
@@ -157,8 +125,8 @@ export default function CityPage() {
       setLoading(true);
       try {
         const queryParams: ProductHotQueryParams = {
-          page: String(page),
-          limit: String(pagination.limit),
+          page: page,
+          limit: pagination.limit,
           sortBy,
           sortOrder,
         };
@@ -167,7 +135,7 @@ export default function CityPage() {
           queryParams.cityId = cityId;
         }
         if (category) {
-          queryParams.category = category as ProductHotQueryParams['category'];
+          queryParams.category = category as ProductHotQueryParams["category"];
         }
         if (searchKeyword.trim()) {
           queryParams.search = searchKeyword.trim();
@@ -177,14 +145,20 @@ export default function CityPage() {
 
         if (response.success && response.data) {
           setPagination(response.data.pagination);
-          setHasMore(response.data.pagination.page < response.data.pagination.totalPages);
-          setProducts((prev) => (append ? [...prev, ...response.data!.products] : response.data!.products));
+          setHasMore(
+            response.data.pagination.page < response.data.pagination.totalPages
+          );
+          setProducts((prev) =>
+            append
+              ? [...prev, ...response.data!.products]
+              : response.data!.products
+          );
         } else if (!append) {
           setProducts([]);
           setHasMore(false);
         }
       } catch (error) {
-        console.error('加载同城商品失败:', error);
+        console.error("加载同城商品失败:", error);
         if (!append) {
           setProducts([]);
           setHasMore(false);
@@ -222,8 +196,10 @@ export default function CityPage() {
   }, [hasMore, loading, loadProducts, pagination.page]);
 
   const activeSortId = useMemo(() => {
-    const match = SORT_FILTERS.find((filter) => filter.sortBy === sortBy && filter.sortOrder === sortOrder);
-    return match?.id || 'createdAt';
+    const match = SORT_FILTERS.find(
+      (filter) => filter.sortBy === sortBy && filter.sortOrder === sortOrder
+    );
+    return match?.id || "createdAt";
   }, [sortBy, sortOrder]);
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -265,8 +241,12 @@ export default function CityPage() {
                   <Icon className="w-5 h-5" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-text-primary">{service.title}</p>
-                  <p className="text-xs text-text-secondary">{service.description}</p>
+                  <p className="text-sm font-semibold text-text-primary">
+                    {service.title}
+                  </p>
+                  <p className="text-xs text-text-secondary">
+                    {service.description}
+                  </p>
                 </div>
               </button>
             );
@@ -283,8 +263,8 @@ export default function CityPage() {
                   onClick={() => setCategory(filter.value)}
                   className={`px-4 py-1.5 rounded-full text-sm transition-colors whitespace-nowrap ${
                     category === filter.value
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-100 text-text-secondary'
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-secondary"
                   }`}
                 >
                   {filter.label}
@@ -304,8 +284,8 @@ export default function CityPage() {
                 }}
                 className={`px-3 py-1 rounded-lg text-xs transition-colors whitespace-nowrap ${
                   activeSortId === filter.id
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'bg-gray-100 text-text-secondary'
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "bg-gray-100 text-text-secondary"
                 }`}
               >
                 {filter.label}
@@ -324,8 +304,8 @@ export default function CityPage() {
             title="暂无同城闲置"
             description={`当前${cityName}还没有闲置商品，去发布第一件吧！`}
             action={{
-              label: '发布闲置',
-              onClick: () => router.push('/publish'),
+              label: "发布闲置",
+              onClick: () => router.push("/publish"),
             }}
           />
         ) : (
@@ -351,11 +331,15 @@ export default function CityPage() {
         <div ref={loadMoreRef} className="h-10" />
 
         {loading && products.length > 0 && (
-          <div className="py-4 text-center text-sm text-text-secondary">加载更多同城好物...</div>
+          <div className="py-4 text-center text-sm text-text-secondary">
+            加载更多同城好物...
+          </div>
         )}
 
         {!hasMore && products.length > 0 && (
-          <div className="py-4 text-center text-xs text-text-tertiary">已经到底啦，敬请期待更多同城好物</div>
+          <div className="py-4 text-center text-xs text-text-tertiary">
+            已经到底啦，敬请期待更多同城好物
+          </div>
         )}
       </main>
 

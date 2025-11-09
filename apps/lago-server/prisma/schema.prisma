@@ -404,6 +404,7 @@ model CommunityActivity {
 enum ProductCategoryEnum {
   toys
   gaming
+  overall
 }
 
 enum TransactionType {

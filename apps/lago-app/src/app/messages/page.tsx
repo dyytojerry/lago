@@ -1,18 +1,20 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { Header } from '@/components/Header';
-import { Loading } from '@/components/Loading';
-import { EmptyState } from '@/components/EmptyState';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { useChatRooms } from '@/lib/apis/chat';
-import { MessageCircle } from 'lucide-react';
-import ProtectedRoute from '@lago/ui/src/components/ProtectedRoute';
+import { useRouter } from "next/navigation";
+import { Header } from "@/components/Header";
+import { Loading } from "@/components/Loading";
+import { EmptyState } from "@/components/EmptyState";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { useChatRooms } from "@/lib/apis/chat";
+import { MessageCircle } from "lucide-react";
+import { ProtectedRoute } from "@lago/ui";
 
 export default function MessagesPage() {
-  return <ProtectedRoute>
-    <MessagesContent />
-  </ProtectedRoute>
+  return (
+    <ProtectedRoute>
+      <MessagesContent />
+    </ProtectedRoute>
+  );
 }
 
 function MessagesContent() {
@@ -59,14 +61,14 @@ function MessagesContent() {
                       {otherUser?.avatarUrl ? (
                         <img
                           src={otherUser.avatarUrl}
-                          alt={otherUser.nickname || '用户'}
+                          alt={otherUser.nickname || "用户"}
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">
                           <span className="text-lg">
-                            {otherUser?.nickname?.[0] || '用'}
+                            {otherUser?.nickname?.[0] || "用"}
                           </span>
                         </div>
                       )}
@@ -76,17 +78,19 @@ function MessagesContent() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-text-primary truncate">
-                          {otherUser?.nickname || '用户'}
+                          {otherUser?.nickname || "用户"}
                         </span>
                         {lastMessage?.createdAt && (
                           <span className="text-xs text-text-secondary flex-shrink-0 ml-2">
-                            {new Date(lastMessage.createdAt).toLocaleDateString()}
+                            {new Date(
+                              lastMessage.createdAt
+                            ).toLocaleDateString()}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-text-secondary truncate flex-1">
-                          {lastMessage?.content || '暂无消息'}
+                          {lastMessage?.content || "暂无消息"}
                         </p>
                         {room.unreadCount > 0 && (
                           <span className="ml-2 px-2 py-0.5 bg-accent text-white text-xs rounded-full flex-shrink-0">
@@ -107,4 +111,3 @@ function MessagesContent() {
     </div>
   );
 }
-

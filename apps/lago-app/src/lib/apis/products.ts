@@ -23,8 +23,8 @@ export class ProductsDTO {
   @IsOptional()
   description?: string;
 
-  @IsEnum(Types.ProductCategory)
-  category: Types.ProductCategory;
+  @IsEnum(['toys', 'gaming'])
+  category: 'toys' | 'gaming';
 
   @IsEnum(Types.ProductType)
   type: Types.ProductType;
@@ -63,9 +63,9 @@ export class ProductDetailQueryParams {
   @IsOptional()
   limit?: number;
 
-  @IsEnum(Types.ProductCategory)
+  @IsEnum(['toys', 'gaming'])
   @IsOptional()
-  category?: Types.ProductCategory;
+  category?: 'toys' | 'gaming';
 
   @IsEnum(Types.ProductType)
   @IsOptional()
@@ -112,9 +112,9 @@ export class ProductUpdateDTO {
   @IsOptional()
   description?: string;
 
-  @IsEnum(Types.ProductCategory)
+  @IsEnum(['toys', 'gaming'])
   @IsOptional()
-  category?: Types.ProductCategory;
+  category?: 'toys' | 'gaming';
 
   @IsEnum(Types.ProductType)
   @IsOptional()
@@ -207,9 +207,9 @@ export class ProductHotQueryParams {
   @IsOptional()
   cityId?: string;
 
-  @IsEnum(Types.ProductCategory)
+  @IsEnum(['toys', 'gaming'])
   @IsOptional()
-  category?: Types.ProductCategory;
+  category?: 'toys' | 'gaming';
 
   @IsString()
   @IsOptional()

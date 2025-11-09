@@ -1,23 +1,27 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Header } from '@/components/Header';
-import { ProductCard } from '@/components/ProductCard';
-import { Loading } from '@/components/Loading';
-import { EmptyState } from '@/components/EmptyState';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { useProducts } from '@/lib/apis/products';
-import { Filter, SortAsc, SortDesc } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Header } from "@/components/Header";
+import { ProductCard } from "@/components/ProductCard";
+import { Loading } from "@/components/Loading";
+import { EmptyState } from "@/components/EmptyState";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { useProducts } from "@/lib/apis/products";
+import { Filter, SortAsc, SortDesc } from "lucide-react";
 
 export default function SearchPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [category, setCategory] = useState<'toys' | 'gaming' | ''>('');
-  const [type, setType] = useState<'rent' | 'sell' | 'both' | ''>('');
-  const [sortBy, setSortBy] = useState<'createdAt' | 'price' | 'viewCount' | 'likeCount'>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [category, setCategory] = useState<"toys" | "gaming" | "overall" | "">(
+    ""
+  );
+  const [type, setType] = useState<"rent" | "sell" | "both" | "">("");
+  const [sortBy, setSortBy] = useState<
+    "createdAt" | "price" | "viewCount" | "likeCount"
+  >("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [showFilters, setShowFilters] = useState(false);
 
   const { data, isLoading, error } = useProducts({
@@ -26,8 +30,8 @@ export default function SearchPage() {
     type: type || undefined,
     sortBy,
     sortOrder,
-    page: '1',
-    limit: '20',
+    page: "1",
+    limit: "20",
   });
 
   const products = data?.data?.products || [];
@@ -68,28 +72,36 @@ export default function SearchPage() {
           <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
             {/* 分类筛选 */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-primary mb-2">分类</label>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                分类
+              </label>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setCategory('')}
+                  onClick={() => setCategory("")}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    category === '' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    category === ""
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   全部
                 </button>
                 <button
-                  onClick={() => setCategory('toys')}
+                  onClick={() => setCategory("toys")}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    category === 'toys' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    category === "toys"
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   玩具
                 </button>
                 <button
-                  onClick={() => setCategory('gaming')}
+                  onClick={() => setCategory("gaming")}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    category === 'gaming' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    category === "gaming"
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   游戏机
@@ -99,36 +111,46 @@ export default function SearchPage() {
 
             {/* 交易类型筛选 */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-primary mb-2">交易类型</label>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                交易类型
+              </label>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setType('')}
+                  onClick={() => setType("")}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    type === '' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    type === ""
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   全部
                 </button>
                 <button
-                  onClick={() => setType('rent')}
+                  onClick={() => setType("rent")}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    type === 'rent' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    type === "rent"
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   租赁
                 </button>
                 <button
-                  onClick={() => setType('sell')}
+                  onClick={() => setType("sell")}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    type === 'sell' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    type === "sell"
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   出售
                 </button>
                 <button
-                  onClick={() => setType('both')}
+                  onClick={() => setType("both")}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    type === 'both' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    type === "both"
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   租售
@@ -138,37 +160,45 @@ export default function SearchPage() {
 
             {/* 排序 */}
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">排序</label>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                排序
+              </label>
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    setSortBy('createdAt');
-                    setSortOrder('desc');
+                    setSortBy("createdAt");
+                    setSortOrder("desc");
                   }}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-1 ${
-                    sortBy === 'createdAt' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    sortBy === "createdAt"
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   最新上架
                 </button>
                 <button
                   onClick={() => {
-                    setSortBy('price');
-                    setSortOrder('asc');
+                    setSortBy("price");
+                    setSortOrder("asc");
                   }}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-1 ${
-                    sortBy === 'price' && sortOrder === 'asc' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    sortBy === "price" && sortOrder === "asc"
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   价格最低
                 </button>
                 <button
                   onClick={() => {
-                    setSortBy('viewCount');
-                    setSortOrder('desc');
+                    setSortBy("viewCount");
+                    setSortOrder("desc");
                   }}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-1 ${
-                    sortBy === 'viewCount' ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'
+                    sortBy === "viewCount"
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-text-primary"
                   }`}
                 >
                   最受欢迎
@@ -182,19 +212,19 @@ export default function SearchPage() {
         {isLoading ? (
           <Loading text="加载中..." />
         ) : error ? (
-          <EmptyState
-            icon="search"
-            title="加载失败"
-            description="请稍后重试"
-          />
+          <EmptyState icon="search" title="加载失败" description="请稍后重试" />
         ) : products.length === 0 ? (
           <EmptyState
             icon="search"
             title="暂无商品"
-            description={searchQuery ? `没有找到"${searchQuery}"相关的商品` : '没有找到符合条件的商品'}
+            description={
+              searchQuery
+                ? `没有找到"${searchQuery}"相关的商品`
+                : "没有找到符合条件的商品"
+            }
             action={{
-              label: '发布商品',
-              onClick: () => router.push('/publish'),
+              label: "发布商品",
+              onClick: () => router.push("/publish"),
             }}
           />
         ) : (
@@ -245,4 +275,3 @@ export default function SearchPage() {
     </div>
   );
 }
-

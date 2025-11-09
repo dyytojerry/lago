@@ -46,6 +46,11 @@ export const swaggerSchemas = {
         nullable: true,
         description: '昵称',
       },
+      email: {
+        type: 'string',
+        nullable: true,
+        description: '邮箱',
+      },
       avatarUrl: {
         type: 'string',
         nullable: true,
@@ -312,7 +317,7 @@ export const swaggerSchemas = {
       },
       category: {
         type: 'string',
-        enum: ['toys', 'gaming'],
+        enum: ['toys', 'gaming', 'overall'],
         description: '商品分类',
       },
       type: {
