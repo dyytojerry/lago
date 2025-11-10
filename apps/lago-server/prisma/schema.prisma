@@ -35,15 +35,16 @@ model User {
   communityIds  String[] // 加入的小区ID数组
 
   // 关联关系
-  products       Product[]
-  ordersAsBuyer  Order[]          @relation("Buyer")
-  ordersAsSeller Order[]          @relation("Seller")
-  chatRooms      ChatRoomMember[]
-  messages       ChatMessage[]
-  notifications  Notification[]
-  settlements    Settlement[]
-  communities    UserCommunity[] // 加入的小区
+  products               Product[]
+  ordersAsBuyer          Order[]                 @relation("Buyer")
+  ordersAsSeller         Order[]                 @relation("Seller")
+  chatRooms              ChatRoomMember[]
+  messages               ChatMessage[]
+  notifications          Notification[]
+  settlements            Settlement[]
+  communities            UserCommunity[] // 加入的小区
   onboardingApplications OnboardingApplication[]
+  consignmentOrders      ConsignmentOrder[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -57,22 +58,26 @@ model User {
 // ==================== 运营系统账号体系 ====================
 
 model OperationStaff {
-  id          String        @id @default(cuid())
-  username    String        @unique // 用户名
-  email       String        @unique
-  password    String // 密码哈希
-  realName    String? // 真实姓名
-  phone       String? // 手机号
-  isActive    Boolean       @default(true) // 账号状态
-  isSuperAdmin Boolean      @default(false)
-  lastLoginAt DateTime? // 最后登录时间
-  lastLoginIp String? // 最后登录IP
+  id           String    @id @default(cuid())
+  username     String    @unique // 用户名
+  email        String    @unique
+  password     String // 密码哈希
+  realName     String? // 真实姓名
+  phone        String? // 手机号
+  isActive     Boolean   @default(true) // 账号状态
+  isSuperAdmin Boolean   @default(false)
+  lastLoginAt  DateTime? // 最后登录时间
+  lastLoginIp  String? // 最后登录IP
 
   // 关联关系
-  operationLogs OperationLog[]
-  loginLogs     LoginLog[]
-  roles         OperationStaffRole[]
-  onboardingReviews OnboardingApplication[] @relation("OnboardingReviewer")
+  operationsLogs         OperationLog[]
+  loginLogs              LoginLog[]
+  roles                  OperationStaffRole[]
+  onboardingReviews      OnboardingApplication[] @relation("OnboardingReviewer")
+  mallProducts           MallProduct[]
+  mallActivities         MallActivity[]
+  mallBanners            MallBanner[]
+  consignmentAssignments ConsignmentOrder[]      @relation("ConsignmentAssignee")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -105,17 +110,17 @@ model OperationRole {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  rolePermissions OperationRolePermission[]
+  rolePermissions  OperationRolePermission[]
   staffAssignments OperationStaffRole[]
 
   @@map("operation_roles")
 }
 
 model OperationRolePermission {
-  id           String             @id @default(cuid())
+  id           String   @id @default(cuid())
   roleId       String
   permissionId String
-  createdAt    DateTime           @default(now())
+  createdAt    DateTime @default(now())
 
   role       OperationRole       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission OperationPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
@@ -125,10 +130,10 @@ model OperationRolePermission {
 }
 
 model OperationStaffRole {
-  id        String         @id @default(cuid())
-  staffId   String
-  roleId    String
-  assignedAt DateTime      @default(now())
+  id         String   @id @default(cuid())
+  staffId    String
+  roleId     String
+  assignedAt DateTime @default(now())
 
   staff OperationStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
   role  OperationRole  @relation(fields: [roleId], references: [id], onDelete: Cascade)
@@ -138,30 +143,30 @@ model OperationStaffRole {
 }
 
 model OnboardingApplication {
-  id                     String           @id @default(cuid())
-  userId                 String
-  user                   User             @relation(fields: [userId], references: [id])
-  type                   OnboardingType
-  serviceCategory        ServiceCategory?
-  status                 OnboardingStatus @default(pending)
-  fullName               String?
-  idNumber               String?
-  businessName           String?
-  businessLicenseNumber  String?
-  contactPhone           String?
-  contactEmail           String?
-  address                String?
-  description            String?
-  experienceYears        Int?
-  documents              Json?
-  metadata               Json?
-  submittedAt            DateTime         @default(now())
-  reviewedAt             DateTime?
-  reviewerId             String?
-  reviewer               OperationStaff?  @relation("OnboardingReviewer", fields: [reviewerId], references: [id])
-  rejectReason           String?
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
+  id                    String           @id @default(cuid())
+  userId                String
+  user                  User             @relation(fields: [userId], references: [id])
+  type                  OnboardingType
+  serviceCategory       ServiceCategory?
+  status                OnboardingStatus @default(pending)
+  fullName              String?
+  idNumber              String?
+  businessName          String?
+  businessLicenseNumber String?
+  contactPhone          String?
+  contactEmail          String?
+  address               String?
+  description           String?
+  experienceYears       Int?
+  documents             Json?
+  metadata              Json?
+  submittedAt           DateTime         @default(now())
+  reviewedAt            DateTime?
+  reviewerId            String?
+  reviewer              OperationStaff?  @relation("OnboardingReviewer", fields: [reviewerId], references: [id])
+  rejectReason          String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -179,8 +184,8 @@ model Province {
   isActive  Boolean @default(true)
 
   // 关联关系
-  cities       City[]
-  communities  Community[]
+  cities      City[]
+  communities Community[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -197,8 +202,8 @@ model City {
   isActive   Boolean @default(true)
 
   // 关联关系
-  province   Province   @relation(fields: [provinceId], references: [id])
-  districts  District[]
+  province    Province    @relation(fields: [provinceId], references: [id])
+  districts   District[]
   communities Community[]
 
   createdAt DateTime @default(now())
@@ -217,7 +222,7 @@ model District {
   isActive  Boolean @default(true)
 
   // 关联关系
-  city       City        @relation(fields: [cityId], references: [id])
+  city        City        @relation(fields: [cityId], references: [id])
   communities Community[]
 
   createdAt DateTime @default(now())
@@ -230,76 +235,76 @@ model District {
 // ==================== 社区体系 ====================
 
 enum CommunityVerificationStatus {
-  pending   // 待认证（尚未提交材料）
+  pending // 待认证（尚未提交材料）
   processing // 待审核（已提交，审核中）
-  approved  // 已认证
-  rejected  // 已拒绝
+  approved // 已认证
+  rejected // 已拒绝
 }
 
 // ==================== 入驻体系 ====================
 
 enum OnboardingType {
-  personal_seller            // 个人卖家（实名认证）
-  small_business_seller      // 小微卖家（个体户资料）
-  personal_service_provider  // 个人服务商（实名认证）
+  personal_seller // 个人卖家（实名认证）
+  small_business_seller // 小微卖家（个体户资料）
+  personal_service_provider // 个人服务商（实名认证）
   enterprise_service_provider // 企业服务商（工商资料）
 }
 
 enum OnboardingStatus {
-  pending     // 填写中（草稿）
-  processing  // 待审核
-  approved    // 已通过
-  rejected    // 已拒绝
+  pending // 填写中（草稿）
+  processing // 待审核
+  approved // 已通过
+  rejected // 已拒绝
 }
 
 enum ServiceCategory {
-  recycling                // 废品回收
-  appliance_repair         // 家电维修
-  appliance_install        // 家电安装
-  appliance_cleaning       // 家电清洗
-  furniture_repair         // 家具维修
-  carpentry                // 木工
-  masonry                  // 泥工/砌筑
-  tiling                   // 瓦工/贴砖
-  painting                 // 油漆翻新
-  plumbing                 // 管道疏通/水电维修
-  electrician              // 电工服务
-  hvac_install             // 暖通空调安装维护
-  locksmith                // 开锁换锁
-  pest_control             // 除虫除害
-  cleaning                 // 专业保洁
-  moving_service           // 搬家搬运
-  landscaping              // 园艺绿化
-  decoration_design        // 装修设计
-  renovation_general       // 整体改造
-  other                    // 其他
+  recycling // 废品回收
+  appliance_repair // 家电维修
+  appliance_install // 家电安装
+  appliance_cleaning // 家电清洗
+  furniture_repair // 家具维修
+  carpentry // 木工
+  masonry // 泥工/砌筑
+  tiling // 瓦工/贴砖
+  painting // 油漆翻新
+  plumbing // 管道疏通/水电维修
+  electrician // 电工服务
+  hvac_install // 暖通空调安装维护
+  locksmith // 开锁换锁
+  pest_control // 除虫除害
+  cleaning // 专业保洁
+  moving_service // 搬家搬运
+  landscaping // 园艺绿化
+  decoration_design // 装修设计
+  renovation_general // 整体改造
+  other // 其他
 }
 
 model Community {
-  id          String  @id @default(cuid())
-  name        String // 小区名称
-  location    String // 地理位置（经纬度 "lat,lng"）
-  address     String? // 详细地址
-  provinceId  String? // 省份ID
-  cityId      String? // 城市ID
-  districtId  String? // 区县ID
-  partnerId   String? // 合作物业ID（User role=property）
-  geoHash     String? // 地理位置哈希，用于距离计算
-  images      String[] // 小区相册
-  description String? // 小区介绍
+  id                 String                      @id @default(cuid())
+  name               String // 小区名称
+  location           String // 地理位置（经纬度 "lat,lng"）
+  address            String? // 详细地址
+  provinceId         String? // 省份ID
+  cityId             String? // 城市ID
+  districtId         String? // 区县ID
+  partnerId          String? // 合作物业ID（User role=property）
+  geoHash            String? // 地理位置哈希，用于距离计算
+  images             String[] // 小区相册
+  description        String? // 小区介绍
   verificationStatus CommunityVerificationStatus @default(pending) // 认证状态
-  verifiedAt  DateTime? // 认证时间
-  verifiedBy  String? // 认证审核人ID（OperationStaff）
-  isActive    Boolean @default(true)
+  verifiedAt         DateTime? // 认证时间
+  verifiedBy         String? // 认证审核人ID（OperationStaff）
+  isActive           Boolean                     @default(true)
 
   // 关联关系
-  province    Province?            @relation(fields: [provinceId], references: [id])
-  city        City?                @relation(fields: [cityId], references: [id])
-  district    District?            @relation(fields: [districtId], references: [id])
-  products    Product[]
-  liveEvents  LiveEvent[]          @relation("LiveEvents")
-  activities  CommunityActivity[]
-  members     UserCommunity[]
+  province     Province?              @relation(fields: [provinceId], references: [id])
+  city         City?                  @relation(fields: [cityId], references: [id])
+  district     District?              @relation(fields: [districtId], references: [id])
+  products     Product[]
+  liveEvents   LiveEvent[]            @relation("LiveEvents")
+  activities   CommunityActivity[]
+  members      UserCommunity[]
   verification CommunityVerification?
 
   createdAt DateTime @default(now())
@@ -334,17 +339,17 @@ model UserCommunity {
 
 // 小区认证申请表
 model CommunityVerification {
-  id          String   @id @default(cuid())
-  communityId String  @unique
-  companyName String  // 物业公司名称
-  contactName String  // 联系人姓名
+  id           String                      @id @default(cuid())
+  communityId  String                      @unique
+  companyName  String // 物业公司名称
+  contactName  String // 联系人姓名
   contactPhone String // 联系人电话
-  licenseUrl  String  // 营业执照URL
-  proofUrl    String? // 其他证明资料URL
-  status      CommunityVerificationStatus @default(pending)
+  licenseUrl   String // 营业执照URL
+  proofUrl     String? // 其他证明资料URL
+  status       CommunityVerificationStatus @default(pending)
   rejectReason String? // 拒绝原因
-  reviewedBy  String? // 审核人ID（OperationStaff）
-  reviewedAt  DateTime? // 审核时间
+  reviewedBy   String? // 审核人ID（OperationStaff）
+  reviewedAt   DateTime? // 审核时间
 
   // 关联关系
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
@@ -359,33 +364,33 @@ model CommunityVerification {
 // 小区活动
 enum CommunityActivityType {
   announcement // 公告
-  market       // 摆摊
-  festival     // 过节
-  event        // 活动
-  other        // 其他
+  market // 摆摊
+  festival // 过节
+  event // 活动
+  other // 其他
 }
 
 enum CommunityActivityStatus {
-  draft      // 草稿
-  published  // 已发布
-  ended      // 已结束
-  cancelled  // 已取消
+  draft // 草稿
+  published // 已发布
+  ended // 已结束
+  cancelled // 已取消
 }
 
 model CommunityActivity {
-  id          String                 @id @default(cuid())
-  communityId String
-  creatorId   String // 创建人ID（User role=property）
-  type        CommunityActivityType
-  title       String // 活动标题
-  description String? // 活动描述
-  images      String[] // 活动图片
-  startTime   DateTime? // 开始时间
-  endTime     DateTime? // 结束时间
-  location    String? // 活动地点
-  status      CommunityActivityStatus @default(draft)
-  viewCount   Int     @default(0) // 浏览次数
-  participantCount Int @default(0) // 参与人数
+  id               String                  @id @default(cuid())
+  communityId      String
+  creatorId        String // 创建人ID（User role=property）
+  type             CommunityActivityType
+  title            String // 活动标题
+  description      String? // 活动描述
+  images           String[] // 活动图片
+  startTime        DateTime? // 开始时间
+  endTime          DateTime? // 结束时间
+  location         String? // 活动地点
+  status           CommunityActivityStatus @default(draft)
+  viewCount        Int                     @default(0) // 浏览次数
+  participantCount Int                     @default(0) // 参与人数
 
   // 关联关系
   community Community @relation(fields: [communityId], references: [id])
@@ -421,6 +426,33 @@ enum ProductStatus {
   offline
 }
 
+enum MallProductStatus {
+  draft
+  published
+  offline
+}
+
+enum MallActivityStatus {
+  draft
+  published
+  offline
+}
+
+enum MallBannerStatus {
+  inactive
+  active
+}
+
+enum ConsignmentStatus {
+  submitted
+  received
+  refurbishing
+  listed
+  sold
+  settled
+  cancelled
+}
+
 model Product {
   id          String              @id @default(cuid())
   ownerId     String // 卖家ID
@@ -453,6 +485,85 @@ model Product {
   @@index([status])
   @@index([geoHash])
   @@map("products")
+}
+
+model MallProduct {
+  id                  String            @id @default(cuid())
+  title               String
+  description         String?
+  price               Decimal           @db.Decimal(10, 2)
+  images              String[]          @default([])
+  visibleCommunityIds String[]          @default([])
+  status              MallProductStatus @default(draft)
+  createdById         String?
+  createdBy           OperationStaff?   @relation(fields: [createdById], references: [id])
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  consignmentOrders   ConsignmentOrder[]
+
+  @@index([status])
+  @@index([createdById])
+  @@map("mall_products")
+}
+
+model MallActivity {
+  id                  String             @id @default(cuid())
+  title               String
+  description         String?
+  coverImage          String?
+  startTime           DateTime?
+  endTime             DateTime?
+  visibleCommunityIds String[]           @default([])
+  status              MallActivityStatus @default(draft)
+  createdById         String?
+  createdBy           OperationStaff?    @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdById])
+  @@map("mall_activities")
+}
+
+model MallBanner {
+  id          String           @id @default(cuid())
+  title       String
+  imageUrl    String
+  linkUrl     String?
+  status      MallBannerStatus @default(active)
+  sortOrder   Int              @default(0)
+  createdById String?
+  createdBy   OperationStaff?  @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@map("mall_banners")
+}
+
+model ConsignmentOrder {
+  id              String            @id @default(cuid())
+  userId          String
+  productTitle    String
+  productImages   String[]          @default([])
+  expectedPrice   Decimal?          @db.Decimal(10, 2)
+  description     String?
+  status          ConsignmentStatus @default(submitted)
+  assignedStaffId String?
+  assignedStaff   OperationStaff?   @relation("ConsignmentAssignee", fields: [assignedStaffId], references: [id])
+  mallProductId   String?
+  mallProduct     MallProduct?      @relation(fields: [mallProductId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([assignedStaffId])
+  @@map("consignment_orders")
 }
 
 // ==================== 订单系统 ====================

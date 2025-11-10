@@ -9,19 +9,39 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+interface MenuItem {
+  title: string;
+  icon?: string;
+  path?: string;
+  permission?: string;
+  children?: MenuItem[];
+}
+
 export default function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { isLoggedIn, user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const handleLogout = () => {
     logout();
     router.push("/login");
   };
 
+  const hasPermission = (permission?: string) => {
+    if (!permission) return true;
+    if (!isLoggedIn) return false;
+    if (user?.isSuperAdmin) return true;
+    const permissions: string[] = Array.isArray((user as any)?.permissions)
+      ? ((user as any)?.permissions as string[])
+      : [];
+    if (permissions.includes("*")) return true;
+    return permissions.includes(permission);
+  };
+
   const menuItems = useMemo(() => {
-    return [
+    const rawMenu: MenuItem[] = [
       {
         title: "仪表盘",
         path: "/admin/dashboard",
@@ -33,6 +53,37 @@ export default function Layout({ children }: LayoutProps) {
         path: "/admin/products",
         icon: "📦",
         permission: "products:review",
+      },
+      {
+        title: "商城运营",
+        icon: "🛍️",
+        permission: undefined,
+        children: [
+          {
+            title: "商城商品",
+            path: "/admin/mall/products",
+            icon: "🛒",
+            permission: "mall_products:manage",
+          },
+          {
+            title: "商城活动",
+            path: "/admin/mall/activities",
+            icon: "🎉",
+            permission: "mall_activities:manage",
+          },
+          {
+            title: "商城钻石位",
+            path: "/admin/mall/banners",
+            icon: "💎",
+            permission: "mall_banners:manage",
+          },
+          {
+            title: "寄售管理",
+            path: "/admin/mall/consignments",
+            icon: "📦",
+            permission: "mall_consignments:manage",
+          },
+        ],
       },
       {
         title: "小区管理",
@@ -88,12 +139,31 @@ export default function Layout({ children }: LayoutProps) {
         icon: "👤",
         permission: "system:staff_roles",
       },
-    ].filter((item) => {
-      if (!isLoggedIn) return false;
-      if (user?.isSuperAdmin) return true;
-      return user?.permissions?.includes(item.permission);
-    })
+    ];
+
+    const filtered = rawMenu
+      .map((item) => {
+        if (item.children && item.children.length > 0) {
+          const visibleChildren = item.children.filter((child) => hasPermission(child.permission));
+          if (!isLoggedIn || visibleChildren.length === 0) {
+            return null;
+          }
+          return { ...item, children: visibleChildren } as MenuItem;
+        }
+
+        if (!hasPermission(item.permission)) {
+          return null;
+        }
+        return item;
+      })
+      .filter(Boolean) as MenuItem[];
+
+    return filtered;
   }, [isLoggedIn, user]);
+
+  const handleToggleGroup = (title: string) => {
+    setOpenGroups((prev) => ({ ...prev, [title]: !prev[title] }));
+  };
 
   const displayName = user?.realName || user?.username || user?.email;
   const roleNames = Array.isArray(user?.roles)
@@ -141,20 +211,69 @@ export default function Layout({ children }: LayoutProps) {
           <nav className="p-4">
             <ul className="space-y-2">
               {menuItems.map((item) => {
-                const isActive =
-                  pathname === item.path ||
-                  pathname?.startsWith(item.path + "/");
+                const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+
+                if (hasChildren) {
+                  const isExpanded = openGroups[item.title] ?? true;
+                  const anyChildActive = item.children?.some((child) =>
+                    pathname === child.path || pathname?.startsWith(child.path + "/")
+                  );
+
+                  return (
+                    <li key={item.title} className="space-y-1">
+                      <button
+                        onClick={() => handleToggleGroup(item.title)}
+                        className={`w-full flex items-center justify-between px-4 py-2 rounded-md text-left transition-colors ${
+                          anyChildActive
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <span className="flex items-center gap-3">
+                          {item.icon && <span className="text-lg">{item.icon}</span>}
+                          <span>{item.title}</span>
+                        </span>
+                        <span className="text-sm">{isExpanded ? "−" : "+"}</span>
+                      </button>
+                      {isExpanded && (
+                        <ul className="pl-4 space-y-1">
+                          {item.children?.map((child) => {
+                            const childActive =
+                              pathname === child.path || pathname?.startsWith(child.path + "/");
+                            return (
+                              <li key={child.path}>
+                                <Link
+                                  href={child.path!}
+                                  className={`flex items-center gap-3 px-4 py-2 rounded-md transition-colors ${
+                                    childActive
+                                      ? "bg-blue-50 text-blue-600 font-medium"
+                                      : "text-gray-600 hover:bg-gray-100"
+                                  }`}
+                                >
+                                  {child.icon && <span className="text-lg">{child.icon}</span>}
+                                  <span>{child.title}</span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                }
+
+                const isActive = pathname === item.path || pathname?.startsWith((item.path ?? '') + "/");
                 return (
                   <li key={item.path}>
                     <Link
-                      href={item.path}
+                      href={item.path!}
                       className={`flex items-center gap-3 px-4 py-2 rounded-md transition-colors ${
                         isActive
                           ? "bg-blue-50 text-blue-600 font-medium"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
-                      <span className="text-lg">{item.icon}</span>
+                      {item.icon && <span className="text-lg">{item.icon}</span>}
                       <span>{item.title}</span>
                     </Link>
                   </li>

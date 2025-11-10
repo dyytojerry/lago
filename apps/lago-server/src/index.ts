@@ -36,6 +36,10 @@ import operationSystemRoutes from './routes/operation.roles.routes';
 import uploadRoutes from './routes/upload.routes';
 import onboardingAppRoutes from './routes/onboarding.app.routes';
 import onboardingAdminRoutes from './routes/onboarding.admin.routes';
+import mallProductsRoutes from './routes/mall.products.routes';
+import mallActivitiesRoutes from './routes/mall.activities.routes';
+import mallBannersRoutes from './routes/mall.banners.routes';
+import mallConsignmentsRoutes from './routes/mall.consignments.routes';
 
 
 // Load environment variables
@@ -135,6 +139,10 @@ app.use('/api/admin/orders', authOperation, ordersRoutes);
 app.use('/api/admin/communities', authOperation, communitiesRoutes);
 app.use('/api/admin/system',authOperation,  operationSystemRoutes);
 app.use('/api/admin/onboarding', onboardingAdminRoutes);
+app.use('/api/admin/mall/products', mallProductsRoutes);
+app.use('/api/admin/mall/activities', mallActivitiesRoutes);
+app.use('/api/admin/mall/banners', mallBannersRoutes);
+app.use('/api/admin/mall/consignments', mallConsignmentsRoutes);
 
 
 // Initialize WebSocket service

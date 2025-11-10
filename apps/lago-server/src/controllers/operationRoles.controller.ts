@@ -22,6 +22,10 @@ const DEFAULT_PERMISSIONS = [
   { code: 'finance:manage', name: '管理财务', category: 'finance', description: '处理结算与财务操作' },
   { code: 'system:roles', name: '管理角色权限', category: 'system', description: '配置运营角色权限' },
   { code: 'system:staff_roles', name: '配置员工角色', category: 'system', description: '为运营员工分配角色' },
+  { code: 'mall_products:manage', name: '商城运营 - 商品管理', category: 'mall', description: '发布商城商品并绑定可见小区' },
+  { code: 'mall_activities:manage', name: '商城运营 - 活动管理', category: 'mall', description: '创建商城活动并配置覆盖小区' },
+  { code: 'mall_banners:manage', name: '商城运营 - 钻石位管理', category: 'mall', description: '上传商城Banner并配置跳转链接' },
+  { code: 'mall_consignments:manage', name: '商城运营 - 寄售管理', category: 'mall', description: '管理平台帮卖寄售订单与商品发布' },
 ];
 
 const DEFAULT_ROLES = [
@@ -71,6 +75,16 @@ const DEFAULT_ROLES = [
       'finance:view',
       'finance:manage',
       'orders:view',
+    ],
+  },
+  {
+    name: 'mall_operator',
+    description: '商城运营专员，负责商城商品与活动运营',
+    permissionCodes: [
+      'mall_products:manage',
+      'mall_activities:manage',
+      'mall_banners:manage',
+      'mall_consignments:manage',
     ],
   },
 ];

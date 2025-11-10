@@ -15,6 +15,7 @@ import {
   productDetail,
   communitieActivities,
 } from "@/lib/apis";
+import { useOnboarding } from "@/lib/apis/onboarding";
 import {
   Bell,
   MapPin,
@@ -26,6 +27,11 @@ import {
   Calendar,
   Play,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  PublishActionSheet,
+  PublishActionKey,
+} from "@/components/PublishActionSheet";
 
 interface Product {
   id: string;
@@ -112,6 +118,26 @@ export default function HomePage() {
   const [hasMoreActivities, setHasMoreActivities] = useState(true);
   const activityObserverRef = useRef<HTMLDivElement | null>(null);
   const ACTIVITY_PAGE_SIZE = 10;
+  const [showPublishSheet, setShowPublishSheet] = useState(false);
+
+  const {
+    data: onboardingData,
+    isFetching: onboardingFetching,
+    refetch: refetchOnboarding,
+  } = useOnboarding();
+
+  useEffect(() => {
+    if (showPublishSheet && user) {
+      refetchOnboarding();
+    }
+  }, [showPublishSheet, user, refetchOnboarding]);
+
+  const hasApprovedOnboarding = useMemo(() => {
+    const apps = onboardingData?.data?.applications || [];
+    return apps.some(
+      (app: any) => (app.status || "").toLowerCase() === "approved"
+    );
+  }, [onboardingData]);
 
   useEffect(() => {
     if (!geoLoading && latitude && longitude) {
@@ -311,8 +337,61 @@ export default function HomePage() {
   }, [loadMoreActivities]);
 
   const handlePublish = () => {
-    router.push("/publish");
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    setShowPublishSheet(true);
   };
+
+  const handlePublishAction = useCallback(
+    (action: PublishActionKey) => {
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      const needsOnboarding =
+        action === "publish" || action === "resell" || action === "skill";
+
+      if (needsOnboarding) {
+        if (onboardingFetching) {
+          toast("正在检查入驻状态，请稍候完成再操作");
+          return;
+        }
+
+        if (!hasApprovedOnboarding) {
+          setShowPublishSheet(false);
+          toast.error("请先完成入驻申请，再发布闲置或技能");
+          router.push("/profile/onboarding");
+          return;
+        }
+      }
+
+      setShowPublishSheet(false);
+
+      switch (action) {
+        case "publish":
+          router.push("/publish");
+          break;
+        case "resell":
+          router.push("/publish?mode=resell");
+          break;
+        case "skill":
+          router.push("/publish?mode=skill");
+          break;
+        case "recycle":
+          router.push("/publish?mode=recycle");
+          break;
+        case "consignment":
+          router.push("/publish?mode=consignment");
+          break;
+        default:
+          router.push("/publish");
+      }
+    },
+    [user, router, onboardingFetching, hasApprovedOnboarding]
+  );
 
   const renderHeader = () => (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur">
@@ -597,6 +676,13 @@ export default function HomePage() {
       >
         <Plus className="w-6 h-6" />
       </button>
+
+      <PublishActionSheet
+        open={showPublishSheet}
+        onClose={() => setShowPublishSheet(false)}
+        onAction={handlePublishAction}
+        checkingOnboarding={showPublishSheet && !!user && onboardingFetching}
+      />
 
       <BottomNavigation />
     </div>

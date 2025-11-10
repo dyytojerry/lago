@@ -14,6 +14,7 @@ export enum OperationStaffRole {
   SERVICE_STAFF = 'service_staff',
   OPERATION_STAFF = 'operation_staff',
   FINANCE_STAFF = 'finance_staff',
+  MALL_OPERATOR = 'mall_operator',
 }
 
 export enum ProductCategory {

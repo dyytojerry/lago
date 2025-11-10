@@ -40,7 +40,7 @@ export default function ProductsPage() {
     category: "",
     search: "",
   });
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   useEffect(() => {
     if (!isLoggedIn) {
       router.push("/login");
@@ -291,27 +291,28 @@ export default function ProductsPage() {
                         >
                           详情
                         </Link>
-                        {hasPermission(["super_admin", "audit_staff"]) &&
-                          product.status === "pending" && (
-                            <>
-                              <button
-                                onClick={() =>
-                                  handleApprove(product.id, "approve")
-                                }
-                                className="text-green-600 hover:text-green-800"
-                              >
-                                通过
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleApprove(product.id, "reject")
-                                }
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                拒绝
-                              </button>
-                            </>
-                          )}
+                        {user?.permissions.includes("super_admin") ||
+                          (user?.permissions.includes("audit_staff") &&
+                            product.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    handleApprove(product.id, "approve")
+                                  }
+                                  className="text-green-600 hover:text-green-800"
+                                >
+                                  通过
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleApprove(product.id, "reject")
+                                  }
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  拒绝
+                                </button>
+                              </>
+                            ))}
                       </div>
                     </td>
                   </tr>
