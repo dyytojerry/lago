@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@lago/ui";
+import { useAuth, SingleMediaUploader, UploadedMedia } from "@lago/ui";
 import toast from "react-hot-toast";
 import {
   useAdminMallBanners,
   useAdminMallBanner,
-  adminMallBannerUpdate,
+  useAdminMallBannerUpdate,
   adminMallBannerDelete,
 } from "@/lib/apis";
+import { defaultUploadHandler } from "@/lib/upload";
 
 const STATUS_OPTIONS = [
   { label: "全部状态", value: "" },
@@ -22,14 +23,36 @@ const STATUS_BADGE: Record<string, string> = {
   inactive: "bg-gray-100 text-gray-600",
 };
 
-const EMPTY_FORM = {
-  id: undefined as string | undefined,
-  title: "",
-  imageUrl: "",
-  linkUrl: "",
-  status: "active" as "active" | "inactive",
-  sortOrder: 0,
-};
+interface MallBannerForm {
+  id?: string;
+  title: string;
+  image: UploadedMedia | null;
+  linkUrl: string;
+  status: "active" | "inactive";
+  sortOrder: number;
+}
+
+function createEmptyBannerForm(): MallBannerForm {
+  return {
+    id: undefined,
+    title: "",
+    image: null,
+    linkUrl: "",
+    status: "active",
+    sortOrder: 0,
+  };
+}
+
+function bannerImageFromUrl(url: string): UploadedMedia {
+  const name = url.split("/").pop() || "banner-image";
+  return {
+    url,
+    name,
+    size: 0,
+    mimeType: "image/*",
+    kind: "image",
+  };
+}
 
 export default function MallBannersPage() {
   const router = useRouter();
@@ -37,7 +60,9 @@ export default function MallBannersPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState<MallBannerForm>(() =>
+    createEmptyBannerForm()
+  );
 
   const hasPermission = useMemo(() => {
     if (!user) return false;
@@ -65,10 +90,10 @@ export default function MallBannersPage() {
   );
 
   const createMutation = useAdminMallBanner();
-  const updateMutation = useAdminMallBanner();
+  const updateMutation = useAdminMallBannerUpdate({ id: form.id || "" });
 
   const handleOpenCreate = () => {
-    setForm(EMPTY_FORM);
+    setForm(createEmptyBannerForm());
     setFormOpen(true);
   };
 
@@ -76,7 +101,7 @@ export default function MallBannersPage() {
     setForm({
       id: banner.id,
       title: banner.title ?? "",
-      imageUrl: banner.imageUrl ?? "",
+      image: banner.imageUrl ? bannerImageFromUrl(banner.imageUrl) : null,
       linkUrl: banner.linkUrl ?? "",
       status: banner.status ?? "active",
       sortOrder: banner.sortOrder ?? 0,
@@ -85,7 +110,7 @@ export default function MallBannersPage() {
   };
 
   const closeForm = () => {
-    setForm(EMPTY_FORM);
+    setForm(createEmptyBannerForm());
     setFormOpen(false);
   };
 
@@ -94,7 +119,7 @@ export default function MallBannersPage() {
     try {
       const payload = {
         title: form.title.trim(),
-        imageUrl: form.imageUrl.trim(),
+        imageUrl: form.image?.url || "",
         linkUrl: form.linkUrl?.trim() || undefined,
         status: form.status,
         sortOrder: Number(form.sortOrder) || 0,
@@ -106,7 +131,7 @@ export default function MallBannersPage() {
       }
 
       if (!payload.imageUrl) {
-        toast.error("请填写图片地址");
+        toast.error("请上传图片");
         return;
       }
 
@@ -335,20 +360,22 @@ export default function MallBannersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  图片地址
-                </label>
-                <input
-                  value={form.imageUrl}
-                  onChange={(event) =>
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  Banner 图片
+                </p>
+                <SingleMediaUploader
+                  value={form.image}
+                  onChange={(media) =>
                     setForm((prev) => ({
                       ...prev,
-                      imageUrl: event.target.value,
+                      image: media,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="https://example.com/banner.jpg"
-                  required
+                  accept="image"
+                  uploadHandler={defaultUploadHandler}
+                  placeholder="上传或拖拽图片"
+                  buttonText="上传图片"
+                  allowRemove
                 />
               </div>
 

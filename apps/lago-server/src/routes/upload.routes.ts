@@ -7,7 +7,6 @@ import {
   completeMultipartUpload,
   abortMultipartUpload,
 } from '../controllers/upload.controller';
-import { authUser } from '../middleware/auth';
 
 const router = Router();
 const memoryStorage = multer({ storage: multer.memoryStorage() });
@@ -57,7 +56,7 @@ const memoryStorage = multer({ storage: multer.memoryStorage() });
  *       401:
  *         description: 未认证
  */
-router.post('/single', authUser, memoryStorage.single('file'), uploadSingleMedia);
+router.post('/single', memoryStorage.single('file'), uploadSingleMedia);
 
 /**
  * @swagger
@@ -96,7 +95,7 @@ router.post('/single', authUser, memoryStorage.single('file'), uploadSingleMedia
  *                     data:
  *                       $ref: '#/components/schemas/MultipartInitResponse'
  */
-router.post('/multipart/init', authUser, initMultipartUpload);
+router.post('/multipart/init', initMultipartUpload);
 
 /**
  * @swagger
@@ -140,7 +139,7 @@ router.post('/multipart/init', authUser, initMultipartUpload);
  *                     data:
  *                       $ref: '#/components/schemas/MultipartPartResponse'
  */
-router.post('/multipart/part', authUser, memoryStorage.single('file'), uploadMultipartPart);
+router.post('/multipart/part', memoryStorage.single('file'), uploadMultipartPart);
 
 /**
  * @swagger
@@ -162,7 +161,7 @@ router.post('/multipart/part', authUser, memoryStorage.single('file'), uploadMul
  *       400:
  *         description: 参数错误
  */
-router.post('/multipart/complete', authUser, completeMultipartUpload);
+router.post('/multipart/complete', completeMultipartUpload);
 
 /**
  * @swagger
@@ -182,7 +181,7 @@ router.post('/multipart/complete', authUser, completeMultipartUpload);
  *       200:
  *         description: 成功
  */
-router.post('/multipart/abort', authUser, abortMultipartUpload);
+router.post('/multipart/abort', abortMultipartUpload);
 
 export default router;
 

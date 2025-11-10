@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@lago/ui";
+import { useAuth, MultiMediaUploader, UploadedMedia } from "@lago/ui";
 import toast from "react-hot-toast";
 import {
   adminMallProducts,
@@ -11,13 +11,14 @@ import {
   adminMallProductDelete,
 } from "@/lib/apis";
 import { adminCommunities } from "@/lib/apis/admincommunities";
+import { defaultUploadHandler } from "@/lib/upload";
 
 interface MallProductForm {
   id?: string;
   title: string;
   description: string;
   price: string;
-  images: string;
+  images: UploadedMedia[];
   visibleCommunityIds: string[];
   status: "draft" | "published" | "offline";
 }
@@ -35,14 +36,27 @@ const STATUS_COLORS: Record<string, string> = {
   offline: "bg-red-100 text-red-600",
 };
 
-const EMPTY_FORM: MallProductForm = {
-  title: "",
-  description: "",
-  price: "",
-  images: "",
-  visibleCommunityIds: [],
-  status: "draft",
-};
+function createEmptyProductForm(): MallProductForm {
+  return {
+    title: "",
+    description: "",
+    price: "",
+    images: [],
+    visibleCommunityIds: [],
+    status: "draft",
+  };
+}
+
+function toUploadedMedia(url: string, index: number): UploadedMedia {
+  const name = url.split("/").pop() || `image-${index + 1}`;
+  return {
+    url,
+    name,
+    size: 0,
+    mimeType: "image/*",
+    kind: "image",
+  };
+}
 
 export default function MallProductsPage() {
   const router = useRouter();
@@ -58,7 +72,9 @@ export default function MallProductsPage() {
   const [communities, setCommunities] = useState<any[]>([]);
   const [communityLoading, setCommunityLoading] = useState(false);
 
-  const [form, setForm] = useState<MallProductForm>(EMPTY_FORM);
+  const [form, setForm] = useState<MallProductForm>(() =>
+    createEmptyProductForm()
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -122,7 +138,7 @@ export default function MallProductsPage() {
   };
 
   const handleOpenCreate = () => {
-    setForm(EMPTY_FORM);
+    setForm(createEmptyProductForm());
     setFormOpen(true);
   };
 
@@ -132,7 +148,9 @@ export default function MallProductsPage() {
       title: product.title || "",
       description: product.description || "",
       price: product.price ? String(product.price) : "",
-      images: (product.images || []).join("\n"),
+      images: (product.images || []).map((url: string, index: number) =>
+        toUploadedMedia(url, index)
+      ),
       visibleCommunityIds: product.visibleCommunityIds || [],
       status: product.status || "draft",
     });
@@ -140,7 +158,7 @@ export default function MallProductsPage() {
   };
 
   const resetForm = () => {
-    setForm(EMPTY_FORM);
+    setForm(createEmptyProductForm());
     setFormOpen(false);
   };
 
@@ -152,10 +170,7 @@ export default function MallProductsPage() {
         title: form.title.trim(),
         description: form.description?.trim() || undefined,
         price: Number(form.price),
-        images: form.images
-          .split(/\n|,/)
-          .map((item) => item.trim())
-          .filter(Boolean),
+        images: form.images.map((image) => image.url).filter(Boolean),
         visibleCommunityIds: form.visibleCommunityIds,
         status: form.status,
       };
@@ -472,16 +487,20 @@ export default function MallProductsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  商品图片（每行一个 URL）
-                </label>
-                <textarea
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  商品图片
+                </p>
+                <MultiMediaUploader
                   value={form.images}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, images: event.target.value }))
+                  onChange={(medias) =>
+                    setForm((prev) => ({ ...prev, images: medias }))
                   }
-                  className="w-full min-h-[80px] px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="https://example.com/image.jpg"
+                  accept="image"
+                  uploadHandler={defaultUploadHandler}
+                  placeholder="上传商品图片"
+                  allowPreview
+                  allowRemove
+                  maxFiles={9}
                 />
               </div>
 

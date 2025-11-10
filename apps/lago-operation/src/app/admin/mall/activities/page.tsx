@@ -2,15 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@lago/ui";
+import { useAuth, SingleMediaUploader, UploadedMedia } from "@lago/ui";
 import toast from "react-hot-toast";
 import {
   useAdminMallActivities,
   useAdminMallActivitie,
-  adminMallActivitieUpdate,
+  useAdminMallActivitieUpdate,
   adminMallActivitieDelete,
   adminCommunities,
 } from "@/lib/apis";
+import { defaultUploadHandler } from "@/lib/upload";
 
 const STATUS_OPTIONS = [
   { label: "全部状态", value: "" },
@@ -25,16 +26,29 @@ const STATUS_BADGE: Record<string, string> = {
   offline: "bg-red-100 text-red-600",
 };
 
-const EMPTY_FORM = {
-  id: undefined as string | undefined,
-  title: "",
-  description: "",
-  coverImage: "",
-  startTime: "",
-  endTime: "",
-  visibleCommunityIds: [] as string[],
-  status: "draft" as "draft" | "published" | "offline",
-};
+interface MallActivityForm {
+  id?: string;
+  title: string;
+  description: string;
+  coverImage: UploadedMedia | null;
+  startTime: string;
+  endTime: string;
+  visibleCommunityIds: string[];
+  status: "draft" | "published" | "offline";
+}
+
+function createEmptyForm(): MallActivityForm {
+  return {
+    id: undefined,
+    title: "",
+    description: "",
+    coverImage: null,
+    startTime: "",
+    endTime: "",
+    visibleCommunityIds: [],
+    status: "draft",
+  };
+}
 
 function formatDateTime(value?: string | null) {
   if (!value) return "";
@@ -53,13 +67,24 @@ function toIso(value?: string) {
   return date.toISOString();
 }
 
+function toUploadedImage(url: string): UploadedMedia {
+  const name = url.split("/").pop() || "cover-image";
+  return {
+    url,
+    name,
+    size: 0,
+    mimeType: "image/*",
+    kind: "image",
+  };
+}
+
 export default function MallActivitiesPage() {
   const router = useRouter();
   const { isLoggedIn, user } = useAuth();
   const [statusFilter, setStatusFilter] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [page, setPage] = useState(1);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState<MallActivityForm>(() => createEmptyForm());
   const [formOpen, setFormOpen] = useState(false);
   const [communities, setCommunities] = useState<any[]>([]);
   const [loadingCommunities, setLoadingCommunities] = useState(false);
@@ -91,7 +116,7 @@ export default function MallActivitiesPage() {
   );
 
   const createMutation = useAdminMallActivitie();
-  const updateMutation = useAdminMallActivitie();
+  const updateMutation = useAdminMallActivitieUpdate({ id: form.id || "" });
 
   useEffect(() => {
     if (
@@ -109,7 +134,7 @@ export default function MallActivitiesPage() {
   }, [isLoggedIn, hasPermission, communities.length, loadingCommunities]);
 
   const handleOpenCreate = () => {
-    setForm(EMPTY_FORM);
+    setForm(createEmptyForm());
     setFormOpen(true);
   };
 
@@ -118,7 +143,9 @@ export default function MallActivitiesPage() {
       id: activity.id,
       title: activity.title ?? "",
       description: activity.description ?? "",
-      coverImage: activity.coverImage ?? "",
+      coverImage: activity.coverImage
+        ? toUploadedImage(activity.coverImage)
+        : null,
       startTime: formatDateTime(activity.startTime),
       endTime: formatDateTime(activity.endTime),
       visibleCommunityIds: activity.visibleCommunityIds ?? [],
@@ -128,7 +155,7 @@ export default function MallActivitiesPage() {
   };
 
   const closeForm = () => {
-    setForm(EMPTY_FORM);
+    setForm(createEmptyForm());
     setFormOpen(false);
   };
 
@@ -138,7 +165,7 @@ export default function MallActivitiesPage() {
       const payload = {
         title: form.title.trim(),
         description: form.description?.trim() || undefined,
-        coverImage: form.coverImage?.trim() || undefined,
+        coverImage: form.coverImage?.url || undefined,
         startTime: toIso(form.startTime),
         endTime: toIso(form.endTime),
         visibleCommunityIds: form.visibleCommunityIds,
@@ -417,19 +444,22 @@ export default function MallActivitiesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  封面图 URL
-                </label>
-                <input
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  活动封面图
+                </p>
+                <SingleMediaUploader
                   value={form.coverImage}
-                  onChange={(event) =>
+                  onChange={(media) =>
                     setForm((prev) => ({
                       ...prev,
-                      coverImage: event.target.value,
+                      coverImage: media,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="https://example.com/banner.jpg"
+                  accept="image"
+                  uploadHandler={defaultUploadHandler}
+                  placeholder="上传或拖拽图片"
+                  buttonText="上传封面图"
+                  allowRemove
                 />
               </div>
 
