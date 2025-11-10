@@ -5,7 +5,8 @@ import clsx from "clsx";
 
 export type MediaSourceType = "image" | "video";
 
-export interface OptimizedMediaProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface OptimizedMediaProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   src: string;
   type?: MediaSourceType;
   alt?: string;
@@ -28,6 +29,68 @@ export interface OptimizedMediaProps extends React.HTMLAttributes<HTMLDivElement
   onClick?: () => void;
 }
 
+function clampQuality(input: number | undefined): number {
+  const base = typeof input === "number" ? input : 75;
+  return Math.min(Math.max(Math.round(base), 10), 100);
+}
+
+function deriveAdaptiveQuality(
+  requestedQuality: number,
+  width?: number,
+  height?: number
+): number {
+  const maxDimension = Math.max(width ?? 0, height ?? 0);
+  const pixelCount = (width ?? 0) * (height ?? 0);
+  let quality = clampQuality(requestedQuality);
+
+  if (pixelCount > 6_000_000 || maxDimension > 3000) {
+    quality = Math.min(quality, 60);
+  } else if (pixelCount > 3_000_000 || maxDimension > 2400) {
+    quality = Math.min(quality, 65);
+  } else if (pixelCount > 1_500_000 || maxDimension > 1600) {
+    quality = Math.min(quality, 70);
+  } else if (pixelCount > 750_000 || maxDimension > 1280) {
+    quality = Math.min(quality, 80);
+  }
+
+  return quality;
+}
+
+function buildImageOperations(
+  width: number | undefined,
+  height: number | undefined,
+  quality: number
+): string[] {
+  const operations: string[] = ["image/auto-orient,1"];
+
+  if (width || height) {
+    const resizeParams: string[] = [];
+    if (width) resizeParams.push(`w_${Math.round(width)}`);
+    if (height) resizeParams.push(`h_${Math.round(height)}`);
+    resizeParams.push("m_lfit");
+    operations.push(`resize,${resizeParams.join(",")}`);
+  }
+
+  operations.push(`quality,q_${deriveAdaptiveQuality(quality, width, height)}`);
+
+  return operations;
+}
+
+function buildVideoOperations(
+  width: number | undefined,
+  height: number | undefined
+): string[] {
+  if (!width && !height) {
+    return [];
+  }
+
+  const resizeParams: string[] = [];
+  if (width) resizeParams.push(`w_${Math.round(width)}`);
+  if (height) resizeParams.push(`h_${Math.round(height)}`);
+  resizeParams.push("m_lfit");
+  return [`video/resize,${resizeParams.join(",")}`];
+}
+
 function buildOptimizedUrl(
   src: string,
   type: MediaSourceType,
@@ -39,31 +102,30 @@ function buildOptimizedUrl(
     return src;
   }
 
-  const url = new URL(src, typeof window === "undefined" ? "https://dummy.lago" : window.location.origin);
-  const params = url.searchParams;
+  try {
+    const origin =
+      typeof globalThis !== "undefined" && globalThis.location
+        ? globalThis.location.origin
+        : "https://dummy.lago";
+    const url = new URL(src, origin);
+    const params = url.searchParams;
 
-  if (type === "image") {
-    const transforms: string[] = [];
-    if (width || height) {
-      const resizeParts = ["image/resize"];
-      if (width) resizeParts.push(`w_${Math.round(width)}`);
-      if (height) resizeParts.push(`h_${Math.round(height)}`);
-      resizeParts.push("m_lfit");
-      transforms.push(resizeParts.join(","));
+    const operations =
+      type === "image"
+        ? buildImageOperations(width, height, quality)
+        : buildVideoOperations(width, height);
+
+    if (operations.length === 0) {
+      return src;
     }
-    transforms.push(`image/quality,q_${Math.min(Math.max(quality, 10), 100)}`);
-    params.set("x-oss-process", transforms.join("/"));
-  } else if (type === "video") {
-    const resizeParts = ["video/resize"];
-    if (width) resizeParts.push(`w_${Math.round(width)}`);
-    if (height) resizeParts.push(`h_${Math.round(height)}`);
-    resizeParts.push("m_lfit");
-    resizeParts.push(`bitrate_1200`);
-    params.set("x-oss-process", resizeParts.join(","));
-  }
 
-  url.search = params.toString();
-  return url.toString();
+    params.set("x-oss-process", operations.join("/"));
+    url.search = params.toString();
+    return url.toString();
+  } catch (error) {
+    console.warn("Failed to build optimized OSS URL", error);
+    return src;
+  }
 }
 
 export function OptimizedMedia({
@@ -89,10 +151,12 @@ export function OptimizedMedia({
   onClick,
   ...rest
 }: OptimizedMediaProps) {
-  const optimizedSrc = useMemo(
-    () => (disableOptimization ? src : buildOptimizedUrl(src, type, width, height, quality)),
-    [disableOptimization, height, quality, src, type, width]
-  );
+  const optimizedSrc = useMemo(() => {
+    if (disableOptimization) {
+      return src;
+    }
+    return buildOptimizedUrl(src, type, width, height, quality);
+  }, [disableOptimization, height, quality, src, type, width]);
 
   const containerStyles: React.CSSProperties = {
     width: width ? `${width}px` : undefined,
@@ -141,4 +205,3 @@ export function OptimizedMedia({
     </div>
   );
 }
-

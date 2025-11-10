@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { MapPin, Eye, Heart } from 'lucide-react';
-import { OptimizedMedia } from '@lago/ui';
+import Link from "next/link";
+import { MapPin, Eye, Heart } from "lucide-react";
+import { OptimizedMedia } from "@lago/ui";
 
 export interface ProductCardProps {
   id: string;
@@ -13,7 +13,7 @@ export interface ProductCardProps {
   communityName?: string;
   viewCount?: number;
   likeCount?: number;
-  type?: 'rent' | 'sell' | 'both';
+  type?: "rent" | "sell" | "both";
   isVerified?: boolean;
 }
 
@@ -29,26 +29,25 @@ export function ProductCard({
   type,
   isVerified = false,
 }: ProductCardProps) {
-  const imageUrl = images?.[0] || '/placeholder-product.jpg';
-  const isPlaceholder = imageUrl.startsWith('/');
-  const priceDisplay = typeof price === 'string' ? price : `¥${price}`;
-  const typeLabel = type === 'rent' ? '租赁' : type === 'sell' ? '出售' : '租售';
+  const imageUrl = images?.[0] || "/placeholder-product.jpg";
+  const isPlaceholder = imageUrl.startsWith("/");
+  const priceDisplay = typeof price === "string" ? price : `¥${price}`;
+  const typeLabel =
+    type === "rent" ? "租赁" : type === "sell" ? "出售" : "租售";
 
   return (
     <Link href={`/products/${id}`} className="block">
       <div className="bg-white rounded-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md">
         {/* 商品图片 */}
-        <div className="relative w-full h-48 bg-gray-100">
+        <div className="relative w-full aspect-square bg-gray-100">
           <OptimizedMedia
             src={imageUrl}
             originalSrc={imageUrl}
             type="image"
             alt={title}
-            width={640}
-            height={360}
             quality={70}
             fit="cover"
-            className="absolute inset-0"
+            className="absolute inset-0 size-full"
             mediaClassName="rounded-none"
             disableOptimization={isPlaceholder}
           />
@@ -72,8 +71,10 @@ export function ProductCard({
 
           {/* 价格 */}
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xl font-bold text-accent">{priceDisplay}</span>
-            {type === 'rent' && (
+            <span className="text-xl font-bold text-accent">
+              {priceDisplay}
+            </span>
+            {type === "rent" && (
               <span className="text-sm text-text-secondary">/天</span>
             )}
           </div>
@@ -108,4 +109,3 @@ export function ProductCard({
     </Link>
   );
 }
-
