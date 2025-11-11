@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Loading } from "@/components/Loading";
 import { BottomNavigation } from "@/components/BottomNavigation";
@@ -13,6 +13,7 @@ import { defaultUploadHandler } from "@/lib/upload";
 
 export default function PublishPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -25,7 +26,25 @@ export default function PublishPage() {
   });
   const [images, setImages] = useState<UploadedMedia[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCommunityName, setSelectedCommunityName] = useState<string | null>(null);
   const uploadHandler = useMemo(() => defaultUploadHandler, []);
+
+  useEffect(() => {
+    const communityIdParam = searchParams.get("communityId");
+    const communityNameParam = searchParams.get("communityName");
+
+    if (communityIdParam) {
+      setFormData((prev) => ({ ...prev, communityId: communityIdParam }));
+    }
+
+    if (communityNameParam) {
+      try {
+        setSelectedCommunityName(decodeURIComponent(communityNameParam));
+      } catch {
+        setSelectedCommunityName(communityNameParam);
+      }
+    }
+  }, [searchParams]);
 
   const createMutation = useProducts({
     onSuccess: () => {
@@ -272,6 +291,15 @@ export default function PublishPage() {
               className="w-full px-4 py-2 bg-container rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
+
+          {formData.communityId && (
+            <div className="px-4 py-3 rounded-lg bg-primary/5 border border-primary/10 text-xs text-primary">
+              本次发布将关联到小区：
+              <span className="font-medium">
+                {selectedCommunityName || formData.communityId}
+              </span>
+            </div>
+          )}
 
           {/* 提交按钮 */}
           <div className="pt-4 pb-4">

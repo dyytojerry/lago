@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { CommunityMemberRole } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
@@ -210,15 +211,73 @@ export async function approveCommunityVerification(req: Request, res: Response) 
       },
     });
 
+    const communityUpdateData: any = {
+      verificationStatus: 'approved',
+      verifiedAt: new Date(),
+      verifiedBy: staffId,
+    };
+
+    const propertyUserId = verification.submittedBy;
+    if (propertyUserId) {
+      communityUpdateData.partnerId = propertyUserId;
+    }
+
     // 更新小区认证状态
     await prisma.community.update({
       where: { id },
-      data: {
-        verificationStatus: 'approved',
-        verifiedAt: new Date(),
-        verifiedBy: staffId,
-      },
+      data: communityUpdateData,
     });
+
+    if (propertyUserId) {
+      // 物业主管加入小区并设置角色
+      await prisma.userCommunity.upsert({
+        where: {
+          userId_communityId: {
+            userId: propertyUserId,
+            communityId: id,
+          },
+        },
+        update: {
+          isActive: true,
+          role: CommunityMemberRole.supervisor,
+          assignedBy: staffId,
+          assignedAt: new Date(),
+        },
+        create: {
+          userId: propertyUserId,
+          communityId: id,
+          isActive: true,
+          role: CommunityMemberRole.supervisor,
+          assignedBy: staffId,
+          assignedAt: new Date(),
+        },
+      });
+
+      const propertyUser = await prisma.user.findUnique({
+        where: { id: propertyUserId },
+        select: { communityIds: true, role: true },
+      });
+
+      if (propertyUser) {
+        const existingCommunityIds = propertyUser.communityIds || [];
+        const updatedIds = existingCommunityIds.includes(id)
+          ? existingCommunityIds
+          : [...existingCommunityIds, id];
+
+        const updateData: any = {
+          communityIds: { set: updatedIds },
+        };
+
+        if (propertyUser.role !== 'property') {
+          updateData.role = 'property';
+        }
+
+        await prisma.user.update({
+          where: { id: propertyUserId },
+          data: updateData,
+        });
+      }
+    }
 
     return createSuccessResponse(res, { message: '认证审批通过' });
   } catch (error) {

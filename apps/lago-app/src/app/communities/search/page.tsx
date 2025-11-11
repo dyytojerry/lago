@@ -294,7 +294,8 @@ export default function CommunitySearchPage() {
                             {community.name}
                           </h3>
                           {community.verificationStatus === "approved" && (
-                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
+                              <ShieldCheck className="w-3 h-3" />
                               已认证
                             </span>
                           )}

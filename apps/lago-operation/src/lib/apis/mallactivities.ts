@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
-import { apiRequest, HTTPResponse } from '@lago/common';
+import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
@@ -185,7 +185,7 @@ export function useAdminMallActivities(
  * 创建商城活动 Hook
  */
 export function useAdminMallActivitie(
-  options?: UseMutationOptions<HTTPResponse<any>, Error, AdminMallActivitieDTO>
+  options?: UseMutationOptions<HTTPResponse<AdminMallActivitieResponse>, Error, AdminMallActivitieDTO>
 ) {
   const queryClient = useQueryClient();
 
@@ -208,7 +208,7 @@ export function useAdminMallActivitie(
  */
 export function useAdminMallActivitieUpdate(
   pathParams: AdminMallActivitieUpdatePathParams,
-  options?: UseMutationOptions<HTTPResponse<any>, Error, AdminMallActivitieUpdateDTO>
+  options?: UseMutationOptions<HTTPResponse<AdminMallActivitieUpdateResponse>, Error, AdminMallActivitieUpdateDTO>
 ) {
   const queryClient = useQueryClient();
 
@@ -231,7 +231,7 @@ export function useAdminMallActivitieUpdate(
  */
 export function useAdminMallActivitieDelete(
   pathParams: AdminMallActivitieDeletePathParams,
-  options?: UseMutationOptions<HTTPResponse<any>, Error, any>
+  options?: UseMutationOptions<HTTPResponse<AdminMallActivitieDeleteResponse>, Error, any>
 ) {
   const queryClient = useQueryClient();
 

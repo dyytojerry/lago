@@ -1,26 +1,24 @@
 "use client";
 
-import { Fragment } from "react";
 import {
   X,
   Camera,
   RefreshCcw,
   Sparkles,
-  Recycle,
-  HandIcon,
+  Megaphone,
+  Video,
   ChevronRight,
-  Infinity,
 } from "lucide-react";
 
-export type PublishActionKey =
+export type CommunityActionKey =
   | "publish"
   | "resell"
   | "skill"
-  | "recycle"
-  | "consignment";
+  | "community-post"
+  | "community-live";
 
-interface PublishAction {
-  id: PublishActionKey;
+interface CommunityAction {
+  id: CommunityActionKey;
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -28,14 +26,14 @@ interface PublishAction {
   badge?: string;
 }
 
-interface PublishActionSheetProps {
+interface CommunityActionSheetProps {
   open: boolean;
   onClose: () => void;
-  onAction: (action: PublishActionKey) => void;
+  onAction: (action: CommunityActionKey) => void;
   checkingOnboarding?: boolean;
 }
 
-const SELF_ACTIONS: PublishAction[] = [
+const SELF_ACTIONS: CommunityAction[] = [
   {
     id: "publish",
     title: "发闲置",
@@ -58,18 +56,18 @@ const SELF_ACTIONS: PublishAction[] = [
   },
 ];
 
-const PLATFORM_ACTIONS: PublishAction[] = [
+const COMMUNITY_ACTIONS: CommunityAction[] = [
   {
-    id: "recycle",
-    title: "极速回收",
-    description: "上门质检，立即结算",
-    icon: Recycle,
+    id: "community-post",
+    title: "发布动态",
+    description: "发布公告或社区通知",
+    icon: Megaphone,
   },
   {
-    id: "consignment",
-    title: "官方帮卖",
-    description: "全程托管，省心售卖",
-    icon: HandIcon,
+    id: "community-live",
+    title: "开启直播",
+    description: "面向小区住户开展实时直播",
+    icon: Video,
   },
 ];
 
@@ -78,8 +76,8 @@ function ActionCard({
   onClick,
   disabled,
 }: {
-  action: PublishAction;
-  onClick: (id: PublishActionKey) => void;
+  action: CommunityAction;
+  onClick: (id: CommunityActionKey) => void;
   disabled?: boolean;
 }) {
   const Icon = action.icon;
@@ -102,9 +100,7 @@ function ActionCard({
       <div className="flex items-center gap-4">
         <span
           className={`flex items-center justify-center w-12 h-12 rounded-2xl ${
-            action.highlight
-              ? "bg-white/20 text-white"
-              : "bg-primary/10 text-primary"
+            action.highlight ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
           }`}
         >
           <Icon className="w-6 h-6" />
@@ -121,9 +117,7 @@ function ActionCard({
             {action.badge && (
               <span
                 className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                  action.highlight
-                    ? "bg-white/25 text-white"
-                    : "bg-primary/10 text-primary"
+                  action.highlight ? "bg-white/25 text-white" : "bg-primary/10 text-primary"
                 }`}
               >
                 {action.badge}
@@ -148,12 +142,12 @@ function ActionCard({
   );
 }
 
-export function PublishActionSheet({
+export function CommunityActionSheet({
   open,
   onClose,
   onAction,
   checkingOnboarding,
-}: PublishActionSheetProps) {
+}: CommunityActionSheetProps) {
   if (!open) return null;
 
   const handleBackdropClick = () => {
@@ -176,20 +170,19 @@ export function PublishActionSheet({
       />
 
       <div
-        className="relative z-10 flex flex-col min-h-full bg-gradient-to-b from-amber-50 via-white to-white"
+        className="relative z-10 flex flex-col min-h-full bg-gradient-to-b from-blue-50 via-white to-white"
         onClick={handleContainerClick}
       >
         <header className="px-6 pt-14 pb-10 space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 text-xs text-primary shadow-sm">
-            <Infinity className="w-3.5 h-3.5" />
-            <span>社区闲置，一键变现</span>
+            <span>社区协作中心</span>
           </div>
           <div className="space-y-2">
             <h2 className="text-3xl font-bold text-slate-900 tracking-wide">
-              来购赚点钱！
+              搭建活力社区
             </h2>
             <p className="text-sm text-slate-500 leading-6">
-              选择合适的方式发布闲置或服务，平台为你匹配社区用户和优质买家。
+              发布闲置、动态或直播互动，让社区成员保持紧密联系。
             </p>
           </div>
         </header>
@@ -202,7 +195,7 @@ export function PublishActionSheet({
                   自己卖
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  AI 发布助手，拍照即可生成标题与描述
+                  AI 帮助快速生成标题与描述
                 </p>
               </div>
               {checkingOnboarding && (
@@ -224,9 +217,14 @@ export function PublishActionSheet({
           </section>
 
           <section className="space-y-4">
-            <h3 className="text-base font-semibold text-slate-900">平台卖</h3>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">小区互动</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                与社区成员保持沟通，发布动态或开启直播
+              </p>
+            </div>
             <div className="space-y-3">
-              {PLATFORM_ACTIONS.map((action) => (
+              {COMMUNITY_ACTIONS.map((action) => (
                 <ActionCard
                   key={action.id}
                   action={action}
@@ -241,7 +239,7 @@ export function PublishActionSheet({
           <button
             type="button"
             onClick={onClose}
-            aria-label="关闭发布面板"
+            aria-label="关闭操作面板"
             className="w-12 h-12 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-slate-600 hover:bg-white"
           >
             <X className="w-5 h-5" />

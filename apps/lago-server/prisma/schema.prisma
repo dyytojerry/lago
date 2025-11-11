@@ -45,6 +45,8 @@ model User {
   communities            UserCommunity[] // 加入的小区
   onboardingApplications OnboardingApplication[]
   consignmentOrders      ConsignmentOrder[]
+  communityVerificationsSubmitted CommunityVerification[] @relation("CommunityVerificationSubmittedBy")
+  communityActivities    CommunityActivity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -280,6 +282,14 @@ enum ServiceCategory {
   other // 其他
 }
 
+enum CommunityMemberRole {
+  supervisor // 物业主管
+  steward // 物业管家
+  maintenance // 物业维修
+  security // 物业保安
+  resident // 住户
+}
+
 model Community {
   id                 String                      @id @default(cuid())
   name               String // 小区名称
@@ -326,6 +336,9 @@ model UserCommunity {
   communityId String
   joinedAt    DateTime @default(now())
   isActive    Boolean  @default(true)
+  role        CommunityMemberRole @default(resident)
+  assignedBy  String?
+  assignedAt  DateTime?
 
   // 关联关系
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -350,6 +363,8 @@ model CommunityVerification {
   rejectReason String? // 拒绝原因
   reviewedBy   String? // 审核人ID（OperationStaff）
   reviewedAt   DateTime? // 审核时间
+  submittedBy  String?
+  submittedByUser User? @relation("CommunityVerificationSubmittedBy", fields: [submittedBy], references: [id])
 
   // 关联关系
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
@@ -381,6 +396,7 @@ model CommunityActivity {
   id               String                  @id @default(cuid())
   communityId      String
   creatorId        String // 创建人ID（User role=property）
+  creator          User                    @relation(fields: [creatorId], references: [id])
   type             CommunityActivityType
   title            String // 活动标题
   description      String? // 活动描述

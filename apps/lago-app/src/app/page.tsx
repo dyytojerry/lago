@@ -295,7 +295,7 @@ export default function HomePage() {
         setHasMoreActivities(false);
       }
     } catch (error) {
-      console.error("加载小区活动失败:", error);
+      console.error("加载小区动态失败:", error);
     } finally {
       setActivityLoading(false);
     }
@@ -554,22 +554,22 @@ export default function HomePage() {
         <section className="mb-10">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-text-primary">
-              小区活动
+              小区动态
             </h2>
             <span className="text-xs text-text-secondary">下拉加载更多</span>
           </div>
 
           {activityFeed.length === 0 && activityLoading && (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-              <Loading text="加载活动中..." />
+              <Loading text="加载动态中..." />
             </div>
           )}
 
           {activityFeed.length === 0 && !activityLoading && (
             <EmptyState
               icon="message"
-              title="暂无社区活动"
-              description="关注你的小区，第一时间获取活动动态"
+              title="暂无社区动态"
+              description="关注你的小区，第一时间获取社区动态"
             />
           )}
 
@@ -581,7 +581,7 @@ export default function HomePage() {
                 className="w-full text-left bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                 onClick={() =>
                   router.push(
-                    `/communities/${activity.communityId}/activities/${activity.id}`
+                    `/communities/${activity.communityId}/dynamics/${activity.id}`
                   )
                 }
               >
@@ -616,7 +616,7 @@ export default function HomePage() {
                         ? "直播中"
                         : activity.isUpcoming
                         ? "即将开始"
-                        : "查看活动"}
+                        : "查看动态"}
                     </span>
                   </div>
                 </div>
@@ -646,7 +646,7 @@ export default function HomePage() {
                           : "时间待定"}
                       </span>
                     </div>
-                    <span>{activity.location || "线下活动"}</span>
+                    <span>{activity.location || "线下地点"}</span>
                   </div>
                 </div>
               </button>
@@ -657,13 +657,13 @@ export default function HomePage() {
 
           {activityLoading && activityFeed.length > 0 && (
             <div className="py-4 text-center text-sm text-text-secondary">
-              加载更多活动...
+              加载更多动态...
             </div>
           )}
 
           {!hasMoreActivities && activityFeed.length > 0 && (
             <div className="py-4 text-center text-xs text-text-tertiary">
-              没有更多活动了
+              没有更多动态了
             </div>
           )}
         </section>

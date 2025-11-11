@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
-import { apiRequest, HTTPResponse } from '@lago/common';
+import { apiRequest, HTTPResponse, jsonToFormData } from '@lago/common';
 import * as Types from './types';
 import { IsString, IsNumber, IsBoolean, IsArray, IsObject, IsOptional, IsEnum, ValidateNested } from 'class-validator';
 
@@ -164,7 +164,7 @@ export function useAdminMallBanners(
  * 创建商城钻石位 Hook
  */
 export function useAdminMallBanner(
-  options?: UseMutationOptions<HTTPResponse<any>, Error, AdminMallBannerDTO>
+  options?: UseMutationOptions<HTTPResponse<AdminMallBannerResponse>, Error, AdminMallBannerDTO>
 ) {
   const queryClient = useQueryClient();
 
@@ -187,7 +187,7 @@ export function useAdminMallBanner(
  */
 export function useAdminMallBannerUpdate(
   pathParams: AdminMallBannerUpdatePathParams,
-  options?: UseMutationOptions<HTTPResponse<any>, Error, AdminMallBannerUpdateDTO>
+  options?: UseMutationOptions<HTTPResponse<AdminMallBannerUpdateResponse>, Error, AdminMallBannerUpdateDTO>
 ) {
   const queryClient = useQueryClient();
 
@@ -210,7 +210,7 @@ export function useAdminMallBannerUpdate(
  */
 export function useAdminMallBannerDelete(
   pathParams: AdminMallBannerDeletePathParams,
-  options?: UseMutationOptions<HTTPResponse<any>, Error, any>
+  options?: UseMutationOptions<HTTPResponse<AdminMallBannerDeleteResponse>, Error, any>
 ) {
   const queryClient = useQueryClient();
 

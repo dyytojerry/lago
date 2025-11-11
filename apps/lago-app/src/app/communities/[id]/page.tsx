@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from 'next/navigation';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Calendar,
   CheckCircle,
+  Clock,
   LogIn,
   MapPin,
   Package,
@@ -18,18 +19,29 @@ import {
   Shield,
   Users,
   X,
+  XCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useMutation } from '@tanstack/react-query';
 import MediaPreview from '@lago/ui/src/components/MediaPreview';
 import {
   productDetail,
   communities,
   communitieJoin,
   communitieLeave,
+  communitieUpdateMemberRole,
 } from '@/lib/apis';
+import { useOnboarding } from '@/lib/apis/onboarding';
+import { CommunityMemberRole } from '@/lib/apis/types';
+import {
+  CommunityActionSheet,
+  CommunityActionKey,
+} from '@/components/CommunityActionSheet';
 
 interface CommunityMember {
   id: string;
+  userId: string;
+  role: CommunityMemberRole;
   user: {
     id: string;
     nickname?: string;
@@ -62,7 +74,10 @@ interface CommunityResponse {
     city?: { id: string; name: string };
     district?: { id: string; name: string };
     verificationStatus: 'pending' | 'processing' | 'approved' | 'rejected';
+    partnerId?: string | null;
     isJoined: boolean;
+    currentUserRole?: CommunityMemberRole | null;
+    memberRole?: CommunityMemberRole | null;
     members: CommunityMember[];
     activities: CommunityActivity[];
     _count?: {
@@ -71,6 +86,64 @@ interface CommunityResponse {
       activities: number;
     };
   };
+}
+
+const ROLE_LABELS: Record<CommunityMemberRole, string> = {
+  [CommunityMemberRole.SUPERVISOR]: '物业主管',
+  [CommunityMemberRole.STEWARD]: '物业管家',
+  [CommunityMemberRole.MAINTENANCE]: '物业维修',
+  [CommunityMemberRole.SECURITY]: '物业保安',
+  [CommunityMemberRole.RESIDENT]: '住户',
+};
+
+const ROLE_SELECT_OPTIONS = [
+  {
+    value: CommunityMemberRole.STEWARD,
+    label: ROLE_LABELS[CommunityMemberRole.STEWARD],
+  },
+  {
+    value: CommunityMemberRole.MAINTENANCE,
+    label: ROLE_LABELS[CommunityMemberRole.MAINTENANCE],
+  },
+  {
+    value: CommunityMemberRole.SECURITY,
+    label: ROLE_LABELS[CommunityMemberRole.SECURITY],
+  },
+  {
+    value: CommunityMemberRole.RESIDENT,
+    label: ROLE_LABELS[CommunityMemberRole.RESIDENT],
+  },
+];
+
+function getVerificationStatusInfo(
+  status: CommunityResponse["community"]["verificationStatus"]
+) {
+  switch (status) {
+    case "approved":
+      return {
+        label: "已认证",
+        badgeClass: "bg-emerald-50 text-emerald-600",
+        Icon: CheckCircle,
+      };
+    case "processing":
+      return {
+        label: "审核中",
+        badgeClass: "bg-orange-50 text-orange-600",
+        Icon: Clock,
+      };
+    case "rejected":
+      return {
+        label: "认证未通过",
+        badgeClass: "bg-red-50 text-red-500",
+        Icon: XCircle,
+      };
+    default:
+      return {
+        label: "未认证",
+        badgeClass: "bg-gray-100 text-gray-500",
+        Icon: Shield,
+      };
+  }
 }
 
 interface Product {
@@ -95,7 +168,7 @@ export default function CommunityDetailPage() {
   const communityId = params.id as string;
   const { user } = useAuth();
 
-  const [community, setCommunity] = useState<CommunityResponse['community'] | null>(null);
+  const [community, setCommunity] = useState<CommunityResponse["community"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
@@ -103,20 +176,28 @@ export default function CommunityDetailPage() {
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [showMediaPreview, setShowMediaPreview] = useState(false);
   const [mediaPreviewIndex, setMediaPreviewIndex] = useState(0);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null);
 
-  useEffect(() => {
-    function handleScroll() {
-      setShowStickyHeader(window.scrollY > 120);
-    }
+  const {
+    data: onboardingData,
+    isFetching: onboardingFetching,
+    refetch: refetchOnboarding,
+  } = useOnboarding({ enabled: Boolean(user) });
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const hasApprovedOnboarding = useMemo(() => {
+    const applications = onboardingData?.data?.applications || [];
+    return applications.some(
+      (app: any) => (app.status || "").toLowerCase() === "approved"
+    );
+  }, [onboardingData]);
 
-  useEffect(() => {
-    async function loadCommunity() {
+  const fetchCommunity = useCallback(
+    async (withLoading = false) => {
       try {
-        setLoading(true);
+        if (withLoading) {
+          setLoading(true);
+        }
         const response = await communities({ id: communityId }, true);
         const data = response.data as CommunityResponse | undefined;
         if (response.success && data?.community) {
@@ -125,15 +206,35 @@ export default function CommunityDetailPage() {
           setCommunity(null);
         }
       } catch (error) {
-        console.error('加载小区详情失败:', error);
+        console.error("加载小区详情失败:", error);
         setCommunity(null);
       } finally {
-        setLoading(false);
+        if (withLoading) {
+          setLoading(false);
+        }
       }
+    },
+    [communityId]
+  );
+
+  useEffect(() => {
+    function handleScroll() {
+      setShowStickyHeader(window.scrollY > 120);
     }
 
-    loadCommunity();
-  }, [communityId]);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    fetchCommunity(true);
+  }, [fetchCommunity]);
+
+  useEffect(() => {
+    if (showActionSheet && user) {
+      refetchOnboarding();
+    }
+  }, [showActionSheet, user, refetchOnboarding]);
 
   useEffect(() => {
     async function loadProducts() {
@@ -180,11 +281,7 @@ export default function CommunityDetailPage() {
       const response = await communitieJoin({ id: communityId });
       if (response.success) {
         toast.success('加入小区成功');
-        const refresh = await communities({ id: communityId }, true);
-        const refreshData = refresh.data as CommunityResponse | undefined;
-        if (refresh.success && refreshData?.community) {
-          setCommunity(refreshData.community);
-        }
+        fetchCommunity();
       } else {
         toast.error(response.message || '加入小区失败');
       }
@@ -198,11 +295,7 @@ export default function CommunityDetailPage() {
       const response = await communitieLeave({ id: communityId });
       if (response.success) {
         toast.success('已退出小区');
-        const refresh = await communities({ id: communityId }, true);
-        const refreshData = refresh.data as CommunityResponse | undefined;
-        if (refresh.success && refreshData?.community) {
-          setCommunity(refreshData.community);
-        }
+        fetchCommunity();
       } else {
         toast.error(response.message || '退出小区失败');
       }
@@ -212,12 +305,145 @@ export default function CommunityDetailPage() {
   };
 
   const handleVerify = () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
     router.push(`/communities/${communityId}/verify`);
   };
 
-  const handlePublish = () => {
-    router.push('/publish');
+  const updateMemberRoleMutation = useMutation(
+    async ({ memberId, role }: { memberId: string; role: CommunityMemberRole }) =>
+      communitieUpdateMemberRole(
+        { id: communityId, memberId },
+        { role }
+      ),
+    {
+      onMutate: ({ memberId }) => {
+        setUpdatingMemberId(memberId);
+      },
+      onSuccess: async () => {
+        toast.success('成员角色已更新');
+        await fetchCommunity();
+      },
+      onError: (error: any) => {
+        toast.error(error?.message || '更新成员角色失败');
+      },
+      onSettled: () => {
+        setUpdatingMemberId(null);
+      },
+    }
+  );
+
+  const handleMemberRoleChange = (memberUserId: string, role: CommunityMemberRole) => {
+    if (!community) return;
+    const target = community.members.find((m) => m.userId === memberUserId);
+    if (!target || target.role === role) {
+      return;
+    }
+    updateMemberRoleMutation.mutate({ memberId: memberUserId, role });
   };
+
+  const handleOpenCommunityActions = () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (!community) {
+      toast.error('小区信息加载中，请稍候');
+      return;
+    }
+    setShowActionSheet(true);
+  };
+
+  const handleCommunityAction = useCallback(
+    (action: CommunityActionKey) => {
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      const needsOnboarding =
+        action === 'publish' || action === 'resell' || action === 'skill';
+
+      if (needsOnboarding) {
+        if (onboardingFetching) {
+          toast('正在检查入驻状态，请稍候完成再操作');
+          return;
+        }
+
+        if (!hasApprovedOnboarding) {
+          setShowActionSheet(false);
+          toast.error('请先完成入驻申请，再发布闲置或技能');
+          router.push('/profile/onboarding');
+          return;
+        }
+      }
+
+      if (community?.verificationStatus !== 'approved') {
+        toast.error('该小区尚未认证，暂无法使用此功能');
+        return;
+      }
+
+      const requiresMembership =
+        action === 'community-post' || action === 'community-live';
+
+      if (
+        requiresMembership &&
+        !community?.isJoined &&
+        community?.currentUserRole !== CommunityMemberRole.SUPERVISOR
+      ) {
+        toast.error('请先加入小区或联系物业主管');
+        return;
+      }
+
+      const encodedCommunityName = community?.name
+        ? encodeURIComponent(community.name)
+        : '';
+
+      setShowActionSheet(false);
+
+      switch (action) {
+        case 'publish':
+          router.push(
+            `/publish?communityId=${communityId}${
+              encodedCommunityName ? `&communityName=${encodedCommunityName}` : ''
+            }`
+          );
+          break;
+        case 'resell':
+          router.push(
+            `/publish?mode=resell&communityId=${communityId}${
+              encodedCommunityName ? `&communityName=${encodedCommunityName}` : ''
+            }`
+          );
+          break;
+        case 'skill':
+          router.push(
+            `/publish?mode=skill&communityId=${communityId}${
+              encodedCommunityName ? `&communityName=${encodedCommunityName}` : ''
+            }`
+          );
+          break;
+        case 'community-post':
+          router.push(`/communities/${communityId}/dynamics/new`);
+          break;
+        case 'community-live':
+          router.push('/property/live');
+          break;
+        default:
+          router.push('/publish');
+      }
+    },
+    [
+      community,
+      communityId,
+      hasApprovedOnboarding,
+      onboardingFetching,
+      router,
+      user,
+    ]
+  );
 
   const mediaItems = useMemo(
     () => community?.images?.map((url) => ({ url, type: 'image' as const })) || [],
@@ -249,6 +475,15 @@ export default function CommunityDetailPage() {
       </div>
     );
   }
+
+  const statusInfo = getVerificationStatusInfo(community.verificationStatus);
+  const StatusIcon = statusInfo.Icon;
+  const canApplyVerification =
+    community.verificationStatus === 'pending' || community.verificationStatus === 'rejected';
+  const isVerificationProcessing = community.verificationStatus === 'processing';
+  const canManageMembers =
+    community.currentUserRole === CommunityMemberRole.SUPERVISOR ||
+    (!!community.partnerId && community.partnerId === user?.id);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -304,13 +539,15 @@ export default function CommunityDetailPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-semibold text-text-primary">{community.name}</h1>
-                  {community.verificationStatus === 'approved' && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">
-                      <CheckCircle className="w-4 h-4" />
-                      已认证
-                    </span>
-                  )}
+                  <h1 className="text-2xl font-semibold text-text-primary">
+                    {community.name}
+                  </h1>
+                  <span
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${statusInfo.badgeClass}`}
+                  >
+                    <StatusIcon className="w-4 h-4" />
+                    {statusInfo.label}
+                  </span>
                 </div>
                 {community.address && (
                   <div className="flex items-center gap-1 text-sm text-text-secondary mt-2">
@@ -324,18 +561,8 @@ export default function CommunityDetailPage() {
                   </p>
                 )}
               </div>
-              <div className="flex gap-2">
-                {community.verificationStatus !== 'approved' && user?.role === 'property' && (
-                  <button
-                    onClick={handleVerify}
-                    className="px-4 py-2 rounded-full bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <Shield className="w-4 h-4" />申请认证
-                    </span>
-                  </button>
-                )}
-                {community.verificationStatus === 'approved' && (
+              <div className="flex flex-wrap gap-2">
+                {community.verificationStatus === 'approved' ? (
                   community.isJoined ? (
                     <button
                       onClick={handleLeave}
@@ -349,11 +576,33 @@ export default function CommunityDetailPage() {
                       className="px-4 py-2 rounded-full bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
                     >
                       <span className="inline-flex items-center gap-1">
-                        <LogIn className="w-4 h-4" />加入小区
+                        <LogIn className="w-4 h-4" />
+                        加入小区
                       </span>
                     </button>
                   )
-                )}
+                ) : canApplyVerification ? (
+                  <button
+                    onClick={handleVerify}
+                    className="px-4 py-2 rounded-full bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <Shield className="w-4 h-4" />
+                      {community.verificationStatus === 'rejected' ? '重新认证' : '立即认证'}
+                    </span>
+                  </button>
+                ) : isVerificationProcessing ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="px-4 py-2 rounded-full border border-gray-200 text-sm text-text-secondary bg-gray-50 cursor-default"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      审核中
+                    </span>
+                  </button>
+                ) : null}
               </div>
             </div>
 
@@ -382,7 +631,7 @@ export default function CommunityDetailPage() {
                 </div>
                 <div className="mt-1 flex items-center justify-center gap-1 text-xs">
                   <Calendar className="w-3 h-3" />
-                  活动
+                  动态
                 </div>
               </div>
             </div>
@@ -465,6 +714,31 @@ export default function CommunityDetailPage() {
                   <div className="text-xs text-text-secondary text-center max-w-[80px] line-clamp-1">
                     {member.user.nickname || '用户'}
                   </div>
+                  <span className="px-2 py-0.5 rounded-full bg-gray-100 text-[11px] text-text-secondary">
+                    {ROLE_LABELS[member.role]}
+                  </span>
+                  {canManageMembers &&
+                    member.role !== CommunityMemberRole.SUPERVISOR &&
+                    member.userId !== user?.id && (
+                      <select
+                        value={member.role}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          handleMemberRoleChange(
+                            member.userId,
+                            event.target.value as CommunityMemberRole
+                          )
+                        }
+                        disabled={updatingMemberId === member.userId}
+                        className="mt-1 text-[11px] px-2 py-1 rounded-full border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        {ROLE_SELECT_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                 </div>
               ))}
             </div>
@@ -474,16 +748,16 @@ export default function CommunityDetailPage() {
         {community.activities && community.activities.length > 0 ? (
           <section className="px-4 mt-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-text-primary">小区活动</h2>
+              <h2 className="text-lg font-semibold text-text-primary">小区动态</h2>
               <span className="text-xs text-text-secondary">
-                共 {community._count?.activities ?? community.activities.length} 场
+                共 {community._count?.activities ?? community.activities.length} 条
               </span>
             </div>
             <div className="space-y-4">
               {community.activities.map((activity) => (
                 <div
                   key={activity.id}
-                  onClick={() => router.push(`/communities/${communityId}/activities/${activity.id}`)}
+                  onClick={() => router.push(`/communities/${communityId}/dynamics/${activity.id}`)}
                   className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
                     {activity.images?.[0] && (
@@ -505,7 +779,7 @@ export default function CommunityDetailPage() {
                           ? '集市'
                           : activity.type === 'festival'
                           ? '节庆'
-                          : '活动'}
+                          : '动态'}
                       </span>
                       <h3 className="text-base font-semibold text-text-primary line-clamp-1">
                         {activity.title}
@@ -530,23 +804,30 @@ export default function CommunityDetailPage() {
                             : '时间待定'}
                         </span>
                       </div>
-                      <span>{activity.location || '线下活动'}</span>
+                      <span>{activity.location || '线下地点'}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           </section>
-        ) : <EmptyState icon="calendar" title="暂无活动" description="该小区暂无活动" />}
+        ) : <EmptyState icon="calendar" title="暂无动态" description="该小区暂无社区动态" />}
       </main>
 
       <button
-        onClick={handlePublish}
+        onClick={handleOpenCommunityActions}
         className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
         aria-label="发布闲置"
       >
         <Plus className="w-6 h-6" />
       </button>
+
+      <CommunityActionSheet
+        open={showActionSheet}
+        onClose={() => setShowActionSheet(false)}
+        onAction={handleCommunityAction}
+        checkingOnboarding={showActionSheet && !!user && onboardingFetching}
+      />
 
       {showAllMembers && community.members && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -592,7 +873,30 @@ export default function CommunityDetailPage() {
                         {member.user.nickname || '用户'}
                       </p>
                       <p className="text-xs text-text-secondary">信用 {member.user.creditScore}</p>
+                      <p className="text-[11px] text-primary mt-1">{ROLE_LABELS[member.role]}</p>
                     </div>
+                    {canManageMembers &&
+                      member.role !== CommunityMemberRole.SUPERVISOR &&
+                      member.userId !== user?.id && (
+                        <select
+                          value={member.role}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={(event) =>
+                            handleMemberRoleChange(
+                              member.userId,
+                              event.target.value as CommunityMemberRole
+                            )
+                          }
+                          disabled={updatingMemberId === member.userId}
+                          className="w-full text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                          {ROLE_SELECT_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                   </div>
                 ))}
               </div>

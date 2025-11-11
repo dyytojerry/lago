@@ -1,9 +1,24 @@
-import type { Prisma, CommunityActivityStatus } from '@prisma/client';
+import type { Prisma, CommunityActivityStatus, CommunityActivityType } from '@prisma/client';
+import { CommunityMemberRole, UserRole } from '@prisma/client';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { createSuccessResponse, createErrorResponse } from '../lib/response';
 
 type ScalarQueryParam = string | number | string[];
+
+const ASSIGNABLE_COMMUNITY_ROLES: CommunityMemberRole[] = [
+  CommunityMemberRole.steward,
+  CommunityMemberRole.maintenance,
+  CommunityMemberRole.security,
+  CommunityMemberRole.resident,
+];
+
+const PUBLISHABLE_COMMUNITY_ROLES: CommunityMemberRole[] = [
+  CommunityMemberRole.supervisor,
+  CommunityMemberRole.steward,
+  CommunityMemberRole.maintenance,
+  CommunityMemberRole.security,
+];
 
 /**
  * 计算两点之间的距离（米）
@@ -227,7 +242,10 @@ export async function getUserCommunities(req: Request, res: Response) {
     });
 
     return createSuccessResponse(res, {
-      communities: userCommunities.map((uc) => uc.community),
+      communities: userCommunities.map((uc) => ({
+        ...uc.community,
+        memberRole: uc.role,
+      })),
     });
   } catch (error) {
     console.error('获取用户小区失败:', error);
@@ -251,7 +269,7 @@ export async function getCommunity(req: Request, res: Response) {
         district: { select: { id: true, name: true } },
         members: {
           where: { isActive: true },
-          take: 10,
+          take: 50,
           include: {
             user: {
               select: {
@@ -296,6 +314,7 @@ export async function getCommunity(req: Request, res: Response) {
 
     // 检查用户是否已加入
     let isJoined = false;
+    let currentUserRole: CommunityMemberRole | null = null;
     if (userId) {
       const userCommunity = await prisma.userCommunity.findUnique({
         where: {
@@ -305,18 +324,109 @@ export async function getCommunity(req: Request, res: Response) {
           },
         },
       });
-      isJoined = !!userCommunity && userCommunity.isActive;
+      if (userCommunity?.isActive) {
+        isJoined = true;
+        currentUserRole = userCommunity.role;
+      }
     }
+
+    const members = community.members.map((member) => ({
+      id: member.id,
+      userId: member.userId,
+      role: member.role,
+      joinedAt: member.joinedAt,
+      user: member.user,
+    }));
 
     return createSuccessResponse(res, {
       community: {
         ...community,
+        members,
         isJoined,
+        currentUserRole,
       },
     });
   } catch (error) {
     console.error('获取小区详情失败:', error);
     return createErrorResponse(res, '获取小区详情失败', 500);
+  }
+}
+
+export async function createCommunityActivity(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return createErrorResponse(res, '未登录', 401);
+    }
+
+    const { title, description, images = [], startTime, endTime, location, type } = req.body as {
+      title: string;
+      description?: string;
+      images?: string[];
+      startTime?: string;
+      endTime?: string;
+      location?: string;
+      type?: CommunityActivityType;
+    };
+
+    const community = await prisma.community.findUnique({
+      where: { id },
+      select: {
+        verificationStatus: true,
+      },
+    });
+
+    if (!community) {
+      return createErrorResponse(res, '小区不存在', 404);
+    }
+
+    if (community.verificationStatus !== 'approved') {
+      return createErrorResponse(res, '小区未认证，无法发布动态', 403);
+    }
+
+    const membership = await prisma.userCommunity.findUnique({
+      where: {
+        userId_communityId: {
+          userId,
+          communityId: id,
+        },
+      },
+    });
+
+    if (!membership?.isActive || !PUBLISHABLE_COMMUNITY_ROLES.includes(membership.role)) {
+      return createErrorResponse(res, '仅物业团队成员可以发布小区动态', 403);
+    }
+
+    const parsedStart = startTime ? new Date(startTime) : null;
+    const parsedEnd = endTime ? new Date(endTime) : null;
+
+    if (parsedStart && parsedEnd && parsedStart > parsedEnd) {
+      return createErrorResponse(res, '开始时间不能晚于结束时间', 400);
+    }
+
+    const activityType: CommunityActivityType = type ?? 'announcement';
+
+    const activity = await prisma.communityActivity.create({
+      data: {
+        communityId: id,
+        creatorId: userId,
+        type: activityType,
+        title,
+        description: description || null,
+        images: Array.isArray(images) ? images.filter(Boolean) : [],
+        startTime: parsedStart,
+        endTime: parsedEnd,
+        location: location || null,
+        status: 'published',
+      },
+    });
+
+    return createSuccessResponse(res, { activity }, 201);
+  } catch (error) {
+    console.error('创建小区动态失败:', error);
+    return createErrorResponse(res, '发布动态失败', 500);
   }
 }
 
@@ -374,6 +484,7 @@ export async function joinCommunity(req: Request, res: Response) {
         userId,
         communityId: id,
         isActive: true,
+        role: CommunityMemberRole.resident,
       },
     });
 
@@ -424,37 +535,60 @@ export async function getMarketActivitiesFeed(req: Request, res: Response) {
       where.communityId = communityId;
     }
 
-    const [activities, total] = await Promise.all([
-      prisma.communityActivity.findMany({
-        where,
-        skip,
-        take: limitNum,
-        orderBy: [
-          { startTime: 'desc' },
-          { createdAt: 'desc' },
-        ],
-        include: {
-          community: {
-            select: {
-              id: true,
-              name: true,
-              images: true,
-              address: true,
-              verificationStatus: true,
-            },
+    const activities = await prisma.communityActivity.findMany({
+      where,
+      include: {
+        community: {
+          select: {
+            id: true,
+            name: true,
+            images: true,
+            address: true,
+            verificationStatus: true,
           },
         },
-      }),
-      prisma.communityActivity.count({ where }),
-    ]);
+      },
+    });
 
-    const now = new Date();
+    const creatorIds = Array.from(
+      new Set(activities.map((activity) => activity.creatorId).filter(Boolean))
+    );
 
-    const feed = activities.map((activity) => {
+    const creators = await prisma.user.findMany({
+      where: { id: { in: creatorIds } },
+      select: {
+        id: true,
+        nickname: true,
+        avatarUrl: true,
+        role: true,
+      },
+    });
+
+    const creatorMap = new Map(creators.map((item) => [item.id, item]));
+
+    const now = Date.now();
+
+    const enhanced = activities.map((activity) => {
       const start = activity.startTime ? new Date(activity.startTime) : null;
       const end = activity.endTime ? new Date(activity.endTime) : null;
-      const isLive = !!start && start <= now && (!end || end > now) && activity.status === 'published';
-      const isUpcoming = !!start && start > now;
+      const isLive =
+        !!start && start.getTime() <= now && (!end || end.getTime() > now) && activity.status === 'published';
+      const isUpcoming = !!start && start.getTime() > now;
+
+      const referenceTime = start?.getTime() ?? activity.createdAt.getTime();
+      const hoursDiff = Math.max((now - referenceTime) / (1000 * 60 * 60), 0);
+      const recencyScore = 1 / (1 + hoursDiff);
+      const engagementScore = activity.participantCount * 1.5 + activity.viewCount * 0.5;
+      const heatScore = Number((engagementScore + recencyScore * 120).toFixed(2));
+
+      const creator = activity.creatorId ? creatorMap.get(activity.creatorId) : null;
+
+      let publisherType: 'micro_merchant' | 'platform' | 'community' = 'community';
+      if (creator?.role === UserRole.merchant) {
+        publisherType = 'micro_merchant';
+      } else if (creator?.role === UserRole.admin) {
+        publisherType = 'platform';
+      }
 
       return {
         id: activity.id,
@@ -468,6 +602,13 @@ export async function getMarketActivitiesFeed(req: Request, res: Response) {
         isLive,
         isUpcoming,
         coverImage: activity.images?.[0] || activity.community?.images?.[0] || null,
+        heatScore,
+        publisher: {
+          id: creator?.id ?? null,
+          name: creator?.nickname ?? '社区运营',
+          avatar: creator?.avatarUrl ?? null,
+          type: publisherType,
+        },
         community: {
           id: activity.community?.id,
           name: activity.community?.name,
@@ -475,11 +616,27 @@ export async function getMarketActivitiesFeed(req: Request, res: Response) {
           address: activity.community?.address,
           verificationStatus: activity.community?.verificationStatus,
         },
+        sortMetrics: {
+          recencyScore,
+          engagementScore,
+        },
       };
     });
 
+    const sortedByHeat = [...enhanced].sort((a, b) => {
+      if (b.heatScore !== a.heatScore) {
+        return b.heatScore - a.heatScore;
+      }
+      const aStart = a.startTime ? new Date(a.startTime).getTime() : 0;
+      const bStart = b.startTime ? new Date(b.startTime).getTime() : 0;
+      return bStart - aStart;
+    });
+
+    const total = sortedByHeat.length;
+    const paginated = sortedByHeat.slice(skip, skip + limitNum);
+
     return createSuccessResponse(res, {
-      activities: feed,
+      activities: paginated,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -707,6 +864,7 @@ export async function applyCommunityVerification(req: Request, res: Response) {
         reviewedBy: null,
         reviewedAt: null,
         rejectReason: null,
+        submittedBy: userId,
       },
       create: {
         communityId: id,
@@ -716,6 +874,7 @@ export async function applyCommunityVerification(req: Request, res: Response) {
         licenseUrl,
         proofUrl: proofUrl || null,
         status: 'pending',
+        submittedBy: userId,
       },
     });
 
@@ -723,6 +882,82 @@ export async function applyCommunityVerification(req: Request, res: Response) {
   } catch (error) {
     console.error('申请小区认证失败:', error);
     return createErrorResponse(res, '申请小区认证失败', 500);
+  }
+}
+
+/**
+ * 更新小区成员角色
+ */
+export async function updateCommunityMemberRole(req: Request, res: Response) {
+  try {
+    const { id, memberId } = req.params;
+    const { role } = req.body as { role?: CommunityMemberRole };
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return createErrorResponse(res, '未登录', 401);
+    }
+
+    if (!role || !ASSIGNABLE_COMMUNITY_ROLES.includes(role)) {
+      return createErrorResponse(res, '无效的成员角色', 400);
+    }
+
+    if (memberId === userId) {
+      return createErrorResponse(res, '无法修改自己的角色', 400);
+    }
+
+    const [community, operatorMembership, targetMembership] = await Promise.all([
+      prisma.community.findUnique({
+        where: { id },
+        select: { partnerId: true },
+      }),
+      prisma.userCommunity.findUnique({
+        where: {
+          userId_communityId: {
+            userId,
+            communityId: id,
+          },
+        },
+      }),
+      prisma.userCommunity.findUnique({
+        where: {
+          userId_communityId: {
+            userId: memberId,
+            communityId: id,
+          },
+        },
+      }),
+    ]);
+
+    if (!community) {
+      return createErrorResponse(res, '小区不存在', 404);
+    }
+
+    if (!targetMembership || !targetMembership.isActive) {
+      return createErrorResponse(res, '目标成员不存在或未加入该小区', 404);
+    }
+
+    const isSupervisor =
+      operatorMembership?.isActive && operatorMembership.role === CommunityMemberRole.supervisor;
+    const isPartner = community.partnerId === userId;
+
+    if (!isSupervisor && !isPartner) {
+      return createErrorResponse(res, '无权限操作', 403);
+    }
+
+    await prisma.userCommunity.update({
+      where: { id: targetMembership.id },
+      data: {
+        role,
+        assignedBy: userId,
+        assignedAt: new Date(),
+      },
+    });
+
+    return createSuccessResponse(res, { message: '成员角色已更新' });
+  } catch (error) {
+    console.error('更新小区成员角色失败:', error);
+    return createErrorResponse(res, '更新小区成员角色失败', 500);
   }
 }
 

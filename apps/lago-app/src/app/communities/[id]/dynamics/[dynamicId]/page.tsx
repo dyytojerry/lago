@@ -13,8 +13,9 @@ import {
   Users,
 } from 'lucide-react';
 import { communities, CommunitiesPathParams } from '@/lib/apis';
+import toast from 'react-hot-toast';
 
-interface CommunityActivity {
+interface CommunityDynamic {
   id: string;
   type: string;
   title: string;
@@ -32,7 +33,7 @@ interface CommunityResponse {
     name: string;
     images: string[];
     address?: string;
-    activities: CommunityActivity[];
+    activities: CommunityDynamic[];
     members: Array<{
       id: string;
       user: {
@@ -43,7 +44,7 @@ interface CommunityResponse {
   };
 }
 
-interface ActivityComment {
+interface DynamicComment {
   id: string;
   author: {
     id: string;
@@ -54,76 +55,76 @@ interface ActivityComment {
   createdAt: string;
 }
 
-export default function ActivityDetailPage() {
+export default function CommunityDynamicDetailPage() {
   const router = useRouter();
   const params = useParams();
   const communityId = params.id as string;
-  const activityId = params.activityId as string;
+  const dynamicId = params.dynamicId as string;
 
   const [community, setCommunity] = useState<CommunityResponse['community'] | null>(null);
-  const [activity, setActivity] = useState<CommunityActivity | null>(null);
+  const [dynamic, setDynamic] = useState<CommunityDynamic | null>(null);
   const [loading, setLoading] = useState(true);
-  const [comments] = useState<ActivityComment[]>([]);
+  const [comments] = useState<DynamicComment[]>([]);
 
   useEffect(() => {
-    async function loadActivity() {
+    async function loadDynamic() {
       try {
         setLoading(true);
         const response = await communities({ id: communityId } as CommunitiesPathParams, true);
         const data = response.data as CommunityResponse | undefined;
         if (response.success && data?.community) {
           setCommunity(data.community);
-          const found = data.community.activities.find((item) => item.id === activityId);
-          setActivity(found || null);
+          const found = data.community.activities.find((item) => item.id === dynamicId);
+          setDynamic(found || null);
         } else {
           setCommunity(null);
-          setActivity(null);
+          setDynamic(null);
         }
       } catch (error) {
-        console.error('加载活动详情失败:', error);
+        console.error('加载社区动态详情失败:', error);
         setCommunity(null);
-        setActivity(null);
+        setDynamic(null);
       } finally {
         setLoading(false);
       }
     }
 
-    loadActivity();
-  }, [communityId, activityId]);
+    loadDynamic();
+  }, [communityId, dynamicId]);
 
   const bannerImage = useMemo(() => {
-    if (activity?.images?.length) return activity.images[0];
+    if (dynamic?.images?.length) return dynamic.images[0];
     if (community?.images?.length) return community.images[0];
     return null;
-  }, [activity?.images, community?.images]);
+  }, [dynamic?.images, community?.images]);
 
   const formattedTime = useMemo(() => {
-    if (!activity?.startTime) return '时间待定';
-    return new Date(activity.startTime).toLocaleString('zh-CN', {
+    if (!dynamic?.startTime) return '时间待定';
+    return new Date(dynamic.startTime).toLocaleString('zh-CN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });
-  }, [activity?.startTime]);
+  }, [dynamic?.startTime]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center pt-24">
-          <Loading text="加载活动详情..." />
+          <Loading text="加载社区动态详情..." />
         </div>
       </div>
     );
   }
 
-  if (!community || !activity) {
+  if (!community || !dynamic) {
     return (
       <div className="min-h-screen bg-background">
         <EmptyState
           icon="calendar"
-          title="活动不存在"
+          title="动态不存在"
           description="可能已被删除或设置为隐私"
           action={{
             label: '返回小区',
@@ -146,10 +147,10 @@ export default function ActivityDetailPage() {
             <ArrowLeft className="w-5 h-5 text-text-primary" />
           </button>
           <h1 className="text-base font-semibold text-text-primary line-clamp-1 flex-1 text-center">
-            {activity.title}
+            {dynamic.title}
           </h1>
           <button
-            onClick={() => navigator.share?.({ title: activity.title })}
+            onClick={() => navigator.share?.({ title: dynamic.title })}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="分享"
           >
@@ -163,7 +164,7 @@ export default function ActivityDetailPage() {
           {bannerImage ? (
             <img
               src={bannerImage}
-              alt={activity.title}
+              alt={dynamic.title}
               className="w-full h-full object-cover"
               loading="lazy"
             />
@@ -177,15 +178,17 @@ export default function ActivityDetailPage() {
         <section className="bg-white rounded-3xl shadow-sm p-6 space-y-4">
           <div className="flex flex-col gap-3">
             <span className="inline-flex items-center gap-2 text-xs text-primary px-3 py-1 bg-primary/10 rounded-full self-start">
-              {activity.type === 'announcement'
+              {dynamic.type === 'announcement'
                 ? '公告'
-                : activity.type === 'market'
+                : dynamic.type === 'market'
                 ? '集市'
-                : activity.type === 'festival'
+                : dynamic.type === 'festival'
                 ? '节庆'
-                : '活动'}
+                : dynamic.type === 'event'
+                ? '活动'
+                : '动态'}
             </span>
-            <h2 className="text-2xl font-semibold text-text-primary">{activity.title}</h2>
+            <h2 className="text-2xl font-semibold text-text-primary">{dynamic.title}</h2>
             <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
@@ -193,7 +196,7 @@ export default function ActivityDetailPage() {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <span>{activity.location || community.address || '位置待定'}</span>
+                <span>{dynamic.location || community.address || '位置待定'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -202,63 +205,64 @@ export default function ActivityDetailPage() {
             </div>
           </div>
 
-          {activity.description && (
-            <div className="pt-2 border-t border-gray-100">
-              <h3 className="text-base font-semibold text-text-primary mb-2">活动简介</h3>
-              <p className="text-sm leading-6 text-text-secondary whitespace-pre-wrap">
-                {activity.description}
-              </p>
+          {dynamic.images?.length > 0 && (
+            <div className="grid grid-cols-2 gap-3">
+              {dynamic.images.map((image, index) => (
+                <img
+                  key={`${dynamic.id}-image-${index}`}
+                  src={image}
+                  alt={`${dynamic.title}-${index}`}
+                  className="w-full h-40 object-cover rounded-2xl"
+                  loading="lazy"
+                />
+              ))}
             </div>
+          )}
+
+          {dynamic.description && (
+            <p className="text-sm text-text-secondary leading-6 whitespace-pre-wrap">
+              {dynamic.description}
+            </p>
           )}
         </section>
 
         <section className="bg-white rounded-3xl shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-text-primary">活动评论</h3>
+            <h3 className="text-base font-semibold text-text-primary">互动评论</h3>
             <button
-              onClick={() => router.push('/login')}
-              className="flex items-center gap-1 text-sm text-primary"
+              type="button"
+              className="inline-flex items-center gap-1 text-xs text-primary px-3 py-1 rounded-full bg-primary/10"
+              onClick={() => toast.info('评论功能即将上线，敬请期待')}
             >
-              <MessageCircle className="w-4 h-4" />
-              我要评论
+              <MessageCircle className="w-3.5 h-3.5" />
+              即将上线
             </button>
           </div>
 
           {comments.length === 0 ? (
-            <div className="bg-gray-50 rounded-2xl p-8 text-center text-sm text-text-secondary">
-              暂无评论，快来抢占沙发吧～
-            </div>
+            <EmptyState
+              icon="message"
+              title="暂无评论"
+              description="发布动态后，与社区成员交流互动"
+            />
           ) : (
             <div className="space-y-4">
               {comments.map((comment) => (
-                <div key={comment.id} className="border border-gray-100 rounded-2xl p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden">
-                      {comment.author.avatarUrl ? (
-                        <img
-                          src={comment.author.avatarUrl}
-                          alt={comment.author.nickname}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          {comment.author.nickname[0]}
-                        </div>
-                      )}
+                <div key={comment.id} className="p-4 rounded-2xl bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-text-primary">
+                      {comment.author.nickname}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-text-primary">
-                        {comment.author.nickname}
-                      </p>
-                      <p className="text-xs text-text-secondary">
-                        {new Date(comment.createdAt).toLocaleString('zh-CN')}
-                      </p>
+                    <div className="text-xs text-text-tertiary">
+                      {new Date(comment.createdAt).toLocaleString('zh-CN', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </div>
                   </div>
-                  <p className="text-sm text-text-secondary leading-6 whitespace-pre-wrap">
-                    {comment.content}
-                  </p>
+                  <p className="text-sm text-text-secondary">{comment.content}</p>
                 </div>
               ))}
             </div>

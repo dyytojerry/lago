@@ -4,6 +4,8 @@ import {
   joinCommunity,
   leaveCommunity,
   applyCommunityVerification,
+  updateCommunityMemberRole,
+  createCommunityActivity,
 } from '../controllers/communities.app.controller';
 import { authUser } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
@@ -153,6 +155,42 @@ router.post(
     })
   ),
   applyCommunityVerification
+);
+
+router.patch(
+  '/:id/members/:memberId/role',
+  authUser,
+  validateRequest(
+    Joi.object({
+      body: Joi.object({
+        role: Joi.string()
+          .valid('steward', 'maintenance', 'security', 'resident')
+          .required(),
+      }),
+    })
+  ),
+  updateCommunityMemberRole
+);
+
+router.post(
+  '/:id/dynamics',
+  authUser,
+  validateRequest(
+    Joi.object({
+      body: Joi.object({
+        title: Joi.string().max(80).required(),
+        description: Joi.string().allow('').max(1000).optional(),
+        images: Joi.array().items(Joi.string().uri()).max(9).default([]),
+        startTime: Joi.date().iso().optional(),
+        endTime: Joi.date().iso().optional(),
+        location: Joi.string().allow('').max(200).optional(),
+        type: Joi.string()
+          .valid('announcement', 'market', 'festival', 'event', 'other')
+          .optional(),
+      }),
+    })
+  ),
+  createCommunityActivity
 );
 
 export default router;
